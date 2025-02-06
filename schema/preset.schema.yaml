@@ -1,0 +1,269 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+type: object
+properties:
+  name:
+    description: >
+      The name of the preset. Preset names must be unique and should follow established patterns such as
+      "${source}_${sourceType}_${optionalInfo}".
+    type: string
+  author:
+    description: >
+      The person or organization that authored this preset.
+    type: string
+  description:
+    description: >
+      A description of the preset that will be displayed in the UI. The included content should be a brief and may
+      include information about the preset's purpose, the data it is designed to work with, and any other relevant
+      information.
+    type: string
+  autoloader:
+    description: >
+      The databricks autoloader configuration for this preset. This configuration will be used to load data from the source
+      during the bronze stage of the data pipeline. The fields available mirror those found in the DataSourceSpec
+      except for the location field which is not available here.
+    type: object
+    properties:
+      format:
+        type: string
+        description: json | parquet | csv | kafka | txt | cloudFiles
+      schemaFile:
+        type: string
+        description: An optional file containing the schema of the data source.
+      cloudFiles:
+        type: object
+        description: "The configuration used by the autoloader if format is 'cloudFiles'."
+        properties:
+          schemaHintsFile:
+            type: string
+          schemaHints:
+            type: string
+    required:
+      - format
+  silver:
+    type: object
+    properties:
+      preTransform:
+        description: >
+          A list of pretransform definitions that will be used in later stages. Each item will include a name of the
+          pretransform (used for dataframe variable naming) as well as the FieldSpecs that define the column schema.
+          Other typical properties such as filter, postFilter, and FieldUtils may be included as well.
+        type: array
+        items:
+          type: object
+          properties:
+            name:
+              description: >
+                The name of this pretransformation definition. This is used to identify the data transformation
+                (dataframe) for later use.
+              type: string
+            filter:
+              description: >
+                A SQL filter to apply to the data at the beginning of a data transformation stage.
+              type: string
+            postFilter:
+              description: >
+                A SQL filter to apply at the end of a data transformation stage.
+              type: string
+            fields:
+              description: >
+                A list of FieldSpecs that define the column schema for this pretransformation. Each FieldSpec will
+                include a name, type, and other properties that define the column schema.
+              type: array
+              items:
+                $ref: '#/components/schemas/FieldSpec'
+            utils:
+              description: >
+                A list of utilities for handling fields, including managing unreferenced fields and extracting fields
+                from hierarchical or JSON objects.
+              $ref: '#/components/schemas/FieldUtils'
+      transform:
+        description: >
+          A list of silver transform definitions for data cleaning and processing. Each transformation item will
+          include the name of the transformation which is used for variable and table naming. Other typical properties
+          such as filter, postFilter, and FieldUtils may be included as well.
+        type: array
+        items:
+          type: object
+          properties:
+            name:
+              description: >
+                The name of this silver transform definition. This is used to identify the silver table for writes
+                as well as the data transformation variable (dataframe) for later use in the related notebook.
+              type: string
+            filter:
+              description: >
+                A SQL filter to apply to the data at the beginning of a data transformation stage.
+              type: string
+            postFilter:
+              description: >
+                A SQL filter to apply at the end of a data transformation stage.
+              type: string
+            fields:
+              description: >
+                A list of FieldSpecs that define the column schema for this data transformation. Each FieldSpec will
+                include a name, type, and other properties that define the column schema.
+              type: array
+              items:
+                $ref: '#/components/schemas/FieldSpec'
+            utils:
+              description: >
+                A list of utilities for handling fields, including managing unreferenced fields and extracting fields
+                from hierarchical or JSON objects.
+              $ref: '#/components/schemas/FieldUtils'
+  gold:
+    description: >
+      The gold transform configuration for this preset. This configuration will be used to transform the silver data
+      into the gold OCSF tables. Note that you can have duplicate names for array objects which indicates the same
+      destination table but different source (silver) tables.
+    type: array
+    items:
+      type: object
+      properties:
+        name:
+          description: >
+            The name of this gold transform definition used to identify the gold table for writes.
+          type: string
+        input:
+          description: >
+            The silver transform data used as input for this gold table definition.
+          type: string
+        filter:
+          description: >
+            A SQL filter to apply to the data at the beginning of this stage.
+          type: string
+        postFilter:
+          description: >
+            A SQL filter to apply at the end of this stage.
+          type: string
+        fields:
+          description: >
+            A list of FieldSpecs that define the column schema for the gold stage data. Each FieldSpec will
+            include a name, type, and other properties that define the column schema.
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldSpec'
+        utils:
+          description: >
+            A list of utilities for handling fields, including managing unreferenced fields and extracting fields
+            from hierarchical or JSON objects.
+          $ref: '#/components/schemas/FieldUtils'
+
+components:
+  schemas:
+    FieldSpec:
+      description: >
+        A FieldSpec object is used to define a field to add to a dataset (dataframe). This field can be derived from an existing field,
+        an expression, from a literal value, from a join, etc. FieldSpec objects are found wherever the user needs to transform data
+        including in datasources, custom notebooks, and transforms.
+      type: object
+      properties:
+        name:
+          type: string
+        comment:
+          type: string
+          description: The comment to apply to the field.
+        assert:
+          type: array
+          description: >
+            A list of SQL expressions that must evaluate to true for every processed row.
+            The name of the column can be used in the SQL expression. If the assertion is
+            false, an operational alert is raised using 'message' for each row.
+          items:
+            type: object
+            properties:
+              expr:
+                type: string
+              message:
+                description: >
+                  The message to include in the operational alert if the assertion fails. (E.g., "The user email is null").
+                type: string
+        from:
+          type: string
+          description: This field obtains its value from the source column of this names.
+        alias:
+          type: string
+          description: This field obtains its value from the destination (transformed) column of this name.
+        expr:
+          type: string
+          description: This field obtains its value from the given SQL expression.
+        literal:
+          type: string
+          description: This field obtains its value from the given literal string. For other data types, use expr.
+        join:
+          type: object
+          properties:
+            withTable:
+              type: string
+              description: The table to join to.
+            withCSV:
+              type: object
+              # we expect to need to add more options here to handle CSVs, hence the object
+              properties:
+                path:
+                  type: string
+                  description: The path to the CSV file.
+            lhs:
+              type: string
+              description: The column in the source dataframe to join on.
+            rhs:
+              type: string
+              description: The column in withTable (or withCSV) to join on.
+            select:
+              type: string
+              description: A SQL expression to create the new field from the joined dataset.
+    FieldUtils:
+    description: >
+      Defines utilities for handling fields, including managing unreferenced fields and extracting fields from
+      hierarchical or JSON objects.
+    type: object
+    properties:
+      unreferencedColumns:
+        type: object
+        properties:
+          preserve:
+            description: >
+              Indicates whether columns not referenced in the FieldSpecs should be preserved in the output. This only
+              applies to the name in the "from" attribute.
+            type: boolean
+          embedColumn:
+            description: >
+              Specifies a name for a new column to contain all unreferenced fields as a single structured object.
+              Only applies if preserve is true.
+            type: string
+          omitColumns:
+            description: >
+              Lists columns to exclude from the output (either preserved as columns or embedded). Useful for retaining
+              all columns except the specified ones.
+            type: array
+            items:
+              type: string
+          duplicatePrefix:
+            description: >
+              Adds a specified prefix to resolve ambiguous duplicate field names. This applies only to "preserved"
+              columns that may be duplicative with something in the field specs.
+            type: string
+      jsonExtract:
+        description: "TODO: this happens before unreferencedColumns"
+        type: array
+        items:
+          type: object
+          properties:
+            source:
+              description: >
+                The name of the column containing the JSON string from which fields will be extracted.
+              type: string
+            omitFields:
+              description: >
+                Specifies high-level fields to exclude from extraction.
+              type: array
+              items:
+                type: string
+            duplicatePrefix:
+              description: >
+                Adds a specified prefix to resolve ambiguous duplicate field names generated during extraction.
+              type: string
+            embedColumn:
+              description: >
+                Specifies a column name to store the extracted JSON object as a structured type. If not specified,
+                the object is extracted into the top-level structure.
+              type: string
