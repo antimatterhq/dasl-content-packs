@@ -29,6 +29,14 @@ properties:
       schemaFile:
         type: string
         description: An optional file containing the schema of the data source.
+      schema:
+        type: string
+        description: An optional string representing the schema of the data source.
+      multiline:
+        type: boolean
+        description: >
+          A flag indicating whether the JSON records span multiple lines. Only applies if the format is set to
+          'json'.
       cloudFiles:
         type: object
         description: "The configuration used by the autoloader if format is 'cloudFiles'."
@@ -229,6 +237,11 @@ components:
             description: >
               Specifies a name for a new column to contain all unreferenced fields as a single structured object.
               Only applies if preserve is true.
+            type: string
+          embedColumnType:
+            description: >
+              Specifies the type of structured object that that unreferenced fields will be contained in.
+              Supported values are: json | struct | variant. Only applies if embedColumn is set.
             type: string
           omitColumns:
             description: >
