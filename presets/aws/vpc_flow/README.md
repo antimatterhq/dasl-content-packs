@@ -1,15 +1,15 @@
 
-# AWS Security Lake Route53 Resolver query log presets
+# AWS Security Lake VPC network flows presets
 
 This preset directory contains AWS Security Lake data sources. Current supported data sources:
-- Route53 Resolver query log
+- VPC network flows
 
-## Route53 Resolver query log
+## VPC network flows
 
 Assumed data format: parquet
 
 Silver tables:
-- aws_sec_lake_route53
+- aws_sec_lake_vpc_flow
 
 Gold tables:
-- dns_activity
+- network_activity
