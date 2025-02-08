@@ -1,15 +1,15 @@
 
-# AWS Security Lake Route53 Resolver query log presets
+# AWS Security Lake EKS control plane presets
 
 This preset directory contains AWS Security Lake data sources. Current supported data sources:
-- Route53 Resolver query log
+- EKS control plane
 
-## Route53 Resolver query log
+## EKS control plane
 
 Assumed data format: parquet
 
 Silver tables:
-- aws_sec_lake_route53
+- aws_sec_lake_eks_audit
 
 Gold tables:
-- dns_activity
+- api_activity

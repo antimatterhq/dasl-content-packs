@@ -1,15 +1,15 @@
 
-# AWS Security Lake Route53 Resolver query log presets
+# AWS Security Lake Lambda Execution presets
 
 This preset directory contains AWS Security Lake data sources. Current supported data sources:
-- Route53 Resolver query log
+- Lambda Execution
 
-## Route53 Resolver query log
+## Lambda Execution
 
 Assumed data format: parquet
 
 Silver tables:
-- aws_sec_lake_route53
+- aws_sec_lake_lambda_execution
 
 Gold tables:
-- dns_activity
+- api_activity

@@ -1,15 +1,15 @@
 
-# AWS Security Lake Route53 Resolver query log presets
+# AWS Security Lake S3 DataEvents presets
 
 This preset directory contains AWS Security Lake data sources. Current supported data sources:
-- Route53 Resolver query log
+- S3 DataEvents
 
-## Route53 Resolver query log
+## S3 DataEvents
 
 Assumed data format: parquet
 
 Silver tables:
-- aws_sec_lake_route53
+- aws_sec_lake_s3_data
 
 Gold tables:
-- dns_activity
+- api_activity
