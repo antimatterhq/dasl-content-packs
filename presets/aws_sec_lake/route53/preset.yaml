@@ -1,4 +1,4 @@
-name: aws_route53
+name: aws_sec_lake_route53
 author: Antimatter
 description: "Recommended preset for processing `Route53 Resolver query log` data from AWS Security Lake"
 autoloader:
