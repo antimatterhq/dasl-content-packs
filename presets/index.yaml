@@ -8,7 +8,7 @@ presets:
     iconURL: ""
 
   - name: "aws_sec_lake_cloudtrail_account_change"
-    source: "aws"
+    source: "aws_sec_lake"
     sourceType: "cloudtrail_account_change"
     title: "Preset for: AWS Security Lake CloudTrail CreateUser Events"
     author: "Antimatter"
