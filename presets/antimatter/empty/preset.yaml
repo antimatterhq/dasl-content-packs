@@ -1,0 +1,15 @@
+name: antimatter_empty
+author: Antimatter
+description: "An empty preset that can be used to create custom datasources via api spec"
+autoloader:
+  format: parquet
+silver:
+  preTransform:
+    # does not have any preTransform
+    # the intention is to override this preset in the resource spec
+  transform:
+    # does not produce any silver tables
+    # the intention is to override this preset in the resource spec
+gold:
+  # does not produce any gold tables
+  # the intention is to override this preset in the resource spec
