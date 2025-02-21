@@ -1,4 +1,12 @@
 presets:
+  - name: "antimatter_empty"
+    source: "antimatter"
+    sourceType: "empty"
+    title: "A preset used for e2e testing"
+    author: "Antimatter"
+    description: "A preset that does nothing and is intended to be used by automated e2e tests"
+    iconURL: ""
+
   - name: "aws_sec_lake_route53"
     source: "aws_sec_lake"
     sourceType: "route53"
