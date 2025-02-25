@@ -9,7 +9,7 @@ This preset directory contains AWS Security Lake data sources. Current supported
 Assumed data format: parquet
 
 Silver tables:
-- aws_sec_lake_vpc_flow
+- aws_sec_lake_vpc_flow_network_activity
 
 Gold tables:
 - network_activity

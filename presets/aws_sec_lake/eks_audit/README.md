@@ -9,7 +9,7 @@ This preset directory contains AWS Security Lake data sources. Current supported
 Assumed data format: parquet
 
 Silver tables:
-- aws_sec_lake_eks_audit
+- aws_sec_lake_eks_audit_api_activity
 
 Gold tables:
 - api_activity
