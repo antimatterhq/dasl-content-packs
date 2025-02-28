@@ -1,0 +1,327 @@
+name: aws_sec_lake_cloud_trail_management
+author: Antimatter
+description: "AWS CloudTrail Management Event collected with AWS Security Lake"
+autoloader:
+  format: parquet
+  cloudFiles:
+    schemaHints: "metadata struct<product:struct<version:string,name:string,vendor_name:string,feature:struct<name:string>>,event_code:string,uid:string,profiles:array<string>,version:string>,time bigint,time_dt timestamp,cloud struct<region:string,provider:string>,api struct<response:struct<error:string,message:string,data:variant>,operation:string,version:string,service:struct<name:string>,request:struct<data:variant,uid:string>>,dst_endpoint struct<svc_name:string>,actor struct<user:struct<type:string,name:string,uid_alt:string,uid:string,account:struct<uid:string>,credential_uid:string>,session:struct<created_time_dt:timestamp,is_mfa:boolean,issuer:string>,invoked_by:string,idp:struct<name:string>>,http_request struct<user_agent:string>,src_endpoint struct<uid:string,ip:string,domain:string>,session struct<uid:string,uid_alt:string,credential_uid:string,issuer:string>,policy struct<uid:string>,resources array<struct<uid:string,owner:struct<account:struct<uid:string>>,type:string>>,class_name string,class_uid int,category_name string,category_uid int,severity_id int,severity string,user struct<uid_alt:string,uid:string,name:string>,activity_name string,activity_id int,type_uid bigint,type_name string,status string,is_mfa boolean,unmapped map<string,string>,accountId bigint,region string,asl_version string,observables array<struct<name:string,value:string,type:string,type_id:int>>,eventDay int,_rescued_data string"
+silver:
+  transform:
+    - name: aws_sec_lake_cloud_trail_management_account_change
+      filter: "class_uid = 3001"
+      fields:
+        - name: activity_id
+          from: activity_id
+        - name: activity_name
+          from: activity_name
+        - name: category_uid
+          from: category_uid
+        - name: category_name
+          from: category_name
+        - name: class_uid
+          from: class_uid
+        - name: class_name
+          from: class_name
+        - name: metadata
+          from: metadata
+        - name: severity_id
+          from: severity_id
+        - name: severity
+          from: severity
+        - name: time
+          expr: timestamp_millis(time)
+        - name: time_dt
+          from: time_dt
+        - name: type_uid
+          from: type_uid
+        - name: type_name
+          from: type_name
+        - name: observables
+          from: observables
+        - name: status
+          from: status
+        - name: unmapped
+          from: unmapped
+        - name: api
+          from: api
+        - name: cloud
+          from: cloud
+        - name: actor
+          from: actor
+        - name: policy
+          from: policy
+        - name: http_request
+          from: http_request
+        - name: src_endpoint
+          from: src_endpoint
+        - name: user
+          from: user
+      utils:
+        unreferencedColumns:
+          preserve: true
+          omitColumns:
+            - time
+    - name: aws_sec_lake_cloud_trail_management_authentication
+      filter: "class_uid = 3002"
+      fields:
+        - name: activity_id
+          from: activity_id
+        - name: activity_name
+          from: activity_name
+        - name: category_uid
+          from: category_uid
+        - name: category_name
+          from: category_name
+        - name: class_uid
+          from: class_uid
+        - name: class_name
+          from: class_name
+        - name: metadata
+          from: metadata
+        - name: severity_id
+          from: severity_id
+        - name: severity
+          from: severity
+        - name: time
+          expr: timestamp_millis(time)
+        - name: time_dt
+          from: time_dt
+        - name: type_uid
+          from: type_uid
+        - name: type_name
+          from: type_name
+        - name: observables
+          from: observables
+        - name: status
+          from: status
+        - name: unmapped
+          from: unmapped
+        - name: api
+          from: api
+        - name: cloud
+          from: cloud
+        - name: actor
+          from: actor
+        - name: policy
+          from: policy
+        - name: http_request
+          from: http_request
+        - name: src_endpoint
+          from: src_endpoint
+        - name: dst_endpoint
+          from: dst_endpoint
+        - name: is_mfa
+          from: is_mfa
+        - name: session
+          from: session
+        - name: user
+          from: user
+      utils:
+        unreferencedColumns:
+          preserve: true
+          omitColumns:
+            - time
+    - name: aws_sec_lake_cloud_trail_management_api_activity
+      filter: "class_uid = 6003"
+      fields:
+        - name: activity_id
+          from: activity_id
+        - name: activity_name
+          from: activity_name
+        - name: category_uid
+          from: category_uid
+        - name: category_name
+          from: category_name
+        - name: class_uid
+          from: class_uid
+        - name: class_name
+          from: class_name
+        - name: metadata
+          from: metadata
+        - name: severity_id
+          from: severity_id
+        - name: severity
+          from: severity
+        - name: time
+          expr: timestamp_millis(time)
+        - name: time_dt
+          from: time_dt
+        - name: type_uid
+          from: type_uid
+        - name: type_name
+          from: type_name
+        - name: observables
+          from: observables
+        - name: status
+          from: status
+        - name: unmapped
+          from: unmapped
+        - name: api
+          from: api
+        - name: cloud
+          from: cloud
+        - name: actor
+          from: actor
+        - name: policy
+          from: policy
+        - name: http_request
+          from: http_request
+        - name: resources
+          from: resources
+        - name: src_endpoint
+          from: src_endpoint
+      utils:
+        unreferencedColumns:
+          preserve: true
+          omitColumns:
+            - time
+gold:
+  - name: account_change
+    input: aws_sec_lake_cloud_trail_management_account_change
+    fields:
+      - name: activity_id
+        from: activity_id
+      - name: activity_name
+        from: activity_name
+      - name: category_uid
+        from: category_uid
+      - name: category_name
+        from: category_name
+      - name: class_uid
+        from: class_uid
+      - name: class_name
+        from: class_name
+      - name: metadata
+        from: metadata
+      - name: severity_id
+        from: severity_id
+      - name: severity
+        from: severity
+      - name: time
+        from: time
+      - name: time_dt
+        from: time_dt
+      - name: type_uid
+        from: type_uid
+      - name: type_name
+        from: type_name
+      - name: observables
+        from: observables
+      - name: status
+        from: status
+      - name: api
+        from: api
+      - name: cloud
+        from: cloud
+      - name: actor
+        from: actor
+      - name: http_request
+        from: http_request
+      - name: src_endpoint
+        from: src_endpoint
+      - name: user.uid_alt
+        expr: (COALESCE(user.uid_alt, actor.user.uid_alt))
+      - name: user.uid
+        expr: (COALESCE(user.uid, actor.user.uid))
+      - name: user.name
+        expr: (COALESCE(user.name, actor.user.name))
+  - name: authentication
+    input: aws_sec_lake_cloud_trail_management_authentication
+    fields:
+      - name: activity_id
+        from: activity_id
+      - name: activity_name
+        from: activity_name
+      - name: category_uid
+        from: category_uid
+      - name: category_name
+        from: category_name
+      - name: class_uid
+        from: class_uid
+      - name: class_name
+        from: class_name
+      - name: metadata
+        from: metadata
+      - name: severity_id
+        from: severity_id
+      - name: severity
+        from: severity
+      - name: time
+        from: time
+      - name: time_dt
+        from: time_dt
+      - name: type_uid
+        from: type_uid
+      - name: type_name
+        from: type_name
+      - name: observables
+        from: observables
+      - name: status
+        from: status
+      - name: api
+        from: api
+      - name: cloud
+        from: cloud
+      - name: actor
+        from: actor
+      - name: http_request
+        from: http_request
+      - name: src_endpoint
+        from: src_endpoint
+      - name: dst_endpoint
+        from: dst_endpoint
+      - name: is_mfa
+        from: is_mfa
+      - name: session
+        from: session
+      - name: user.uid_alt
+        expr: (COALESCE(user.uid_alt, actor.user.uid_alt))
+      - name: user.uid
+        expr: (COALESCE(user.uid, actor.user.uid))
+      - name: user.name
+        expr: (COALESCE(user.name, actor.user.name))
+  - name: api_activity
+    input: aws_sec_lake_cloud_trail_management_api_activity
+    fields:
+      - name: activity_id
+        from: activity_id
+      - name: activity_name
+        from: activity_name
+      - name: category_uid
+        from: category_uid
+      - name: category_name
+        from: category_name
+      - name: class_uid
+        from: class_uid
+      - name: class_name
+        from: class_name
+      - name: metadata
+        from: metadata
+      - name: severity_id
+        from: severity_id
+      - name: severity
+        from: severity
+      - name: time
+        from: time
+      - name: time_dt
+        from: time_dt
+      - name: type_uid
+        from: type_uid
+      - name: type_name
+        from: type_name
+      - name: observables
+        from: observables
+      - name: status
+        from: status
+      - name: api
+        from: api
+      - name: cloud
+        from: cloud
+      - name: actor
+        from: actor
+      - name: http_request
+        from: http_request
+      - name: resources
+        from: resources
+      - name: src_endpoint
+        from: src_endpoint

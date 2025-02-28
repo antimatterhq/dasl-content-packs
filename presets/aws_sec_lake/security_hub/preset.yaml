@@ -1,0 +1,301 @@
+name: aws_sec_lake_security_hub
+author: Antimatter
+description: "AWS Security Hub Findings collected with AWS Security Lake"
+autoloader:
+  format: parquet
+  cloudFiles:
+    schemaHints: "activity_id int,activity_name string,category_name string,category_uid int,class_name string,class_uid int,cloud struct<account:struct<uid:string>,provider:string,region:string>,compliance struct<control:string,requirements:array<string>,standards:array<string>,status:string>,evidences array<struct<api:struct<operation:string,service:struct<name:string>>,data:variant,src_endpoint:struct<ip:string,location:struct<city:string,coordinates:array<float>,country:string>>>>,finding_info struct<created_time_dt:timestamp,desc:string,first_seen_time_dt:timestamp,last_seen_time_dt:timestamp,modified_time_dt:timestamp,src_url:string,title:string,types:array<string>,uid:string>,metadata struct<extensions:array<struct<name:string,uid:string,version:string>>,log_version:string,processed_time_dt:timestamp,product:struct<feature:struct<uid:string>,name:string,uid:string,vendor_name:string,version:string>,profiles:array<string>,version:string>,observables array<struct<name:string,type:string,type_id:int,value:string>>,remediation struct<desc:string,references:array<string>>,resource struct<cloud_partition:string,data:variant,region:string,type:string,uid:string>,resources array<struct<cloud_partition:string,data:variant,region:string,type:string,uid:string>>,severity string,severity_id int,status string,time bigint,time_dt timestamp,type_name string,type_uid bigint,unmapped map<string,string>,vulnerabilities array<struct<affected_packages:array<struct<architecture:string,epoch:int,fixed_in_version:string,name:string,package_manager:string,release:string,remediation:struct<desc:string>,version:string>>,cve:struct<created_time_dt:timestamp,cvss:array<struct<base_score:float,vector_string:string,version:string>>,epss:struct<score:string>,modified_time_dt:timestamp,references:array<string>,uid:string>,is_exploit_available:boolean,is_fix_available:boolean,references:array<string>,remediation:struct<desc:string>,vendor_name:string>>,_rescued_data string"
+silver:
+  transform:
+    - name: aws_sec_lake_security_hub_vulnerability_finding
+      filter: "class_uid = 2002"
+      fields:
+        - name: activity_id
+          from: activity_id
+        - name: activity_name
+          from: activity_name
+        - name: category_uid
+          from: category_uid
+        - name: category_name
+          from: category_name
+        - name: class_uid
+          from: class_uid
+        - name: class_name
+          from: class_name
+        - name: metadata
+          from: metadata
+        - name: observables
+          from: observables
+        - name: severity_id
+          from: severity_id
+        - name: severity
+          from: severity
+        - name: status
+          from: status
+        - name: time
+          expr: timestamp_millis(time)
+        - name: time_dt
+          from: time_dt
+        - name: type_uid
+          from: type_uid
+        - name: type_name
+          from: type_name
+        - name: unmapped
+          from: unmapped
+        - name: cloud
+          from: cloud
+        - name: finding_info
+          from: finding_info
+        - name: resource
+          from: resource
+        - name: resources
+          from: resources
+        - name: vulnerabilities
+          from: vulnerabilities
+      utils:
+        unreferencedColumns:
+          preserve: true
+          omitColumns:
+            - time
+    - name: aws_sec_lake_security_hub_compliance_finding
+      filter: "class_uid = 2003"
+      fields:
+        - name: activity_id
+          from: activity_id
+        - name: activity_name
+          from: activity_name
+        - name: category_uid
+          from: category_uid
+        - name: category_name
+          from: category_name
+        - name: class_uid
+          from: class_uid
+        - name: class_name
+          from: class_name
+        - name: metadata
+          from: metadata
+        - name: observables
+          from: observables
+        - name: severity_id
+          from: severity_id
+        - name: severity
+          from: severity
+        - name: status
+          from: status
+        - name: time
+          expr: timestamp_millis(time)
+        - name: time_dt
+          from: time_dt
+        - name: type_uid
+          from: type_uid
+        - name: type_name
+          from: type_name
+        - name: unmapped
+          from: unmapped
+        - name: cloud
+          from: cloud
+        - name: finding_info
+          from: finding_info
+        - name: compliance
+          from: compliance
+        - name: evidences
+          from: evidences
+        - name: remediation
+          from: remediation
+        - name: resource
+          from: resource
+        - name: resources
+          from: resources
+      utils:
+        unreferencedColumns:
+          preserve: true
+          omitColumns:
+            - time
+    - name: aws_sec_lake_security_hub_detection_finding
+      filter: "class_uid = 2004"
+      fields:
+        - name: activity_id
+          from: activity_id
+        - name: activity_name
+          from: activity_name
+        - name: category_uid
+          from: category_uid
+        - name: category_name
+          from: category_name
+        - name: class_uid
+          from: class_uid
+        - name: class_name
+          from: class_name
+        - name: metadata
+          from: metadata
+        - name: observables
+          from: observables
+        - name: severity_id
+          from: severity_id
+        - name: severity
+          from: severity
+        - name: status
+          from: status
+        - name: time
+          expr: timestamp_millis(time)
+        - name: time_dt
+          from: time_dt
+        - name: type_uid
+          from: type_uid
+        - name: type_name
+          from: type_name
+        - name: unmapped
+          from: unmapped
+        - name: cloud
+          from: cloud
+        - name: finding_info
+          from: finding_info
+        - name: evidences
+          from: evidences
+        - name: remediation
+          from: remediation
+        - name: resources
+          from: resources
+        - name: vulnerabilities
+          from: vulnerabilities
+      utils:
+        unreferencedColumns:
+          preserve: true
+          omitColumns:
+            - time
+gold:
+  - name: vulnerability_finding
+    input: aws_sec_lake_security_hub_vulnerability_finding
+    fields:
+      - name: activity_id
+        from: activity_id
+      - name: activity_name
+        from: activity_name
+      - name: category_uid
+        from: category_uid
+      - name: category_name
+        from: category_name
+      - name: class_uid
+        from: class_uid
+      - name: class_name
+        from: class_name
+      - name: metadata
+        from: metadata
+      - name: observables
+        from: observables
+      - name: severity_id
+        from: severity_id
+      - name: severity
+        from: severity
+      - name: status
+        from: status
+      - name: time
+        from: time
+      - name: time_dt
+        from: time_dt
+      - name: type_uid
+        from: type_uid
+      - name: type_name
+        from: type_name
+      - name: cloud
+        from: cloud
+      - name: finding_info
+        from: finding_info
+      - name: resource
+        from: resource
+      - name: resources
+        from: resources
+      - name: vulnerabilities
+        from: vulnerabilities
+  - name: compliance_finding
+    input: aws_sec_lake_security_hub_compliance_finding
+    fields:
+      - name: activity_id
+        from: activity_id
+      - name: activity_name
+        from: activity_name
+      - name: category_uid
+        from: category_uid
+      - name: category_name
+        from: category_name
+      - name: class_uid
+        from: class_uid
+      - name: class_name
+        from: class_name
+      - name: metadata
+        from: metadata
+      - name: observables
+        from: observables
+      - name: severity_id
+        from: severity_id
+      - name: severity
+        from: severity
+      - name: status
+        from: status
+      - name: time
+        from: time
+      - name: time_dt
+        from: time_dt
+      - name: type_uid
+        from: type_uid
+      - name: type_name
+        from: type_name
+      - name: cloud
+        from: cloud
+      - name: finding_info
+        from: finding_info
+      - name: compliance
+        from: compliance
+      - name: evidences
+        from: evidences
+      - name: remediation
+        from: remediation
+      - name: resource
+        from: resource
+      - name: resources
+        from: resources
+  - name: detection_finding
+    input: aws_sec_lake_security_hub_detection_finding
+    fields:
+      - name: activity_id
+        from: activity_id
+      - name: activity_name
+        from: activity_name
+      - name: category_uid
+        from: category_uid
+      - name: category_name
+        from: category_name
+      - name: class_uid
+        from: class_uid
+      - name: class_name
+        from: class_name
+      - name: metadata
+        from: metadata
+      - name: observables
+        from: observables
+      - name: severity_id
+        from: severity_id
+      - name: severity
+        from: severity
+      - name: status
+        from: status
+      - name: time
+        from: time
+      - name: time_dt
+        from: time_dt
+      - name: type_uid
+        from: type_uid
+      - name: type_name
+        from: type_name
+      - name: cloud
+        from: cloud
+      - name: finding_info
+        from: finding_info
+      - name: evidences
+        from: evidences
+      - name: remediation
+        from: remediation
+      - name: resources
+        from: resources
+      - name: vulnerabilities
+        from: vulnerabilities
