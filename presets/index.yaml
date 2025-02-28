@@ -1,4 +1,12 @@
 presets:
+  - name: "internal_route53"
+    source: "internal"
+    sourceType: "route53"
+    title: "INTERNAL PRESET FOR TESTING - AWS SecLake - CloudTrail"
+    author: "Antimatter"
+    description: "AWS CloudTrail Management Event collected with AWS Security Lake"
+    iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/aws_sec_lake/cloudtrail_management/icon.png"
+
   - name: "aws_sec_lake_cloudtrail_management"
     source: "aws_sec_lake"
     sourceType: "cloudtrail_management"
