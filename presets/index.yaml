@@ -1,11 +1,11 @@
 presets:
-  - name: "aws_sec_lake_cloud_trail_management"
+  - name: "aws_sec_lake_cloudtrail_management"
     source: "aws_sec_lake"
     sourceType: "cloudtrail_management"
     title: "AWS SecLake - CloudTrail"
     author: "Antimatter"
     description: "AWS CloudTrail Management Event collected with AWS Security Lake"
-    iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/aws_sec_lake/cloud_trail_management/icon.png"
+    iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/aws_sec_lake/cloudtrail_management/icon.png"
 
   - name: "aws_sec_lake_eks_audit"
     source: "aws_sec_lake"
