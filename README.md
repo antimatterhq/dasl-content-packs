@@ -5,10 +5,10 @@ table pre-transform and transform definitions, and gold table transform definiti
 
 ## Layout and Schema
 The preset content packs are stored using the pattern:
-`presets/{source}/{sourceType}/{name}.yaml`
+`presets/{source}/{sourceType}/preset.yaml`
 
-For example, a preset named "aws_sec_lake_route53" with a source of "aws" and sourceType of
-"route53" will be defined in `presets/aws/route53/aws_sec_lake_route53.yaml`
+For example, a preset named "aws_sec_lake_route53" with a source of "aws_sec_lake" and sourceType of
+"route53" will be defined in `presets/aws_sec_lake/route53/preset.yaml`
 
 The schema for a preset is located at [schema/preset.schema.yaml](./schema/preset.schema.yaml)
 

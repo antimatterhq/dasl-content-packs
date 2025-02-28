@@ -1,13 +1,13 @@
 name: aws_sec_lake_vpc_flow
 author: Antimatter
-description: "Recommended preset for processing `VPC Flow logs` data from AWS Security Lake"
+description: "AWS VPC network flows logs collected with AWS Security Lake"
 autoloader:
   format: parquet
   cloudFiles:
     schemaHints: "metadata struct<product:struct<version:string,name:string,feature:struct<name:string>,vendor_name:string>,profiles:array<string>,version:string>,cloud struct<account:struct<uid:string>,region:string,zone:string,provider:string>,src_endpoint struct<port:int,svc_name:string,ip:string,intermediate_ips:array<string>,interface_uid:string,vpc_uid:string,instance_uid:string,subnet_uid:string>,dst_endpoint struct<port:int,svc_name:string,ip:string,intermediate_ips:array<string>,interface_uid:string,vpc_uid:string,instance_uid:string,subnet_uid:string>,connection_info struct<protocol_num:int,tcp_flags:int,protocol_ver:string,boundary_id:int,boundary:string,direction_id:int,direction:string>,traffic struct<packets:bigint,bytes:bigint>,time bigint,time_dt timestamp,start_time_dt timestamp,end_time_dt timestamp,status_code string,severity_id int,severity string,class_name string,class_uid int,category_name string,category_uid int,activity_name string,activity_id int,action string,action_id int,disposition string,type_uid bigint,type_name string,accountId bigint,region string,asl_version string,unmapped map<string,string>,observables array<struct<name:string,value:string,type:string,type_id:int>>,eventDay int,_rescued_data string"
 silver:
   transform:
-    - name: aws_sec_lake_vpc_flow_network_activity
+    - name: aws_sec_lake_vpc_flow
       filter: "class_uid = 4001"
       fields:
         - name: activity_id
@@ -69,7 +69,7 @@ silver:
             - time
 gold:
   - name: network_activity
-    input: aws_sec_lake_vpc_flow_network_activity
+    input: aws_sec_lake_vpc_flow
     fields:
       - name: activity_id
         from: activity_id

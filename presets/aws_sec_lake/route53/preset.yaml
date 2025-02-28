@@ -1,13 +1,13 @@
 name: aws_sec_lake_route53
 author: Antimatter
-description: "Recommended preset for processing `Route53 Events` data from AWS Security Lake"
+description: "AWS Route53 Resolver query log data collected with AWS Security Lake"
 autoloader:
   format: parquet
   cloudFiles:
     schemaHints: "metadata struct<product:struct<version:string,name:string,feature:struct<name:string>,vendor_name:string>,profiles:array<string>,version:string>,cloud struct<account:struct<uid:string>,region:string,provider:string>,src_endpoint struct<vpc_uid:string,ip:string,port:int,instance_uid:string>,time bigint,time_dt timestamp,query struct<hostname:string,type:string,class:string>,answers array<struct<type:string,rdata:string,class:string>>,connection_info struct<protocol_name:string,direction:string,direction_id:int>,dst_endpoint struct<instance_uid:string,interface_uid:string>,firewall_rule struct<uid:string>,severity_id int,severity string,class_name string,class_uid int,category_name string,category_uid int,activity_id int,activity_name string,type_uid bigint,type_name string,rcode_id int,rcode string,disposition string,action string,action_id int,unmapped map<string,string>,accountId bigint,region string,asl_version string,observables array<struct<name:string,value:string,type:string,type_id:int>>,eventDay int,_rescued_data string,actor struct<user:struct<type:string,name:string,uid_alt:string,uid:string,account:struct<uid:string>,credential_uid:string>,session:struct<created_time_dt:timestamp,is_mfa:boolean,issuer:string>,invoked_by:string,idp:struct<name:string>>"
 silver:
   transform:
-    - name: aws_sec_lake_route53_dns_activity
+    - name: aws_sec_lake_route53
       filter: "class_uid = 4003"
       fields:
         - name: activity_id
@@ -81,7 +81,7 @@ silver:
             - time
 gold:
   - name: dns_activity
-    input: aws_sec_lake_route53_dns_activity
+    input: aws_sec_lake_route53
     fields:
       - name: activity_id
         from: activity_id

@@ -1,6 +1,6 @@
 name: aws_sec_lake_lambda_execution
 author: Antimatter
-description: "Recommended preset for processing `CloudTrail Lambda Data Events` data from AWS Security Lake"
+description: "AWS Lambda Execution data collected with AWS Security Lake"
 autoloader:
   format: parquet
   cloudFiles:
