@@ -10,6 +10,10 @@ silver:
     - name: aws_sec_lake_route53
       filter: ""
       postFilter: ""
+      utils:
+        # this is needed - otherwise the result of the preTransform will have zero columns
+        unreferencedColumns:
+          preserve: true
   transform:
     - name: aws_sec_lake_route53
       filter: "class_uid = 4003"
