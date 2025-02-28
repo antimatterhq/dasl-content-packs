@@ -4,7 +4,7 @@ description: "Cloudflare HTTP request logs"
 autoloader:
   format: json
   cloudFiles:
-    schemaHints: "CacheCacheStatus string,CacheResponseBytes bigint,ClientASN bigint,ClientCountry string,ClientDeviceType string,ClientIP string,ClientIPClass string,ClientMTLSAuthCertFingerprint string,ClientMTLSAuthStatus string,ClientRegionCode string,ClientRequestBytes bigint,ClientRequestHost string,ClientRequestMethod string,ClientRequestPath string,ClientRequestProtocol string,ClientRequestReferer string,ClientRequestScheme string,ClientRequestSource string,ClientRequestURI string,ClientRequestUserAgent string,ClientSSLProtocol string,EdgeColoCode string,EdgeEndTimestamp string,EdgePathingOp string,EdgePathingSrc string,EdgePathingStatus string,EdgeResponseBytes bigint,EdgeResponseContentType string,EdgeResponseStatus bigint,EdgeServerIP string,EdgeStartTimestamp string,OriginIP string,OriginResponseDurationMs bigint,OriginResponseHTTPLastModified string,OriginResponseStatus bigint,OriginSSLProtocol string,ParentRayID string,RayID string,SecurityAction string,SecurityActions array<string>,SecurityRuleDescription string,SecurityRuleID string,SecurityRuleIDs array<string>,SecuritySources array<string>,WAFAttackScore bigint,WAFRCEAttackScore bigint,WAFSQLiAttackScore bigint,WAFXSSAttackScore bigint,WorkerStatus string,WorkerSubrequest boolean,ZoneName string,unmapped map<string,string>,_rescued_data string"
+    schemaHints: "CacheCacheStatus string,CacheResponseBytes bigint,ClientASN bigint,ClientCountry string,ClientDeviceType string,ClientIP string,ClientIPClass string,ClientMTLSAuthCertFingerprint string,ClientMTLSAuthStatus string,ClientRegionCode string,ClientRequestBytes int,ClientRequestHost string,ClientRequestMethod string,ClientRequestPath string,ClientRequestProtocol string,ClientRequestReferer string,ClientRequestScheme string,ClientRequestSource string,ClientRequestURI string,ClientRequestUserAgent string,ClientSSLProtocol string,EdgeColoCode string,EdgeEndTimestamp timestamp,EdgePathingOp string,EdgePathingSrc string,EdgePathingStatus string,EdgeResponseBytes int,EdgeResponseContentType string,EdgeResponseStatus int,EdgeServerIP string,EdgeStartTimestamp timestamp,OriginIP string,OriginResponseDurationMs bigint,OriginResponseHTTPLastModified string,OriginResponseStatus int,OriginSSLProtocol string,ParentRayID string,RayID string,SecurityAction string,SecurityActions array<string>,SecurityRuleDescription string,SecurityRuleID string,SecurityRuleIDs array<string>,SecuritySources array<string>,WAFAttackScore bigint,WAFRCEAttackScore bigint,WAFSQLiAttackScore bigint,WAFXSSAttackScore bigint,WorkerStatus string,WorkerSubrequest boolean,ZoneName string,unmapped map<string,string>,_rescued_data string"
 silver:
   transform:
     - name: cloudflare_http_requests
@@ -14,13 +14,13 @@ silver:
         - name: ocsf_category_uid
           expr: CAST('4' AS INT)
         - name: ocsf_category_name
-          literal: "ocsf_category_name"
+          literal: "Network Activity"
         - name: ocsf_class_uid
           expr: CAST('4002' AS INT)
         - name: ocsf_class_name
           literal: "HTTP Activity"
         - name: time
-          expr: CAST(EdgeStartTimestamp AS TIMESTAMP)
+          from: EdgeStartTimestamp
         - name: ClientRequestMethod
           from: ClientRequestMethod
         - name: http_status_code
@@ -119,15 +119,15 @@ gold:
       - name: http_response.code
         from: http_status_code
       - name: http_response.status
-        from: EdgeResponseStatus
+        expr: CAST(EdgeResponseStatus AS STRING)
       - name: http_response.length
         from: EdgeResponseBytes
       - name: tls.version
         from: ClientSSLProtocol
       - name: traffic.bytes_in
-        from: ClientRequestBytes
+        expr: CAST(ClientRequestBytes AS BIGINT)
       - name: traffic.bytes_out
-        from: EdgeResponseBytes
+        expr: CAST(EdgeResponseBytes AS BIGINT)
       - name: duration
         from: duration
       - name: end_time_dt
@@ -135,7 +135,7 @@ gold:
       - name: start_time_dt
         from: time
       - name: status_code
-        from: EdgeResponseStatus
+        expr: CAST(EdgeResponseStatus AS STRING)
       - name: activity_name
         from: ClientRequestMethod
       - name: device.type
