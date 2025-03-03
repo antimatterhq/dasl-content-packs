@@ -3,6 +3,7 @@ author: Antimatter
 description: "Cloudflare HTTP request logs"
 autoloader:
   format: json
+  multiline: true
   cloudFiles:
     schemaHints: "CacheCacheStatus string,CacheResponseBytes bigint,ClientASN bigint,ClientCountry string,ClientDeviceType string,ClientIP string,ClientIPClass string,ClientMTLSAuthCertFingerprint string,ClientMTLSAuthStatus string,ClientRegionCode string,ClientRequestBytes int,ClientRequestHost string,ClientRequestMethod string,ClientRequestPath string,ClientRequestProtocol string,ClientRequestReferer string,ClientRequestScheme string,ClientRequestSource string,ClientRequestURI string,ClientRequestUserAgent string,ClientSSLProtocol string,EdgeColoCode string,EdgeEndTimestamp timestamp,EdgePathingOp string,EdgePathingSrc string,EdgePathingStatus string,EdgeResponseBytes int,EdgeResponseContentType string,EdgeResponseStatus int,EdgeServerIP string,EdgeStartTimestamp timestamp,OriginIP string,OriginResponseDurationMs bigint,OriginResponseHTTPLastModified string,OriginResponseStatus int,OriginSSLProtocol string,ParentRayID string,RayID string,SecurityAction string,SecurityActions array<string>,SecurityRuleDescription string,SecurityRuleID string,SecurityRuleIDs array<string>,SecuritySources array<string>,WAFAttackScore bigint,WAFRCEAttackScore bigint,WAFSQLiAttackScore bigint,WAFXSSAttackScore bigint,WorkerStatus string,WorkerSubrequest boolean,ZoneName string,unmapped map<string,string>,_rescued_data string"
 silver:
