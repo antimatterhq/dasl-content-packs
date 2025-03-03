@@ -37,7 +37,8 @@ properties:
         description: >
           A flag indicating whether the JSON records span multiple lines. Only applies if the format is set to
           'json'.
-      cloudFiles:
+      multiline: true
+  cloudFiles:
         type: object
         description: "The configuration used by the autoloader if format is 'cloudFiles'."
         properties:
