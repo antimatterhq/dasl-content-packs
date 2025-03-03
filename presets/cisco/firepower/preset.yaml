@@ -77,7 +77,7 @@ gold:
       - name: src_endpoint.ip
         from: src_ip
       - name: src_endpoint.port
-        from: ocsf_endpoint_port
+        from: ocsf_src_endpoint_port
       - name: dst_endpoint.interface_name
         from: dst_if
       - name: dst_endpoint.ip

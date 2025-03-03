@@ -19,7 +19,7 @@ Gold tables:
 Assumed data format: text
 
 Silver tables:
-- cisco_firepower
+    - umbrella_dns
 
 Gold tables:
-- network_activity
+    - dns_activity
