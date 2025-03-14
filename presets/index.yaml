@@ -1,4 +1,20 @@
 presets:
+  - name: "akamai_waf"
+    source: "akamai"
+    sourceType: "waf"
+    title: "Akamai - WAF"
+    author: "Antimatter"
+    description: "Akamai Web Applicaiton Firewall logs"
+    iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/akamai/waf/icon.png"
+
+  - name: "aws_waf"
+    source: "aws"
+    sourceType: "waf_format_v1"
+    title: "AWS - WAF format v1"
+    author: "Antimatter"
+    description: "Amazon Web Services Web Application Firewall v2 format v1 logs"
+    iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/aws/waf_format_v1/icon.png"
+
   - name: "aws_sec_lake_cloudtrail_management"
     source: "aws_sec_lake"
     sourceType: "cloudtrail_management"
@@ -62,6 +78,14 @@ presets:
     author: "Antimatter"
     description: "AWS WAF activity logs collected with AWS Security Lake"
     iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/aws_sec_lake/waf/icon.png"
+
+  - name: "azure_waf"
+    source: "azure"
+    sourceType: "waf"
+    title: "Azure - WAF"
+    author: "Antimatter"
+    description: "Azure Web Application Firewall logs"
+    iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/azure/waf/icon.png"
 
   - name: "cloudflare_httpreq"
     source: "cloudflare"
