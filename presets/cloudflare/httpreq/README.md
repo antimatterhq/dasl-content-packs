@@ -8,7 +8,7 @@ This preset directory contains cloudflare data sources. Current supported data s
 Assumed data format: json
 
 Silver tables:
-    - cloudflare_http_req
+    - cloudflare_waf_http_requests
 
 Gold tables:
-    - network_activity
+    - http_activity
