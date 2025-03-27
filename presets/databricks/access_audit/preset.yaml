@@ -1,0 +1,740 @@
+name: databricks_access_audit
+author: Antimatter
+description: "Datasource processing for Databricks access audit logs"
+bronze:
+  skipBronzeLoading: true
+silver:
+  bronzeTables:
+    - name: system.access.audit
+      
+  transform:
+    - name: databricks_access_audit
+      fields:
+        - name: time
+          expr: CAST(event_time AS TIMESTAMP)
+
+        - name: ocsf_time_dt
+          expr: CAST(event_time AS TIMESTAMP)
+
+        - name: ocsf_action_id
+          expr: |
+            CASE
+              WHEN response.status_code >= 200 AND response.status_code < 300 THEN 1
+              WHEN response.status_code >= 400 AND response.status_code < 500 THEN 2
+              ELSE 0
+            END
+            
+        - name: ocsf_action
+          expr: |
+            CASE
+              WHEN response.status_code >= 200 AND response.status_code < 300 THEN 'Allowed'
+              WHEN response.status_code >= 400 AND response.status_code < 500 THEN 'Denied'
+              ELSE 'Unknown'
+            END
+            
+        - name: action_name
+          from: action_name
+
+        - name: ocsf_actor.user.account.uid
+          from: account_id
+
+        - name: ocsf_actor.user.name
+          from: identity_metadata.run_by
+
+        - name: ocsf_actor.user.email_addr
+          from: user_identity.email
+
+        - name: ocsf_api.service.name
+          from: service_name
+
+        - name: ocsf_api.response.code
+          from: response.status_code
+
+        - name: ocsf_api.response.data
+          from: CAST(to_json(named_struct('result', response.result)) AS VARIANT)
+
+        - name: ocsf_cloud.provider
+          literal: Databricks
+
+        - name: ocsf_cloud.account.uid 
+          from: account_id
+
+        - name: ocsf_cloud.account.type_id 
+          expr: cast('99' as INT)
+
+        - name: ocsf_disposition_id
+          expr: |
+            CASE
+              WHEN response.status_code >= 200 AND response.status_code < 300 THEN 1
+              WHEN response.status_code = 401 THEN 26
+              WHEN response.status_code >= 400 AND response.status_code < 500 THEN 2
+              ELSE 0
+            END
+
+        - name: ocsf_disposition
+          expr: |
+            CASE
+              WHEN response.status_code >= 200 AND response.status_code < 300 THEN 'Allowed'
+              WHEN response.status_code = 401 THEN 'Unauthorized'
+              WHEN response.status_code >= 400 AND response.status_code < 500 THEN 'Blocked'
+              ELSE 'Unknown'
+            END
+
+        - name: ocsf_dst_endpoint.svc_name
+          from: service_name
+
+
+        - name: ocsf_http_request.args
+          expr: to_json(request_params)
+
+        - name: ocsf_http_request.uid
+          from: request_id
+        
+        - name: ocsf_http_request.user_agent
+          from: user_agent
+        
+        - name: ocsf_http_response.code
+          from: response.status_code
+
+        # The Event ID, Code, or Name that the product uses to primarily identify the event.
+        - name: ocsf_metadata.event_code
+          from: action_name
+        
+        # The event log schema version that specifies the format of the original event. For example 
+        # syslog version or Cisco Log Schema Version.
+        - name: ocsf_metadata.log_version
+          from: version
+
+        - name: ocsf_metadata.log_name
+          literal: system.access.audit
+
+        - name: ocsf_metadata.log_provider
+          literal: Databricks
+
+        - name: request_params
+          from: request_params
+
+        - name: ocsf_severity_id
+          expr: CAST('1' AS INT)
+
+        - name: ocsf_severity
+          literal: Informational
+
+        - name: ocsf_src_endpoint.ip
+          from: source_ip_address
+
+        - name: ocsf_status
+          expr: |
+            CASE 
+                WHEN response.status_code >= 200 AND response.status_code < 300 THEN 'Success'
+                WHEN response.status_code >= 400 THEN 'Failure'
+                ELSE 'Other'
+            END
+            
+        - name: ocsf_status_id
+          expr: |
+            CASE 
+                WHEN response.status_code >= 200 AND response.status_code < 300 THEN 1
+                WHEN response.status_code >= 400 THEN 2
+                ELSE 99
+            END
+
+        - name: ocsf_unmapped
+          expr: to_json(named_struct(
+            'workspace_id', workspace_id, 
+            'request_id', request_id,
+            'audit_level', audit_level,
+            'identity_metadata', identity_metadata
+            ))
+            
+      utils:
+        unreferencedColumns:
+          preserve: true
+
+gold:
+  - name: account_change
+    input: databricks_access_audit
+    filter: |
+      action_name = 'activateUser' OR 
+      action_name = 'add' OR 
+      action_name = 'addX509' OR 
+      action_name = 'changePassword' OR 
+      action_name = 'deactivateUser' OR 
+      action_name = 'delete' OR 
+      action_name = 'mfaAddKey' OR 
+      action_name = 'mfaDeleteKey' OR 
+      action_name = 'resetPassword' OR 
+      action_name = 'updateUser' OR 
+      action_name = 'validateEmail'
+    fields: 
+      - name: time
+        from: time
+        
+
+      - name: action_id
+        from: ocsf_action_id
+          
+      - name: activity_id
+        expr: |
+          CASE 
+            WHEN 
+              action_name = 'add' OR
+              action_name = 'addX509' THEN 1
+            WHEN action_name = 'activateUser' THEN 2
+            WHEN action_name = 'changePassword' THEN 3
+            WHEN action_name = 'resetPassword' THEN 4
+            WHEN action_name = 'deactivateUser' THEN 5
+            WHEN action_name = 'delete' THEN 6
+            WHEN action_name = 'mfaAddKey' THEN 10
+            WHEN action_name = 'mfaDeleteKey' THEN 11
+            ELSE 99
+          END
+
+      - name: activity_name
+        expr: |
+          CASE 
+            WHEN 
+              action_name = 'add' OR
+              action_name = 'addX509' THEN 'Create'
+            WHEN action_name = 'activateUser' THEN 'Enable'
+            WHEN action_name = 'changePassword' THEN 'Password Change'
+            WHEN action_name = 'resetPassword' THEN 'Password Reset'
+            WHEN action_name = 'deactivateUser' THEN 'Disable'
+            WHEN action_name = 'delete' THEN 'Delete'
+            WHEN action_name = 'mfaAddKey' THEN 'MFA Factor Enable'
+            WHEN action_name = 'mfaDeleteKey' THEN 'MFA Factor Disable'
+            ELSE action_name
+          END
+
+      - name: actor
+        from: ocsf_actor
+
+      - name: api
+        from: ocsf_api
+
+      - name: category_name
+        literal: Identity & Access Management
+
+      - name: category_uid
+        expr: CAST('3' AS INT)
+
+      - name: class_name
+        literal: "Account Change"
+
+      - name: class_uid
+        expr: CAST('3001' AS INT)
+
+      - name: cloud
+        from: ocsf_cloud
+
+      - name: disposition_id
+        from: ocsf_disposition_id
+
+      - name: disposition
+        from: ocsf_disposition
+
+      - name: http_request
+        from: ocsf_http_request
+
+      - name: http_response
+        from: ocsf_http_response
+
+      - name: metadata
+        from: ocsf_metadata
+
+      - name: raw_data
+        expr: to_json(request_params)
+
+      - name: severity
+        from: ocsf_severity
+
+      - name: severity_id
+        from: ocsf_severity_id
+
+      - name: src_endpoint
+        from: ocsf_src_endpoint
+
+      - name: status
+        from: ocsf_status
+
+      - name: status_id
+        from: ocsf_status_id
+
+      - name: type_name
+        expr: |
+          CASE 
+            WHEN 
+              action_name = 'add' OR
+              action_name = 'addX509' THEN 'Account Change: Create'
+            WHEN action_name = 'activateUser' THEN 'Account Change: Enable'
+            WHEN action_name = 'changePassword' THEN 'Password Account Change: Change'
+            WHEN action_name = 'resetPassword' THEN 'Password Account Change: Reset'
+            WHEN action_name = 'deactivateUser' THEN 'Account Change: Disable'
+            WHEN action_name = 'delete' THEN 'Account Change: Delete'
+            WHEN action_name = 'mfaAddKey' THEN 'Account Change: MFA Factor Enable'
+            WHEN action_name = 'mfaDeleteKey' THEN 'Account Change: MFA Factor Disable'
+            ELSE 'Account Change: Other'
+          END
+
+      - name: type_uid
+        expr: |
+          CASE 
+            WHEN 
+              action_name = 'add' OR
+              action_name = 'addX509' THEN CAST(300101 as BIGINT)
+            WHEN action_name = 'activateUser' THEN CAST(300102 as BIGINT)
+            WHEN action_name = 'changePassword' THEN CAST(300103 as BIGINT)
+            WHEN action_name = 'resetPassword' THEN CAST(300104 as BIGINT)
+            WHEN action_name = 'deactivateUser' THEN CAST(300105 as BIGINT)
+            WHEN action_name = 'delete' THEN CAST(300106 as BIGINT)
+            WHEN action_name = 'mfaAddKey' THEN CAST(300110 as BIGINT)
+            WHEN action_name = 'mfaDeleteKey' THEN CAST(300111 as BIGINT)
+            ELSE CAST(300199 as BIGINT)
+          END
+
+      - name: unmapped
+        expr: CAST(ocsf_unmapped AS VARIANT)
+
+  - name: group_management
+    input: databricks_access_audit
+    filter: |
+      action_name = 'addPrincipalToGroup' OR 
+      action_name = 'addPrincipalsToGroup' OR 
+      action_name = 'createGroup' OR 
+      action_name = 'getGroupMembers' OR 
+      action_name = 'getGroups' OR 
+      action_name = 'getInheritedGroups' OR 
+      action_name = 'removeGroup' OR 
+      action_name = 'removePrincipalFromGroup' OR 
+      action_name = 'removePrincipalsFromGroup' OR 
+      action_name = 'updateGroup' 
+
+    fields: 
+      - name: time
+        from: time
+
+      - name: action
+        from: ocsf_action
+          
+      - name: action_id
+        from: ocsf_action_id
+          
+      - name: activity_id
+        expr: |
+          CASE 
+            WHEN 
+              action_name = 'addPrincipalToGroup' OR
+              action_name = 'addPrincipalsToGroup' THEN 3
+            WHEN 
+              action_name = 'removePrincipalFromGroup' OR
+              action_name = 'removePrincipalsFromGroup' THEN 4
+            WHEN action_name = 'removeGroup' THEN 5
+            WHEN action_name = 'createGroup' THEN 6
+            ELSE 99
+          END
+
+      - name: activity_name
+        expr: |
+          CASE 
+            WHEN 
+              action_name = 'addPrincipalToGroup' OR
+              action_name = 'addPrincipalsToGroup' THEN 'Add User'
+            WHEN 
+              action_name = 'removePrincipalFromGroup' OR
+              action_name = 'removePrincipalsFromGroup' THEN 'Remove User'
+            WHEN action_name = 'removeGroup' THEN 'Delete'
+            WHEN action_name = 'createGroup' THEN 'Create'
+            ELSE action_name
+          END
+
+      - name: actor
+        from: ocsf_actor
+
+      - name: api
+        from: ocsf_api
+
+      - name: category_name
+        literal: Identity & Access Management
+
+      - name: category_uid
+        expr: CAST('3' AS INT)
+
+      - name: class_name
+        literal: Group Management
+
+      - name: class_uid
+        expr: CAST('3006' AS INT)
+
+      - name: cloud
+        from: ocsf_cloud
+
+      - name: disposition_id
+        from: ocsf_disposition_id
+
+      - name: disposition
+        from: ocsf_disposition
+
+      - name: group.name
+        from: request_params.targetGroupName
+
+      - name: group.uid
+        from: request_params.targetGroupId
+
+
+      - name: http_request
+        from: ocsf_http_request
+
+      - name: http_response
+        from: ocsf_http_response
+
+      - name: metadata
+        from: ocsf_metadata
+
+      - name: raw_data
+        expr: to_json(request_params)
+
+      - name: severity
+        from: ocsf_severity
+
+      - name: severity_id
+        from: ocsf_severity_id
+
+      - name: src_endpoint
+        from: ocsf_src_endpoint
+
+      - name: status
+        from: ocsf_status
+
+      - name: status_id
+        from: ocsf_status_id
+
+      - name: type_name
+        expr: |
+          CASE 
+            WHEN 
+              action_name = 'addPrincipalToGroup' OR
+              action_name = 'addPrincipalsToGroup' THEN 'Group Management: Add User'
+            WHEN 
+              action_name = 'removePrincipalFromGroup' OR
+              action_name = 'removePrincipalsFromGroup' THEN 'Group Management: Remove User'
+            WHEN action_name = 'removeGroup' THEN 'Group Management: Delete'
+            WHEN action_name = 'createGroup' THEN 'Group Management: Create'
+            ELSE 'Group Management: Other'
+          END
+
+      - name: type_uid
+        expr: |
+          CASE 
+            WHEN 
+              action_name = 'addPrincipalToGroup' OR
+              action_name = 'addPrincipalsToGroup' THEN CAST(300603 as BIGINT)
+            WHEN 
+              action_name = 'removePrincipalFromGroup' OR
+              action_name = 'removePrincipalsFromGroup' THEN CAST(300604 as BIGINT)
+            WHEN action_name = 'removeGroup' THEN CAST(300605 as BIGINT)
+            WHEN action_name = 'createGroup' THEN CAST(300606 as BIGINT)
+            ELSE CAST(300699 as BIGINT)
+          END
+
+      - name: unmapped
+        expr: CAST(ocsf_unmapped AS VARIANT)
+
+  - name: api_activity
+    input: databricks_access_audit
+    fields: 
+      - name: time
+        from: time
+
+      - name: action_id
+        from: ocsf_action_id
+          
+      - name: activity_id
+        expr: |
+          CASE 
+              WHEN LOWER(action_name) LIKE 'create%' THEN 1 
+
+              WHEN LOWER(action_name) LIKE 'get%' THEN 2 
+              WHEN LOWER(action_name) LIKE 'list%' THEN 2 
+
+              WHEN LOWER(action_name) LIKE 'update%' THEN 3 
+              WHEN LOWER(action_name) LIKE 'change%' THEN 3 
+              WHEN LOWER(action_name) LIKE 'move%' THEN 3 
+              WHEN LOWER(action_name) LIKE 'put%' THEN 3 
+              WHEN LOWER(action_name) LIKE 'rename%' THEN 3 
+              WHEN LOWER(action_name) LIKE 'set%' THEN 3 
+
+              WHEN LOWER(action_name) LIKE 'delete%' THEN 4 
+              WHEN LOWER(action_name) LIKE 'remove%' THEN 4 
+
+              WHEN action_name IS NULL OR action_name = '' THEN 0 
+              ELSE 99 
+          END
+        
+      - name: activity_name 
+        expr: |
+          CASE 
+              WHEN LOWER(action_name) LIKE 'create%' THEN 'Create' 
+
+              WHEN LOWER(action_name) LIKE 'get%' THEN 'Read' 
+              WHEN LOWER(action_name) LIKE 'list%' THEN 'Read' 
+
+              WHEN LOWER(action_name) LIKE 'update%' THEN 'Update' 
+              WHEN LOWER(action_name) LIKE 'change%' THEN 'Update' 
+              WHEN LOWER(action_name) LIKE 'move%' THEN 'Update' 
+              WHEN LOWER(action_name) LIKE 'put%' THEN 'Update' 
+              WHEN LOWER(action_name) LIKE 'rename%' THEN 'Update' 
+              WHEN LOWER(action_name) LIKE 'set%' THEN 'Update' 
+
+              WHEN LOWER(action_name) LIKE 'delete%' THEN 'Delete' 
+              WHEN LOWER(action_name) LIKE 'remove%' THEN 'Delete' 
+
+              WHEN action_name IS NULL OR action_name = '' THEN 'Unknown'  
+              ELSE action_name
+          END
+
+      - name: actor
+        from: ocsf_actor
+
+      - name: api
+        from: ocsf_api
+
+      - name: category_uid
+        expr: CAST('6' AS INT)
+
+      - name: category_name
+        literal: Application Activity
+
+      - name: class_uid
+        expr: CAST('6003' AS INT)
+
+      - name: class_name
+        literal: "API Activity"
+
+      - name: cloud
+        from: ocsf_cloud
+
+      - name: disposition_id
+        from: ocsf_disposition_id
+
+      - name: disposition
+        from: ocsf_disposition
+
+      - name: dst_endpoint
+        from: ocsf_dst_endpoint
+
+      - name: http_request
+        from: ocsf_http_request
+
+      - name: http_response
+        from: ocsf_http_response
+
+      - name: metadata
+        from: ocsf_metadata
+      
+      - name: severity_id
+        from: ocsf_severity_id
+
+      - name: severity
+        from: ocsf_severity
+
+
+      - name: src_endpoint
+        from: ocsf_src_endpoint
+
+      - name: status
+        from: ocsf_status
+
+      - name: status_id
+        from: ocsf_status_id
+
+
+      - name: type_uid
+        expr: |
+          CASE 
+              WHEN LOWER(action_name) LIKE 'create%' THEN CAST(600301 as BIGINT) 
+
+              WHEN LOWER(action_name) LIKE 'get%' THEN CAST(600302 as BIGINT) 
+              WHEN LOWER(action_name) LIKE 'list%' THEN CAST(600302 as BIGINT) 
+
+              WHEN LOWER(action_name) LIKE 'update%' THEN CAST(600303 as BIGINT) 
+              WHEN LOWER(action_name) LIKE 'change%' THEN CAST(600303 as BIGINT) 
+              WHEN LOWER(action_name) LIKE 'move%' THEN CAST(600303 as BIGINT) 
+              WHEN LOWER(action_name) LIKE 'put%' THEN CAST(600303 as BIGINT) 
+              WHEN LOWER(action_name) LIKE 'rename%' THEN CAST(600303 as BIGINT) 
+              WHEN LOWER(action_name) LIKE 'set%' THEN CAST(600303 as BIGINT) 
+
+              WHEN LOWER(action_name) LIKE 'delete%' THEN CAST(600304 as BIGINT)
+              WHEN LOWER(action_name) LIKE 'remove%' THEN CAST(600304 as BIGINT) 
+
+              WHEN action_name IS NULL OR action_name = '' THEN CAST(600300 as BIGINT) 
+              ELSE CAST(600399 as BIGINT) 
+          END
+
+      - name: type_name
+        expr: |
+          CASE 
+              WHEN LOWER(action_name) LIKE 'create%' THEN 'API Activity: Create' 
+
+              WHEN LOWER(action_name) LIKE 'get%' THEN 'API Activity: Read' 
+              WHEN LOWER(action_name) LIKE 'list%' THEN 'API Activity: Read' 
+
+              WHEN LOWER(action_name) LIKE 'update%' THEN 'API Activity: Update' 
+              WHEN LOWER(action_name) LIKE 'change%' THEN 'API Activity: Update' 
+              WHEN LOWER(action_name) LIKE 'move%' THEN 'API Activity: Update' 
+              WHEN LOWER(action_name) LIKE 'put%' THEN 'API Activity: Update' 
+              WHEN LOWER(action_name) LIKE 'rename%' THEN 'API Activity: Update' 
+              WHEN LOWER(action_name) LIKE 'set%' THEN 'API Activity: Update' 
+
+              WHEN LOWER(action_name) LIKE 'delete%' THEN 'API Activity: Delete' 
+              WHEN LOWER(action_name) LIKE 'remove%' THEN 'API Activity: Delete' 
+
+              WHEN action_name IS NULL OR action_name = '' THEN 'API Activity: Unknown' 
+              ELSE 'API Activity: Other' 
+          END
+
+      - name: unmapped
+        expr: CAST(ocsf_unmapped AS VARIANT)
+
+  - name: authentication
+    input: databricks_access_audit
+    filter: lower(action_name) like '%login' OR lower(action_name) like '%oidc%' OR lower(action_name) like '%authentication%' OR lower(action_name) like '%oauth%' OR lower(action_name) like 'validate%credential' OR lower(action_name) = 'logout'
+    fields: 
+      - name: time
+        from: time
+        
+      - name: action_id
+        from: ocsf_action_id
+          
+      - name: activity_id
+        expr: |
+          CASE 
+            WHEN LOWER(action_name) LIKE '%login' THEN 1
+            WHEN LOWER(action_name) = 'logout' THEN 2
+            ELSE 99
+          END
+
+      - name: activity_name
+        expr: |
+          CASE 
+            WHEN LOWER(action_name) LIKE '%login' THEN 'Logon'
+            WHEN LOWER(action_name) = 'logout' THEN 'Logoff'
+            ELSE action_name
+          END
+
+      - name: category_name
+        literal: Identity & Access Management
+
+      - name: category_uid
+        expr: CAST('3' AS INT)
+
+      - name: class_name
+        literal: "Authentication"
+
+      - name: class_uid
+        expr: CAST('3002' AS INT)
+
+      - name: cloud
+        from: ocsf_cloud
+
+      - name: disposition_id
+        from: ocsf_disposition_id
+
+      - name: disposition
+        from: ocsf_disposition
+
+      - name: dst_endpoint
+        from: ocsf_dst_endpoint
+
+      - name: http_request
+        from: ocsf_http_request
+
+      - name: http_response
+        from: ocsf_http_response
+
+      - name: is_mfa
+        expr: |
+          CASE
+            WHEN action_name = 'mfaLogin' THEN TRUE
+
+            ELSE FALSE
+          END
+
+      - name: logon_type
+        expr: |
+          CASE
+            WHEN 
+              action_name = 'mintOAuthToken' OR
+              action_name = 'mintOAuthAuthorizationCode' OR
+              action_name = 'oidcBrowserLogin' OR
+              action_name = 'oidcTokenAuthorization' OR
+              action_name = 'tokenLogin' OR
+              action_name = 'certLogin' OR
+              action_name = 'jwtLogin' OR
+              action_name = 'mfaLogin' OR
+              action_name = 'samlLogin' OR        
+              action_name = 'validateCredential' OR
+              action_name = 'validateStorageCredential' OR
+              action_name = 'accountInHouseOAuthClientAuthentication' OR
+              action_name = 'workspaceInHouseOAuthClientAuthentication' THEN 'Network'
+            ELSE 'Unknown'
+          END
+
+      - name: logon_type_id
+        expr: |
+          CASE
+            WHEN 
+              action_name = 'mintOAuthToken' OR
+              action_name = 'mintOAuthAuthorizationCode' OR
+              action_name = 'oidcBrowserLogin' OR
+              action_name = 'oidcTokenAuthorization' OR
+              action_name = 'tokenLogin' OR
+              action_name = 'certLogin' OR
+              action_name = 'jwtLogin' OR
+              action_name = 'mfaLogin' OR
+              action_name = 'samlLogin' OR        
+              action_name = 'validateCredential' OR
+              action_name = 'validateStorageCredential' OR
+              action_name = 'accountInHouseOAuthClientAuthentication' OR
+              action_name = 'workspaceInHouseOAuthClientAuthentication' THEN 3
+            ELSE 0
+          END
+
+      - name: metadata
+        from: ocsf_metadata
+
+      - name: raw_data
+        expr: to_json(request_params)
+
+      - name: severity_id
+        from: ocsf_severity_id
+
+      - name: severity
+        from: ocsf_severity
+
+      - name: src_endpoint
+        from: ocsf_src_endpoint
+
+      - name: status
+        from: ocsf_status
+
+      - name: status_id
+        from: ocsf_status_id
+
+      - name: type_name
+        expr: |
+          CASE 
+            WHEN LOWER(action_name) LIKE '%login' THEN 'Authentication: Logon'
+            WHEN LOWER(action_name) = 'logout' THEN 'Authentication: Logoff'
+            ELSE 'Authentication: Other'
+          END
+
+      - name: type_uid
+        expr: |
+          CASE 
+            WHEN LOWER(action_name) LIKE '%login' THEN CAST(300201 as BIGINT)
+            WHEN LOWER(action_name) = 'logout' THEN CAST(300202 as BIGINT)
+            ELSE CAST(300299 as BIGINT)
+          END
+      
+      - name: unmapped
+        expr: CAST(ocsf_unmapped AS VARIANT)
