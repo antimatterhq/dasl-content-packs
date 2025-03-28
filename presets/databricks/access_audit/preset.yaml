@@ -293,7 +293,7 @@ gold:
           END
 
       - name: unmapped
-        from: ocsf_unmapped
+        expr: CAST(ocsf_unmapped AS VARIANT)
 
   - name: group_management
     input: databricks_access_audit
@@ -437,7 +437,7 @@ gold:
           END
 
       - name: unmapped
-        from: ocsf_unmapped
+        expr: CAST(ocsf_unmapped AS VARIANT)
 
   - name: api_activity
     input: databricks_access_audit
@@ -593,7 +593,7 @@ gold:
           END
 
       - name: unmapped
-        from: ocsf_unmapped
+        expr: CAST(ocsf_unmapped AS VARIANT)
 
   - name: authentication
     input: databricks_access_audit
@@ -737,4 +737,4 @@ gold:
           END
       
       - name: unmapped
-        from: ocsf_unmapped
+        expr: CAST(ocsf_unmapped AS VARIANT)
