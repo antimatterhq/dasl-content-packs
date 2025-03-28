@@ -281,15 +281,15 @@ gold:
           CASE 
             WHEN 
               action_name = 'add' OR
-              action_name = 'addX509' THEN 300101
-            WHEN action_name = 'activateUser' THEN 300102
-            WHEN action_name = 'changePassword' THEN 300103
-            WHEN action_name = 'resetPassword' THEN 300104
-            WHEN action_name = 'deactivateUser' THEN 300105
-            WHEN action_name = 'delete' THEN 300106
-            WHEN action_name = 'mfaAddKey' THEN 300110
-            WHEN action_name = 'mfaDeleteKey' THEN 300111
-            ELSE 300199
+              action_name = 'addX509' THEN CAST(300101 as BIGINT)
+            WHEN action_name = 'activateUser' THEN CAST(300102 as BIGINT)
+            WHEN action_name = 'changePassword' THEN CAST(300103 as BIGINT)
+            WHEN action_name = 'resetPassword' THEN CAST(300104 as BIGINT)
+            WHEN action_name = 'deactivateUser' THEN CAST(300105 as BIGINT)
+            WHEN action_name = 'delete' THEN CAST(300106 as BIGINT)
+            WHEN action_name = 'mfaAddKey' THEN CAST(300110 as BIGINT)
+            WHEN action_name = 'mfaDeleteKey' THEN CAST(300111 as BIGINT)
+            ELSE CAST(300199 as BIGINT)
           END
 
       - name: unmapped
@@ -427,13 +427,13 @@ gold:
           CASE 
             WHEN 
               action_name = 'addPrincipalToGroup' OR
-              action_name = 'addPrincipalsToGroup' THEN 300603
+              action_name = 'addPrincipalsToGroup' THEN CAST(300603 as BIGINT)
             WHEN 
               action_name = 'removePrincipalFromGroup' OR
-              action_name = 'removePrincipalsFromGroup' THEN 300604
-            WHEN action_name = 'removeGroup' THEN 300605
-            WHEN action_name = 'createGroup' THEN 300606
-            ELSE 300699
+              action_name = 'removePrincipalsFromGroup' THEN CAST(300604 as BIGINT)
+            WHEN action_name = 'removeGroup' THEN CAST(300605 as BIGINT)
+            WHEN action_name = 'createGroup' THEN CAST(300606 as BIGINT)
+            ELSE CAST(300699 as BIGINT)
           END
 
       - name: unmapped
@@ -551,23 +551,23 @@ gold:
       - name: type_uid
         expr: |
           CASE 
-              WHEN LOWER(action_name) LIKE 'create%' THEN 600301 
+              WHEN LOWER(action_name) LIKE 'create%' THEN CAST(600301 as BIGINT) 
 
-              WHEN LOWER(action_name) LIKE 'get%' THEN 600302 
-              WHEN LOWER(action_name) LIKE 'list%' THEN 600302 
+              WHEN LOWER(action_name) LIKE 'get%' THEN CAST(600302 as BIGINT) 
+              WHEN LOWER(action_name) LIKE 'list%' THEN CAST(600302 as BIGINT) 
 
-              WHEN LOWER(action_name) LIKE 'update%' THEN 600303 
-              WHEN LOWER(action_name) LIKE 'change%' THEN 600303 
-              WHEN LOWER(action_name) LIKE 'move%' THEN 600303 
-              WHEN LOWER(action_name) LIKE 'put%' THEN 600303 
-              WHEN LOWER(action_name) LIKE 'rename%' THEN 600303 
-              WHEN LOWER(action_name) LIKE 'set%' THEN 600303 
+              WHEN LOWER(action_name) LIKE 'update%' THEN CAST(600303 as BIGINT) 
+              WHEN LOWER(action_name) LIKE 'change%' THEN CAST(600303 as BIGINT) 
+              WHEN LOWER(action_name) LIKE 'move%' THEN CAST(600303 as BIGINT) 
+              WHEN LOWER(action_name) LIKE 'put%' THEN CAST(600303 as BIGINT) 
+              WHEN LOWER(action_name) LIKE 'rename%' THEN CAST(600303 as BIGINT) 
+              WHEN LOWER(action_name) LIKE 'set%' THEN CAST(600303 as BIGINT) 
 
-              WHEN LOWER(action_name) LIKE 'delete%' THEN 600304 
-              WHEN LOWER(action_name) LIKE 'remove%' THEN 600304 
+              WHEN LOWER(action_name) LIKE 'delete%' THEN CAST(600304 as BIGINT)
+              WHEN LOWER(action_name) LIKE 'remove%' THEN CAST(600304 as BIGINT) 
 
-              WHEN action_name IS NULL OR action_name = '' THEN 600300 
-              ELSE 600399 
+              WHEN action_name IS NULL OR action_name = '' THEN CAST(600300 as BIGINT) 
+              ELSE CAST(600399 as BIGINT) 
           END
 
       - name: type_name
@@ -731,9 +731,9 @@ gold:
       - name: type_uid
         expr: |
           CASE 
-            WHEN LOWER(action_name) LIKE '%login' THEN 300201
-            WHEN LOWER(action_name) = 'logout' THEN 300202
-            ELSE 300299
+            WHEN LOWER(action_name) LIKE '%login' THEN CAST(300201 as BIGINT)
+            WHEN LOWER(action_name) = 'logout' THEN CAST(300202 as BIGINT)
+            ELSE CAST(300299 as BIGINT)
           END
       
       - name: unmapped
