@@ -51,7 +51,7 @@ silver:
           from: response.status_code
 
         - name: ocsf_api.response.data
-          from: response.result
+          from: to_json(named_struct('result', response.result))
 
         - name: ocsf_cloud.provider
           literal: Databricks

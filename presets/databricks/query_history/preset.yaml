@@ -346,32 +346,32 @@ gold:
         - name: type_uid
           expr: |
             CASE
-              WHEN statement_type = 'ADD' THEN 600301
-              WHEN statement_type = 'ALTER' THEN 600303
-              WHEN statement_type = 'ANALYZE' THEN 600399
-              WHEN statement_type = 'CACHE' THEN 600399
-              WHEN statement_type = 'COPY' THEN 600301
-              WHEN statement_type = 'CREATE' THEN 600301
-              WHEN statement_type = 'DELETE' THEN 600304
-              WHEN statement_type = 'DESCRIBE' THEN 600302
-              WHEN statement_type = 'DROP' THEN 600304
-              WHEN statement_type = 'GRANT' THEN 600301
-              WHEN statement_type = 'INSERT' THEN 600301
-              WHEN statement_type = 'LIST' THEN 600302
-              WHEN statement_type = 'MERGE' THEN 600303
-              WHEN statement_type = 'OPTIMIZE' THEN 600399
-              WHEN statement_type = 'OTHER' THEN 600399
-              WHEN statement_type = 'REFRESH' THEN 600399
-              WHEN statement_type = 'REPLACE' THEN 600303
-              WHEN statement_type = 'RESET' THEN 600399
-              WHEN statement_type = 'SET' THEN 600399
-              WHEN statement_type = 'SELECT' THEN 600302
-              WHEN statement_type = 'SHOW' THEN 600302
-              WHEN statement_type = 'TRUNCATE' THEN 600304
-              WHEN statement_type = 'UPDATE' THEN 600303
-              WHEN statement_type = 'UNCACHE' THEN 600399
-              WHEN statement_type = 'USE' THEN 600399
-              ELSE 600399
+              WHEN statement_type = 'ADD' THEN CAST(600301 AS BIGINT)
+              WHEN statement_type = 'ALTER' THEN CAST(600303 AS BIGINT)
+              WHEN statement_type = 'ANALYZE' THEN CAST(600399 AS BIGINT)
+              WHEN statement_type = 'CACHE' THEN CAST(600399 AS BIGINT)
+              WHEN statement_type = 'COPY' THEN CAST(600301 AS BIGINT)
+              WHEN statement_type = 'CREATE' THEN CAST(600301 AS BIGINT)
+              WHEN statement_type = 'DELETE' THEN CAST(600304 AS BIGINT)
+              WHEN statement_type = 'DESCRIBE' THEN CAST(600302 AS BIGINT)
+              WHEN statement_type = 'DROP' THEN CAST(600304 AS BIGINT)
+              WHEN statement_type = 'GRANT' THEN CAST(600301 AS BIGINT)
+              WHEN statement_type = 'INSERT' THEN CAST(600301 AS BIGINT)
+              WHEN statement_type = 'LIST' THEN CAST(600302 AS BIGINT)
+              WHEN statement_type = 'MERGE' THEN CAST(600303 AS BIGINT)
+              WHEN statement_type = 'OPTIMIZE' THEN CAST(600399 AS BIGINT)
+              WHEN statement_type = 'OTHER' THEN CAST(600399 AS BIGINT)
+              WHEN statement_type = 'REFRESH' THEN CAST(600399 AS BIGINT)
+              WHEN statement_type = 'REPLACE' THEN CAST(600303 AS BIGINT)
+              WHEN statement_type = 'RESET' THEN CAST(600399 AS BIGINT)
+              WHEN statement_type = 'SET' THEN CAST(600399 AS BIGINT)
+              WHEN statement_type = 'SELECT' THEN CAST(600302 AS BIGINT)
+              WHEN statement_type = 'SHOW' THEN CAST(600302 AS BIGINT)
+              WHEN statement_type = 'TRUNCATE' THEN CAST(600304 AS BIGINT)
+              WHEN statement_type = 'UPDATE' THEN CAST(600303 AS BIGINT)
+              WHEN statement_type = 'UNCACHE' THEN CAST(600399 AS BIGINT)
+              WHEN statement_type = 'USE' THEN CAST(600399 AS BIGINT)
+              ELSE CAST(600399 AS BIGINT)
             END
         - name: unmapped
           expr: CAST(ocsf_unmapped AS VARIANT)
