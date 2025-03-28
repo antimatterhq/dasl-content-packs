@@ -276,11 +276,11 @@ gold:
         - name: category_name
           literal: Application Activity
         - name: category_uid
-          expr: 6
+          expr: CAST('6' AS INT)
         - name: class_name
           literal: API Activity
         - name: class_uid
-          expr: 6003
+          expr: CAST('6003' AS INT)
         - name: cloud
           from: ocsf_cloud
         - name: disposition

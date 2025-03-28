@@ -651,7 +651,6 @@ gold:
       - name: http_response
         from: ocsf_http_response
 
-
       - name: is_mfa
         expr: |
           CASE
@@ -660,8 +659,6 @@ gold:
             ELSE FALSE
           END
 
-
-      # multiple cases use for clarity
       - name: logon_type
         expr: |
           CASE
