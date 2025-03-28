@@ -117,7 +117,7 @@ silver:
           literal: databricks
           
         - name: ocsf_actor.session.is_remote
-          expr: True
+          expr: CAST('true' AS BOOLEAN)
 
         - name: ocsf_api.request.data
           expr: to_json(named_struct('statement_text', statement_text))
@@ -132,7 +132,7 @@ silver:
           from: account_id
 
         - name: ocsf_cloud.account.type_id 
-          expr: 99
+          expr: cast('99' as INT)
 
         - name: ocsf_disposition_id
           expr: |
