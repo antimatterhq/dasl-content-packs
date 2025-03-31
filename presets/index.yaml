@@ -93,7 +93,7 @@ presets:
     title: "Databricks - Audit Table"
     author: "Antimatter"
     description: "Databricks Audit Table logs"
-    iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/default_icon.png"
+    iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/databricks/access_audit/icon.png"
 
   - name: "databricks_query_history"
     source: "databricks"
@@ -101,4 +101,4 @@ presets:
     title: "Databricks - Query History"
     author: "Antimatter"
     description: "Databricks Query History logs"
-    iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/default_icon.png"
+    iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/databricks/query_history/icon.png"
