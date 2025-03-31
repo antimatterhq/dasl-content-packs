@@ -1,0 +1,377 @@
+name: databricks_query_history
+author: Antimatter
+description: "Processes Databricks query logs from the system.query.history table."
+bronze:
+  skipBronzeLoading: true
+silver:
+  bronzeTables:
+    - name: system.query.history
+      
+  transform:
+    - name: databricks_query_history
+      fields:
+        - name: time
+          expr: CAST(start_time AS TIMESTAMP)
+
+        - name: ocsf_time_dt
+          expr: CAST(start_time AS TIMESTAMP)
+
+        - name: ocsf_action_id
+          expr: |
+            CASE
+              WHEN execution_status = 'FINISHED' 
+                OR execution_status = 'CANCELED' THEN 1
+              ELSE 0
+            END
+
+        - name: ocsf_action
+          expr: |
+            CASE
+              WHEN execution_status = 'FINISHED' 
+                OR execution_status = 'CANCELED' THEN 'Allowed'
+              ELSE 'Unknown'
+            END
+
+        - name: ocsf_activity_id
+          expr: |
+            CASE
+              WHEN statement_type = 'ADD' THEN 1
+              WHEN statement_type = 'ALTER' THEN 3
+              WHEN statement_type = 'ANALYZE' THEN 99
+              WHEN statement_type = 'CACHE' THEN 99
+              WHEN statement_type = 'COPY' THEN 1
+              WHEN statement_type = 'CREATE' THEN 1
+              WHEN statement_type = 'DELETE' THEN 4
+              WHEN statement_type = 'DESCRIBE' THEN 2
+              WHEN statement_type = 'DROP' THEN 4
+              WHEN statement_type = 'GRANT' THEN 1
+              WHEN statement_type = 'INSERT' THEN 1
+              WHEN statement_type = 'LIST' THEN 2
+              WHEN statement_type = 'MERGE' THEN 3
+              WHEN statement_type = 'OPTIMIZE' THEN 99
+              WHEN statement_type = 'OTHER' THEN 99
+              WHEN statement_type = 'REFRESH' THEN 99
+              WHEN statement_type = 'REPLACE' THEN 3
+              WHEN statement_type = 'RESET' THEN 99
+              WHEN statement_type = 'SET' THEN 99
+              WHEN statement_type = 'SELECT' THEN 2
+              WHEN statement_type = 'SHOW' THEN 2
+              WHEN statement_type = 'TRUNCATE' THEN 4
+              WHEN statement_type = 'UPDATE' THEN 3
+              WHEN statement_type = 'UNCACHE' THEN 99
+              WHEN statement_type = 'USE' THEN 99
+              ELSE 0
+            END
+
+        - name: ocsf_activity_name
+          expr: |
+            CASE
+              WHEN statement_type = 'ADD' THEN 'Create'
+              WHEN statement_type = 'ALTER' THEN 'Update'
+              WHEN statement_type = 'ANALYZE' THEN statement_type
+              WHEN statement_type = 'CACHE' THEN statement_type
+              WHEN statement_type = 'COPY' THEN 'Create'
+              WHEN statement_type = 'CREATE' THEN 'Create'
+              WHEN statement_type = 'DELETE' THEN 'Delete'
+              WHEN statement_type = 'DESCRIBE' THEN 'Read'
+              WHEN statement_type = 'DROP' THEN 'Delete'
+              WHEN statement_type = 'GRANT' THEN 'Create'
+              WHEN statement_type = 'INSERT' THEN 'Create'
+              WHEN statement_type = 'LIST' THEN 'Read'
+              WHEN statement_type = 'MERGE' THEN 'Update'
+              WHEN statement_type = 'OPTIMIZE' THEN statement_type
+              WHEN statement_type = 'OTHER' THEN statement_type
+              WHEN statement_type = 'REFRESH' THEN statement_type
+              WHEN statement_type = 'REPLACE' THEN 'Update'
+              WHEN statement_type = 'RESET' THEN statement_type
+              WHEN statement_type = 'SET' THEN statement_type
+              WHEN statement_type = 'SELECT' THEN 'Read'
+              WHEN statement_type = 'SHOW' THEN 'Read'
+              WHEN statement_type = 'TRUNCATE' THEN 'Delete'
+              WHEN statement_type = 'UPDATE' THEN 'Update'
+              WHEN statement_type = 'UNCACHE' THEN statement_type
+              WHEN statement_type = 'USE' THEN statement_type
+              ELSE statement_type
+            END
+            
+        - name: ocsf_actor.user.account.uid
+          from: account_id
+
+        - name: ocsf_actor.user.name
+          from: executed_by
+
+        - name: ocsf_actor.user.email_addr
+          expr: | 
+            CASE
+              WHEN contains(executed_by, '@') THEN executed_by
+              ELSE NULL
+            END
+
+        - name: ocsf_actor.app_name
+          from: client_application
+        
+        - name: ocsf_actor.session.uuid
+          from: session_id
+          
+        - name: ocsf_actor.session.issuer
+          literal: databricks
+          
+        - name: ocsf_actor.session.is_remote
+          expr: CAST('true' AS BOOLEAN)
+
+        - name: ocsf_api.request.data
+          expr: CAST(to_json(named_struct('statement_text', statement_text)) AS VARIANT)
+
+        - name: ocsf_api.response.error_message
+          expr: error_message
+
+        - name: ocsf_cloud.provider
+          literal: Databricks
+
+        - name: ocsf_cloud.account.uid 
+          from: account_id
+
+        - name: ocsf_cloud.account.type_id 
+          expr: cast('99' as INT)
+
+        - name: ocsf_disposition_id
+          expr: |
+            CASE
+              WHEN execution_status = 'FINISHED' 
+                OR execution_status = 'CANCELED' THEN 1
+              ELSE 0
+            END
+
+        - name: ocsf_disposition
+          expr: |
+            CASE
+              WHEN execution_status = 'FINISHED' 
+                OR execution_status = 'CANCELED' THEN 'Allowed'
+              ELSE 'Unknown'
+            END
+
+        - name: ocsf_duration
+          from: CAST(total_duration_ms AS BIGINT)
+
+        - name: ocsf_end_time
+          expr: CAST(update_time AS TIMESTAMP)
+        
+        - name: ocsf_end_time_dt
+          expr: CAST(update_time AS TIMESTAMP)
+        
+        - name: ocsf_metadata.log_name
+          literal: system.access.audit
+
+        - name: ocsf_metadata.log_provider
+          literal: Databricks
+
+        - name: ocsf_observables
+          expr: |
+            CASE 
+              WHEN query_source IS NOT NULL THEN array(
+                named_struct(
+                  'name', 'notebook_id',
+                  'type_id', 38,
+                  'type', 'Resource Details Object: notebook_id',
+                  'value', query_source.notebook_id
+                ),
+                named_struct(
+                  'name', 'job_id',
+                  'type_id', 38,
+                  'type', 'Resource Details Object: job_id',
+                  'value', query_source.job_info.job_id
+                ),
+                named_struct(
+                  'name', 'job_run_id',
+                  'type_id', 38,
+                  'type', 'Resource Details Object: job_run_id',
+                  'value', query_source.job_info.job_run_id
+                ),
+                named_struct(
+                  'name', 'job_task_run_id',
+                  'type_id', 38,
+                  'type', 'Resource Details Object: job_task_run_id',
+                  'value', query_source.job_info.job_task_run_id
+                )
+              )
+              ELSE NULL
+            END
+
+        - name: ocsf_severity_id
+          expr: CAST('1' AS INT)
+
+        - name: ocsf_severity
+          literal: Informational
+          
+        - name: ocsf_start_time
+          expr: CAST(start_time AS TIMESTAMP) 
+
+        - name: ocsf_start_time_dt
+          expr: CAST(start_time AS TIMESTAMP) 
+        
+        - name: ocsf_status
+          expr: |
+            CASE
+              WHEN execution_status = 'FINISHED' THEN 'Success'
+              WHEN execution_status = 'FAILED' THEN 'Failure'
+              WHEN execution_status = 'CANCELED' THEN 'Other'
+              ELSE 'Unknown'
+            END
+
+        - name: ocsf_status_id
+          expr: |
+            CASE
+              WHEN execution_status = 'FINISHED' THEN 1
+              WHEN execution_status = 'FAILED' THEN 2
+              WHEN execution_status = 'CANCELED' THEN 99
+              ELSE 0
+            END
+
+        - name: ocsf_unmapped
+          expr: to_json(named_struct(
+              'client_driver', client_driver,
+              'compilation_duration_ms', compilation_duration_ms,
+              'compute', compute,
+              'end_time', end_time,
+              'execution_duration_ms', execution_duration_ms,
+              'from_result_cache', from_result_cache,
+              'pruned_files', pruned_files,
+              'produced_rows', produced_rows,
+              'query_source', query_source,
+              'read_bytes', read_bytes,
+              'read_files', read_files,
+              'read_io_cache_percent', read_io_cache_percent,
+              'read_partitions', read_partitions,
+              'read_rows', read_rows,
+              'result_fetch_duration_ms', result_fetch_duration_ms,
+              'shuffle_read_bytes', shuffle_read_bytes,
+              'spilled_local_bytes', spilled_local_bytes,
+              'total_task_duration_ms', total_task_duration_ms,
+              'waiting_at_capacity_duration_ms', waiting_at_capacity_duration_ms,
+              'waiting_for_compute_duration_ms', waiting_for_compute_duration_ms,
+              'workspace_id', workspace_id,
+              'written_bytes', written_bytes
+            ))
+
+      utils:
+        unreferencedColumns:
+          preserve: true
+
+gold:
+    - name: api_activity
+      input: databricks_query_history
+      fields:
+        - name: action
+          from: ocsf_action
+        - name: action_id
+          from: ocsf_action_id
+        - name: activity_id
+          from: ocsf_activity_id
+        - name: activity_name
+          from: ocsf_activity_name
+        - name: actor
+          from: ocsf_actor
+        - name: api
+          from: ocsf_api
+        - name: category_name
+          literal: Application Activity
+        - name: category_uid
+          expr: CAST('6' AS INT)
+        - name: class_name
+          literal: API Activity
+        - name: class_uid
+          expr: CAST('6003' AS INT)
+        - name: cloud
+          from: ocsf_cloud
+        - name: disposition
+          from: ocsf_disposition
+        - name: disposition_id
+          from: ocsf_disposition_id
+        - name: duration
+          from: ocsf_duration
+        - name: end_time
+          from: ocsf_end_time
+        - name: end_time_dt
+          from: ocsf_end_time_dt
+        - name: metadata
+          from: ocsf_metadata
+        - name: observables
+          from: ocsf_observables          
+        - name: severity
+          from: ocsf_severity
+        - name: severity_id
+          from: ocsf_severity_id
+        - name: start_time
+          from: ocsf_start_time
+        - name: start_time_dt
+          from: ocsf_start_time_dt
+        - name: status
+          from: ocsf_status
+        - name: status_id
+          from: ocsf_status_id
+        - name: time
+          from: time
+        - name: time_dt
+          from: ocsf_time_dt
+        - name: type_name
+          expr: |
+            CASE
+              WHEN statement_type = 'ADD' THEN 'API Activity: Create'
+              WHEN statement_type = 'ALTER' THEN 'API Activity: Update'
+              WHEN statement_type = 'ANALYZE' THEN 'API Activity: Other'
+              WHEN statement_type = 'CACHE' THEN 'API Activity: Other'
+              WHEN statement_type = 'COPY' THEN 'API Activity: Create'
+              WHEN statement_type = 'CREATE' THEN 'API Activity: Create'
+              WHEN statement_type = 'DELETE' THEN 'API Activity: Delete'
+              WHEN statement_type = 'DESCRIBE' THEN 'API Activity: Read'
+              WHEN statement_type = 'DROP' THEN 'API Activity: Delete'
+              WHEN statement_type = 'GRANT' THEN 'API Activity: Create'
+              WHEN statement_type = 'INSERT' THEN 'API Activity: Create'
+              WHEN statement_type = 'LIST' THEN 'API Activity: Read'
+              WHEN statement_type = 'MERGE' THEN 'API Activity: Update'
+              WHEN statement_type = 'OPTIMIZE' THEN 'API Activity: Other'
+              WHEN statement_type = 'OTHER' THEN 'API Activity: Other'
+              WHEN statement_type = 'REFRESH' THEN 'API Activity: Other'
+              WHEN statement_type = 'REPLACE' THEN 'API Activity: Update'
+              WHEN statement_type = 'RESET' THEN 'API Activity: Other'
+              WHEN statement_type = 'SET' THEN 'API Activity: Other'
+              WHEN statement_type = 'SELECT' THEN 'API Activity: Read'
+              WHEN statement_type = 'SHOW' THEN 'API Activity: Read'
+              WHEN statement_type = 'TRUNCATE' THEN 'API Activity: Delete'
+              WHEN statement_type = 'UPDATE' THEN 'API Activity: Update'
+              WHEN statement_type = 'UNCACHE' THEN 'API Activity: Other'
+              WHEN statement_type = 'USE' THEN 'API Activity: Other'
+              ELSE 'API Activity: Other'
+            END
+        - name: type_uid
+          expr: |
+            CASE
+              WHEN statement_type = 'ADD' THEN CAST(600301 AS BIGINT)
+              WHEN statement_type = 'ALTER' THEN CAST(600303 AS BIGINT)
+              WHEN statement_type = 'ANALYZE' THEN CAST(600399 AS BIGINT)
+              WHEN statement_type = 'CACHE' THEN CAST(600399 AS BIGINT)
+              WHEN statement_type = 'COPY' THEN CAST(600301 AS BIGINT)
+              WHEN statement_type = 'CREATE' THEN CAST(600301 AS BIGINT)
+              WHEN statement_type = 'DELETE' THEN CAST(600304 AS BIGINT)
+              WHEN statement_type = 'DESCRIBE' THEN CAST(600302 AS BIGINT)
+              WHEN statement_type = 'DROP' THEN CAST(600304 AS BIGINT)
+              WHEN statement_type = 'GRANT' THEN CAST(600301 AS BIGINT)
+              WHEN statement_type = 'INSERT' THEN CAST(600301 AS BIGINT)
+              WHEN statement_type = 'LIST' THEN CAST(600302 AS BIGINT)
+              WHEN statement_type = 'MERGE' THEN CAST(600303 AS BIGINT)
+              WHEN statement_type = 'OPTIMIZE' THEN CAST(600399 AS BIGINT)
+              WHEN statement_type = 'OTHER' THEN CAST(600399 AS BIGINT)
+              WHEN statement_type = 'REFRESH' THEN CAST(600399 AS BIGINT)
+              WHEN statement_type = 'REPLACE' THEN CAST(600303 AS BIGINT)
+              WHEN statement_type = 'RESET' THEN CAST(600399 AS BIGINT)
+              WHEN statement_type = 'SET' THEN CAST(600399 AS BIGINT)
+              WHEN statement_type = 'SELECT' THEN CAST(600302 AS BIGINT)
+              WHEN statement_type = 'SHOW' THEN CAST(600302 AS BIGINT)
+              WHEN statement_type = 'TRUNCATE' THEN CAST(600304 AS BIGINT)
+              WHEN statement_type = 'UPDATE' THEN CAST(600303 AS BIGINT)
+              WHEN statement_type = 'UNCACHE' THEN CAST(600399 AS BIGINT)
+              WHEN statement_type = 'USE' THEN CAST(600399 AS BIGINT)
+              ELSE CAST(600399 AS BIGINT)
+            END
+        - name: unmapped
+          expr: CAST(ocsf_unmapped AS VARIANT)
