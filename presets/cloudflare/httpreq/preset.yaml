@@ -10,7 +10,7 @@ silver:
     - name: cloudflare_waf_http_requests
       fields:
         - name: ocsf_activity_id
-          expr: CASE WHEN LOWER(ClientRequestMethod) = 'connect' THEN 1 WHEN LOWER(ClientRequestMethod) = 'delete' THEN 2 WHEN LOWER(ClientRequestMethod) = 'get' THEN 3 WHEN LOWER(ClientRequestMethod) = 'head' THEN 4 WHEN LOWER(ClientRequestMethod) = 'options' THEN 5 WHEN LOWER(ClientRequestMethod) = 'post' THEN 6 WHEN LOWER(ClientRequestMethod) = 'put' THEN 7 WHEN LOWER(ClientRequestMethod) = 'trace' THEN 8 WHEN ClientRequestMethod IS NULL OR ClientRequestMethod = '' THEN 0 ELSE 99 END
+          from: activity_id
         - name: ocsf_activity_name
           expr: CASE WHEN ClientRequestMethod IS NULL OR ClientRequestMethod = '' THEN ClientRequestMethod ELSE CONCAT(UPPER(SUBSTRING(ClientRequestMethod, 1, 1)), LOWER(SUBSTRING(ClientRequestMethod, 2))) END
         - name: ocsf_category_uid
@@ -170,6 +170,9 @@ silver:
                   )
                 )"
       utils:
+        temporaryFields:
+          - name: activity_id
+            expr: CASE WHEN LOWER(ClientRequestMethod) = 'connect' THEN 1 WHEN LOWER(ClientRequestMethod) = 'delete' THEN 2 WHEN LOWER(ClientRequestMethod) = 'get' THEN 3 WHEN LOWER(ClientRequestMethod) = 'head' THEN 4 WHEN LOWER(ClientRequestMethod) = 'options' THEN 5 WHEN LOWER(ClientRequestMethod) = 'post' THEN 6 WHEN LOWER(ClientRequestMethod) = 'put' THEN 7 WHEN LOWER(ClientRequestMethod) = 'trace' THEN 8 WHEN ClientRequestMethod IS NULL OR ClientRequestMethod = '' THEN 0 ELSE 99 END
         unreferencedColumns:
           preserve: true
 gold:

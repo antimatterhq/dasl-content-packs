@@ -14,7 +14,7 @@ silver:
         - name: activity_id
           from: activity_id
         - name: activity_name
-          from: activity_name
+          from: example_field
         - name: actor
           from: actor
         - name: category_uid
@@ -76,6 +76,9 @@ silver:
         - name: eventDay
           from: eventDay
       utils:
+        temporaryFields:
+          - name: example_field
+            from: activity_name
         unreferencedColumns:
           preserve: true
           omitColumns:
