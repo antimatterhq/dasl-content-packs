@@ -1,4 +1,4 @@
-name: aws_sec_lake_route53
+name: internal_route53
 author: Antimatter
 description: "AWS Route53 Resolver query log data collected with AWS Security Lake"
 autoloader:
