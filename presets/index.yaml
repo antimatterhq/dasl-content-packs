@@ -86,3 +86,11 @@ presets:
     author: "Antimatter"
     description: "Cloudflare HTTP request logs"
     iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/cloudflare/httpreq/icon.png"
+
+  - name: "okta_syslog"
+    source: "okta"
+    sourceType: "syslog"
+    title: "OKTA - Syslog (Preview)"
+    author: "Antimatter"
+    description: "OKTA Syslog wrapped by Cribl"
+    iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/okta/syslog/icon.png"
