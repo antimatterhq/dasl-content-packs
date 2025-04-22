@@ -1,6 +1,6 @@
 presets:
-  - name: "internal_route53"
-    source: "internal"
+  - name: "testing_route53"
+    source: "testing"
     sourceType: "route53"
     title: "INTERNAL PRESET FOR TESTING - AWS SecLake - CloudTrail"
     author: "Antimatter"
