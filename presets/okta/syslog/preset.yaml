@@ -1,0 +1,713 @@
+name: okta_syslog
+author: Antimatter
+description: "Preset for OKTA syslog wrapped by Cribl"
+autoloader:
+  format: json
+  cloudFiles:
+    schemaHints: |
+      actor struct<`alternateId`:string,`detailEntry`:string,`displayName`:string,`id`:string,`type`:string>,
+      authenticationContext struct<`authenticationProvider`:string,`authenticationStep`:bigint,`authenticatorContext`:struct<`applicationVersion`:string,`binaryIdentifier`:string,`binaryPath`:string,`bindingMethod`:string,`requestOrigin`:string,`signerDistinguishedName`:string,`signerKeyIdentifier`:string,`userConsent`:string,`validationStatus`:string>,`credentialProvider`:string,`credentialType`:string,`externalSessionId`:string,`interface`:string,`issuer`:struct<`id`:string>,`rootSessionId`:string>,
+      client struct<`device`:string,`geographicalContext`:struct<`city`:string,`country`:string,`geolocation`:struct<`lat`:double,`lon`:double>,`postalCode`:string,`state`:string>,`id`:string,`ipAddress`:string,`userAgent`:struct<`browser`:string,`os`:string,`rawUserAgent`:string>,`zone`:string>,
+      debugContext struct<`debugData`:struct<`aaguid`:string,`addedObjects`:string,`appContextName`:string,`appname`:string,`audience`:string,`authCode`:string,`authMethodFirstEnrollment`:string,`authMethodFirstType`:string,`authMethodFirstVerificationTime`:string,`authMethodSecondEnrollment`:string,`authMethodSecondType`:string,`authMethodSecondVerificationTime`:string,`authTime`:string,`authenticationClassRef`:string,`authenticatorMethodChallengeTime`:string,`authnRequestId`:string,`backupEligible`:string,`behaviors`:string,`category`:string,`challengeAuthenticatorsList`:string,`changedAttributes`:string,`clientAuthType`:string,`clientId`:string,`clientSecret`:string,`clientType`:string,`deletedObjects`:string,`detailedmessage`:string,`device`:string,`deviceCategory`:string,`deviceFingerprint`:string,`devicePlatform`:string,`deviceTokenHash`:string,`dtHash`:string,`emailProvider`:string,`emailRequestId`:string,`enrollmentMethodChallengeTime`:string,`expiryTime`:string,`factor`:string,`factorIntent`:string,`grantType`:string,`grantedScopes`:string,`idpType`:string,`importLastToken`:string,`importTrigger`:string,`importType`:string,`initiationType`:string,`ip`:string,`issuedAt`:string,`issuer`:string,`jobId`:string,`jti`:string,`keyTypeUsedForAuthentication`:string,`logOnlySecurityData`:string,`loginResult`:string,`matchedAuthenticatorGroups`:string,`oktaUserAgentExtended`:string,`operationRateLimitScopeType`:string,`operationRateLimitSecondsToReset`:string,`operationRateLimitSubtype`:string,`operationRateLimitThreshold`:string,`operationRateLimitTimeSpan`:string,`operationRateLimitTimeUnit`:string,`operationRateLimitType`:string,`orgId`:string,`origin`:string,`pushOnlyResponseType`:string,`pushWithNumberChallengeResponseType`:string,`redirectUri`:string,`requestId`:string,`requestUri`:string,`requestedScopes`:string,`responseMode`:string,`responseTime`:string,`responseType`:string,`risk`:string,`signOnMode`:string,`state`:string,`subject`:string,`targetEventHookIds`:string,`threatSuspected`:string,`threshold`:string,`timeSpan`:string,`timeUnit`:string,`totalObjects`:string,`totalTime`:string,`traceId`:string,`tunnels`:string,`unchangedObjects`:string,`updatedObjects`:string,`url`:string,`userId`:string>>,
+      device struct<`device_integrator`:string,`disk_encryption_type`:string,`id`:string,`jailbreak`:boolean,`managed`:boolean,`name`:string,`os_platform`:string,`os_version`:string,`registered`:boolean,`screen_lock_type`:string,`secure_hardware_present`:boolean>,
+      outcome struct<`reason`:string,`result`:string>,
+      request struct<`ipChain`:array<struct<`geographicalContext`:struct<`city`:string,`country`:string,`geolocation`:struct<`lat`:double,`lon`:double>,`postalCode`:string,`state`:string>,`ip`:string,`source`:string,`version`:string>>>,
+      securityContext struct<`asNumber`:bigint,`asOrg`:string,`domain`:string,`isProxy`:boolean,`isp`:string>,
+      target array<struct<`alternateId`:string,`detailEntry`:struct<`appInstanceId`:string,`appUserId`:string,`appUsername`:string,`audience`:string,`authenticatorKey`:string,`authenticatorMethodVerificationTime`:string,`certName`:string,`certStatus`:string,`completedAt`:string,`deviceIntegrator`:string,`deviceStatus`:string,`expires`:string,`hash`:string,`identifyingAttribute`:string,`initiatedAt`:string,`initiatedBy`:string,`managed`:string,`methodTypeUsed`:string,`methodUsedVerifiedProperties`:string,`notAfter`:string,`notBefore`:string,`oktaDeviceId`:string,`osPlatform`:string,`osVersion`:string,`policyName`:string,`policyRuleFactorMode`:string,`policyType`:string,`refreshtokentype`:string,`resolution`:string,`serialNumber`:string,`signOnModeEvaluationResult`:string,`signOnModeType`:string,`subject`:string,`tpmPresent`:string,`udid`:string,`userId`:string>,`displayName`:string,`id`:string,`type`:string>>,
+      transaction struct<`detail`:struct<`requestApiTokenClientId`:string,`requestApiTokenId`:string,`rootApiTokenId`:string>,`id`:string,`type`:string>
+
+silver:
+  preTransform:
+    - name: unbox_cribl
+      fields:
+        - name: _time
+          from: _time
+        - name: actor
+          from: actor
+        - name: authenticationContext
+          from: authenticationContext
+        - name: client
+          from: client
+        - name: debugContext
+          from: debugContext
+        - name: device
+          from: device
+        - name: displayMessage
+          from: displayMessage
+        - name: eventType
+          from: eventType
+        - name: host
+          from: host
+        - name: legacyEventType
+          from: legacyEventType
+        - name: outcome
+          from: outcome
+        - name: published
+          from: published
+        - name: request
+          from: request
+        - name: securityContext
+          from: securityContext
+        - name: severity
+          from: severity
+        - name: target
+          from: target
+        - name: transaction
+          from: transaction
+        - name: uuid
+          from: uuid
+        - name: version
+          from: version
+        - name: _rescued_data
+          from: _rescued_data
+
+  transform:
+    - name: okta_syslog
+      fields:
+        - name: metadata.product.name
+          literal: Okta System Log
+        - name: metadata.product.vendor_name
+          literal: Okta
+        - name: metadata.product.version
+          from: version
+        - name: metadata.product.uid
+          from: uuid
+        - name: metadata.event_code
+          from: eventType
+        - name: eventType
+          from: eventType
+        - name: ocsf_category_uid
+          expr: CAST('3' AS INT)
+        - name: ocsf_category_name
+          literal: Identity & Access Management
+        - name: ocsf_class_uid
+          expr: |
+            CASE 
+                WHEN LOWER(eventType) = 'app.user_management.grouppush.mapping.okta.users.ignored' THEN CAST('3006' AS INT)
+                WHEN LOWER(eventType) = 'app.generic.unauth_app_access_attempt' THEN CAST('3002' AS INT)
+                WHEN LOWER(eventType) = 'app.oauth2.authorize' THEN CAST('3002' AS INT)
+                WHEN LOWER(eventType) = 'app.oauth2.authorize.code' THEN CAST('3002' AS INT)
+                WHEN LOWER(eventType) = 'app.oauth2.client.read_client_secret' THEN CAST('3002' AS INT)
+                WHEN LOWER(eventType) = 'app.oauth2.token.grant' THEN CAST('3002' AS INT)
+                WHEN LOWER(eventType) = 'app.oauth2.token.grant.access_token' THEN CAST('3002' AS INT)
+                WHEN LOWER(eventType) = 'app.oauth2.token.grant.id_token' THEN CAST('3002' AS INT)
+                WHEN LOWER(eventType) = 'app.oauth2.token.grant.refresh_token' THEN CAST('3002' AS INT)
+                WHEN LOWER(eventType) = 'app.realtimesync.import.details.update_user' THEN CAST('3001' AS INT)
+                WHEN LOWER(eventType) = 'application.configuration.detect_error' THEN CAST('3004' AS INT)
+                WHEN LOWER(eventType) = 'application.lifecycle.update' THEN CAST('3004' AS INT)
+                WHEN LOWER(eventType) = 'application.policy.sign_on.deny_access' THEN CAST('3002' AS INT)
+                WHEN LOWER(eventType) = 'application.provision.group_push.push_memberships' THEN CAST('3006' AS INT)
+                WHEN LOWER(eventType) = 'application.provision.user.deactivate' THEN CAST('3001' AS INT)
+                WHEN LOWER(eventType) = 'application.provision.user.deprovision' THEN CAST('3001' AS INT)
+                WHEN LOWER(eventType) = 'application.provision.user.push_profile' THEN CAST('3001' AS INT)
+                WHEN LOWER(eventType) = 'application.user_membership.remove' THEN CAST('3005' AS INT)
+                WHEN LOWER(eventType) = 'application.user_membership.update' THEN CAST('3005' AS INT)
+                WHEN LOWER(eventType) = 'core.concurrency.org.limit.violation' THEN CAST('3004' AS INT)
+                WHEN LOWER(eventType) = 'device.enrollment.create' THEN CAST('3004' AS INT)
+                WHEN LOWER(eventType) = 'device.lifecycle.activate' THEN CAST('3004' AS INT)
+                WHEN LOWER(eventType) = 'device.user.add' THEN CAST('3004' AS INT)
+                WHEN LOWER(eventType) = 'event_hook.delivery' THEN CAST('3004' AS INT)
+                WHEN LOWER(eventType) = 'group.user_membership.add' THEN CAST('3006' AS INT)
+                WHEN LOWER(eventType) = 'group.user_membership.remove' THEN CAST('3006' AS INT)
+                WHEN LOWER(eventType) = 'pki.cert.issue' THEN CAST('3004' AS INT)
+                WHEN LOWER(eventType) = 'policy.evaluate_sign_on' THEN CAST('3002' AS INT)
+                WHEN LOWER(eventType) = 'security.request.blocked' THEN CAST('3003' AS INT)
+                WHEN LOWER(eventType) = 'system.agent.ad.read_ldap' THEN CAST('3004' AS INT)
+                WHEN LOWER(eventType) = 'system.agent.ad.read_topology' THEN CAST('3004' AS INT)
+                WHEN LOWER(eventType) = 'system.client.concurrency_rate_limit.notification' THEN CAST('3004' AS INT)
+                WHEN LOWER(eventType) = 'system.client.rate_limit.notification' THEN CAST('3004' AS INT)
+                WHEN LOWER(eventType) = 'system.email.delivery' THEN CAST('3004' AS INT)
+                WHEN LOWER(eventType) = 'system.email.mfa_enroll_notification.sent_message' THEN CAST('3005' AS INT)
+                WHEN LOWER(eventType) = 'system.email.new_device_notification.sent_message' THEN CAST('3005' AS INT)
+                WHEN LOWER(eventType) = 'system.import.complete' THEN CAST('3004' AS INT)
+                WHEN LOWER(eventType) = 'system.import.complete_batch' THEN CAST('3004' AS INT)
+                WHEN LOWER(eventType) = 'system.import.custom_object.complete' THEN CAST('3004' AS INT)
+                WHEN LOWER(eventType) = 'system.import.download.complete' THEN CAST('3004' AS INT)
+                WHEN LOWER(eventType) = 'system.import.download.start' THEN CAST('3004' AS INT)
+                WHEN LOWER(eventType) = 'system.import.group.complete' THEN CAST('3006' AS INT)
+                WHEN LOWER(eventType) = 'system.import.group_membership.complete' THEN CAST('3006' AS INT)
+                WHEN LOWER(eventType) = 'system.import.implicit_deletion.complete' THEN CAST('3004' AS INT)
+                WHEN LOWER(eventType) = 'system.import.implicit_deletion.start' THEN CAST('3004' AS INT)
+                WHEN LOWER(eventType) = 'system.import.membership_processing.complete' THEN CAST('3006' AS INT)
+                WHEN LOWER(eventType) = 'system.import.membership_processing.start' THEN CAST('3006' AS INT)
+                WHEN LOWER(eventType) = 'system.import.object_creation.complete' THEN CAST('3004' AS INT)
+                WHEN LOWER(eventType) = 'system.import.object_creation.start' THEN CAST('3004' AS INT)
+                WHEN LOWER(eventType) = 'system.import.start' THEN CAST('3001' AS INT)
+                WHEN LOWER(eventType) = 'system.import.user.complete' THEN CAST('3001' AS INT)
+                WHEN LOWER(eventType) = 'system.import.user.update' THEN CAST('3001' AS INT)
+                WHEN LOWER(eventType) = 'system.import.user_matching.complete' THEN CAST('3001' AS INT)
+                WHEN LOWER(eventType) = 'system.import.user_matching.start' THEN CAST('3001' AS INT)
+                WHEN LOWER(eventType) = 'system.operation.concurrency_limit.violation' THEN CAST('3004' AS INT)
+                WHEN LOWER(eventType) = 'system.operation.rate_limit.violation' THEN CAST('3004' AS INT)
+                WHEN LOWER(eventType) = 'system.push.send_factor_verify_push' THEN CAST('3002' AS INT)
+                WHEN LOWER(eventType) = 'user.account.update_profile' THEN CAST('3001' AS INT)
+                WHEN LOWER(eventType) = 'user.authentication.auth_via_mfa' THEN CAST('3002' AS INT)
+                WHEN LOWER(eventType) = 'user.authentication.sso' THEN CAST('3002' AS INT)
+                WHEN LOWER(eventType) = 'user.authentication.verify' THEN CAST('3002' AS INT)
+                WHEN LOWER(eventType) = 'user.lifecycle.deactivate' THEN CAST('3001' AS INT)
+                WHEN LOWER(eventType) = 'user.lifecycle.suspend' THEN CAST('3001' AS INT)
+                WHEN LOWER(eventType) = 'user.mfa.factor.activate' THEN CAST('3002' AS INT)
+                WHEN LOWER(eventType) = 'user.mfa.factor.update' THEN CAST('3002' AS INT)
+                WHEN LOWER(eventType) = 'user.session.access_admin_app' THEN CAST('3002' AS INT)
+                WHEN LOWER(eventType) = 'user.session.clear' THEN CAST('3003' AS INT)
+                WHEN LOWER(eventType) = 'user.session.start' THEN CAST('3003' AS INT)
+                ELSE NULL
+            END
+        - name: ocsf_class_name
+          expr: |
+            CASE
+                WHEN LOWER(eventType) = 'app.user_management.grouppush.mapping.okta.users.ignored' THEN 'Group Management'
+                WHEN LOWER(eventType) = 'app.generic.unauth_app_access_attempt' THEN 'Authentication'
+                WHEN LOWER(eventType) = 'app.oauth2.authorize' THEN 'Authentication'
+                WHEN LOWER(eventType) = 'app.oauth2.authorize.code' THEN 'Authentication'
+                WHEN LOWER(eventType) = 'app.oauth2.client.read_client_secret' THEN 'Authentication'
+                WHEN LOWER(eventType) = 'app.oauth2.token.grant' THEN 'Authentication'
+                WHEN LOWER(eventType) = 'app.oauth2.token.grant.access_token' THEN 'Authentication'
+                WHEN LOWER(eventType) = 'app.oauth2.token.grant.id_token' THEN 'Authentication'
+                WHEN LOWER(eventType) = 'app.oauth2.token.grant.refresh_token' THEN 'Authentication'
+                WHEN LOWER(eventType) = 'app.realtimesync.import.details.update_user' THEN 'Account Change'
+                WHEN LOWER(eventType) = 'application.configuration.detect_error' THEN 'Entity Management'
+                WHEN LOWER(eventType) = 'application.lifecycle.update' THEN 'Entity Management'
+                WHEN LOWER(eventType) = 'application.policy.sign_on.deny_access' THEN 'Authentication'
+                WHEN LOWER(eventType) = 'application.provision.group_push.push_memberships' THEN 'Group Management'
+                WHEN LOWER(eventType) = 'application.provision.user.deactivate' THEN 'Account Change'
+                WHEN LOWER(eventType) = 'application.provision.user.deprovision' THEN 'Account Change'
+                WHEN LOWER(eventType) = 'application.provision.user.push_profile' THEN 'Account Change'
+                WHEN LOWER(eventType) = 'application.user_membership.remove' THEN 'User Access Management'
+                WHEN LOWER(eventType) = 'application.user_membership.update' THEN 'User Access Management'
+                WHEN LOWER(eventType) = 'core.concurrency.org.limit.violation' THEN 'Entity Management'
+                WHEN LOWER(eventType) = 'device.enrollment.create' THEN 'Entity Management'
+                WHEN LOWER(eventType) = 'device.lifecycle.activate' THEN 'Entity Management'
+                WHEN LOWER(eventType) = 'device.user.add' THEN 'Entity Management'
+                WHEN LOWER(eventType) = 'event_hook.delivery' THEN 'Entity Management'
+                WHEN LOWER(eventType) = 'group.user_membership.add' THEN 'Group Management'
+                WHEN LOWER(eventType) = 'group.user_membership.remove' THEN 'Group Management'
+                WHEN LOWER(eventType) = 'pki.cert.issue' THEN 'Entity Management'
+                WHEN LOWER(eventType) = 'policy.evaluate_sign_on' THEN 'Authentication'
+                WHEN LOWER(eventType) = 'security.request.blocked' THEN 'Authorize Session'
+                WHEN LOWER(eventType) = 'system.agent.ad.read_ldap' THEN 'Entity Management'
+                WHEN LOWER(eventType) = 'system.agent.ad.read_topology' THEN 'Entity Management'
+                WHEN LOWER(eventType) = 'system.client.concurrency_rate_limit.notification' THEN 'Entity Management'
+                WHEN LOWER(eventType) = 'system.client.rate_limit.notification' THEN 'Entity Management'
+                WHEN LOWER(eventType) = 'system.email.delivery' THEN 'Entity Management'
+                WHEN LOWER(eventType) = 'system.email.mfa_enroll_notification.sent_message' THEN 'User Access Management'
+                WHEN LOWER(eventType) = 'system.email.new_device_notification.sent_message' THEN 'User Access Management'
+                WHEN LOWER(eventType) = 'system.import.complete' THEN 'Entity Management'
+                WHEN LOWER(eventType) = 'system.import.complete_batch' THEN 'Entity Management'
+                WHEN LOWER(eventType) = 'system.import.custom_object.complete' THEN 'Entity Management'
+                WHEN LOWER(eventType) = 'system.import.download.complete' THEN 'Entity Management'
+                WHEN LOWER(eventType) = 'system.import.download.start' THEN 'Entity Management'
+                WHEN LOWER(eventType) = 'system.import.group.complete' THEN 'Group Management'
+                WHEN LOWER(eventType) = 'system.import.group_membership.complete' THEN 'Group Management'
+                WHEN LOWER(eventType) = 'system.import.implicit_deletion.complete' THEN 'Entity Management'
+                WHEN LOWER(eventType) = 'system.import.implicit_deletion.start' THEN 'Entity Management'
+                WHEN LOWER(eventType) = 'system.import.membership_processing.complete' THEN 'Group Management'
+                WHEN LOWER(eventType) = 'system.import.membership_processing.start' THEN 'Group Management'
+                WHEN LOWER(eventType) = 'system.import.object_creation.complete' THEN 'Entity Management'
+                WHEN LOWER(eventType) = 'system.import.object_creation.start' THEN 'Entity Management'
+                WHEN LOWER(eventType) = 'system.import.start' THEN 'Account Change'
+                WHEN LOWER(eventType) = 'system.import.user.complete' THEN 'Account Change'
+                WHEN LOWER(eventType) = 'system.import.user.update' THEN 'Account Change'
+                WHEN LOWER(eventType) = 'system.import.user_matching.complete' THEN 'Account Change'
+                WHEN LOWER(eventType) = 'system.import.user_matching.start' THEN 'Account Change'
+                WHEN LOWER(eventType) = 'system.operation.concurrency_limit.violation' THEN 'Entity Management'
+                WHEN LOWER(eventType) = 'system.operation.rate_limit.violation' THEN 'Entity Management'
+                WHEN LOWER(eventType) = 'system.push.send_factor_verify_push' THEN 'Authentication'
+                WHEN LOWER(eventType) = 'user.account.update_profile' THEN 'Account Change'
+                WHEN LOWER(eventType) = 'user.authentication.auth_via_mfa' THEN 'Authentication'
+                WHEN LOWER(eventType) = 'user.authentication.sso' THEN 'Authentication'
+                WHEN LOWER(eventType) = 'user.authentication.verify' THEN 'Authentication'
+                WHEN LOWER(eventType) = 'user.lifecycle.deactivate' THEN 'Account Change'
+                WHEN LOWER(eventType) = 'user.lifecycle.suspend' THEN 'Account Change'
+                WHEN LOWER(eventType) = 'user.mfa.factor.activate' THEN 'Authentication'
+                WHEN LOWER(eventType) = 'user.mfa.factor.update' THEN 'Authentication'
+                WHEN LOWER(eventType) = 'user.session.access_admin_app' THEN 'Authentication'
+                WHEN LOWER(eventType) = 'user.session.clear' THEN 'Authorize Session'
+                WHEN LOWER(eventType) = 'user.session.start' THEN 'Authorize Session'
+                ELSE NULL
+            END
+        - name: ocsf_activity_id
+          expr: |
+            CASE
+                WHEN LOWER(eventType) = 'app.user_management.grouppush.mapping.okta.users.ignored' THEN CAST('3' AS INT)
+                ELSE CAST('99' AS INT)
+            END
+        - name: ocsf_activity_name
+          expr: |
+            CASE
+                WHEN LOWER(eventType) = 'app.user_management.grouppush.mapping.okta.users.ignored' THEN 'update'
+                ELSE 'other'
+            END
+        - name: ocsf_actor.user.uid
+          expr: actor.id
+        - name: ocsf_actor.user.name
+          expr: actor.displayName
+        - name: ocsf_actor.user.email_addr
+          expr: actor.alternateId
+        - name: ocsf_actor.user.uid_alt
+          expr: actor.alternateId
+        - name: ocsf_actor.session.uid
+          expr: authenticationContext.externalSessionId
+        - name: ocsf_actor.session.issuer
+          expr: authenticationContext.issuer.id
+        - name: ocsf_actor.user.type
+          expr: |
+            CASE 
+                WHEN LOWER(actor.type) = 'user' THEN 'user'
+                WHEN LOWER(actor.type) = 'publicclientapp' THEN 'other'
+                WHEN LOWER(actor.type) = 'systemprincipal' THEN 'system'
+                ELSE 'other'
+            END
+        - name: ocsf_actor.user.type_id
+          expr: |
+            CASE 
+                WHEN LOWER(actor.type) = 'user' THEN CAST('1' AS INT)
+                WHEN LOWER(actor.type) = 'publicclientapp' THEN CAST('99' AS INT)
+                WHEN LOWER(actor.type) = 'systemprincipal' THEN CAST('3' AS INT)
+                ELSE CAST('99' AS INT)
+            END
+        - name: ocsf_status_id
+          expr: |
+            CASE 
+                WHEN LOWER(outcome.result) = 'allow' THEN CAST('1' AS INT)
+                WHEN LOWER(outcome.result) = 'success' THEN CAST('1' AS INT)
+                WHEN LOWER(outcome.result) = 'deny' THEN CAST('2' AS INT)
+                WHEN LOWER(outcome.result) = 'failure' THEN CAST('2' AS INT)
+                ELSE CAST('99' AS INT)
+            END
+        - name: ocsf_status
+          expr: |
+            CASE 
+                WHEN LOWER(outcome.result) = 'allow' THEN 'success'
+                WHEN LOWER(outcome.result) = 'success' THEN 'success'
+                WHEN LOWER(outcome.result) = 'deny' THEN 'failure'
+                WHEN LOWER(outcome.result) = 'failure' THEN 'failure'
+                ELSE 'other'
+            END
+        - name: ocsf_status_code
+          expr: LOWER(outcome.result)
+        - name: ocsf_status_detail
+          from: outcome.reason
+        - name: ocsf_time
+          expr: timestamp_millis(cast(_time AS BIGINT) * 1000)
+        - name: ocsf_message
+          from: displayMessage
+        - name: ocsf_severity
+          expr: |
+            CASE 
+                WHEN LOWER(severity) = 'info' THEN 'informational'
+                WHEN LOWER(severity) = 'warn' THEN 'high'
+                WHEN LOWER(severity) = 'error' THEN 'fatal'
+                ELSE 'other'
+            END
+        - name: ocsf_severity_id
+          expr: |
+            CASE 
+                WHEN LOWER(severity) = 'info' THEN CAST('1' AS INT)
+                WHEN LOWER(severity) = 'warn' THEN CAST('4' AS INT)
+                WHEN LOWER(severity) = 'error' THEN CAST('6' AS INT)
+                ELSE CAST('99' AS INT)
+            END
+
+        - name: ocsf_device.hostname
+          from: host
+        - name: ocsf_device.ip
+          from: client.ipAddress
+        - name: ocsf_device.is_trusted
+          expr: device.secure_hardware_present AND device.jailbreak IS NULL
+        - name: ocsf_device.name
+          from: device.name
+
+        - name: ocsf_device.os
+          from: ocsf_os
+        - name: ocsf_device.type
+          expr: | 
+            CASE
+              WHEN (LOWER(client.device) == 'computer') THEN 'desktop'
+              WHEN (LOWER(client.device) == 'tablet') THEN 'tablet'
+              WHEN (LOWER(client.device) == 'mobile') THEN 'mobile'
+              ELSE 'other'
+            END
+        - name: ocsf_device.type_id
+          expr: | 
+            CASE
+              WHEN (LOWER(client.device) == 'computer') THEN CAST('2' AS INT)
+              WHEN (LOWER(client.device) == 'tablet') THEN CAST('4' AS INT)
+              WHEN (LOWER(client.device) == 'mobile') THEN CAST('5' AS INT)
+              ELSE CAST('99' AS INT)
+            END
+        - name: ocsf_device.uid
+          from: device.id
+
+        - name: ocsf_http_request.uid
+          from: debugContext.debugData.requestId
+        - name: ocsf_http_request.user_agent
+          from: client.userAgent.rawUserAgent
+        - name: ocsf_http_request.url.path
+          from: debugContext.debugData.requestUri
+        - name: ocsf_http_request.url.query_string
+          expr:
+            CASE
+              WHEN(instr(debugContext.debugData.url, '?') > 0) THEN substring(debugContext.debugData.url, instr(debugContext.debugData.url, '?') + 1)
+              ELSE NULL
+            END
+        - name: ocsf_http_request.url.url_string
+          from: debugContext.debugData.url
+        - name: ocsf_src_endpoint.hostname
+          from: host
+        - name: ocsf_src_endpoint.ip
+          from: client.ipAddress
+        - name: ocsf_src_endpoint.name
+          expr: |
+            CASE
+              WHEN (actor.displayName IS NOT NULL) THEN actor.displayName
+              WHEN (device.name IS NOT NULL) THEN device.name
+              ELSE NULL
+            END
+        - name: ocsf_src_endpoint.autonomous_system.name
+          from: securityContext.asOrg
+        - name: ocsf_src_endpoint.autonomous_system.number
+          from: securityContext.asNumber
+
+
+        - name: ocsf_src_endpoint.os
+          from: ocsf_os
+        - name: ocsf_src_endpoint.uid
+          from: uuid
+
+        - name: ocsf_src_endpoint.type
+          expr: |
+            CASE
+              WHEN (LOWER(client.device) = 'computer') THEN 'desktop'
+              WHEN (LOWER(client.device) = 'laptop') THEN 'laptop'
+              WHEN (LOWER(client.device) = 'mobile') THEN 'mobile'
+              WHEN (LOWER(client.device) = 'tablet') THEN 'tablet'
+              ELSE 'other'
+            END
+        - name: ocsf_src_endpoint.type_id
+          expr: |
+            CASE
+              WHEN (LOWER(client.device) = 'computer') THEN CAST('2' AS INT)
+              WHEN (LOWER(client.device) = 'laptop') THEN CAST('3' AS INT)
+              WHEN (LOWER(client.device) = 'tablet') THEN CAST('4' AS INT)
+              WHEN (LOWER(client.device) = 'mobile') THEN CAST('5' AS INT)
+              ELSE CAST('99' AS INT)
+            END
+        - name: ocsf_src_endpoint.location.city
+          from: client.geographicalContext.city
+        - name: ocsf_src_endpoint.location.country
+          from: client.geographicalContext.country
+        - name: ocsf_src_endpoint.location.lat
+          expr: CAST(client.geographicalContext.geolocation.lat AS FLOAT)
+        - name: ocsf_src_endpoint.location.long
+          expr: CAST(client.geographicalContext.geolocation.lon AS FLOAT)
+        - name: ocsf_src_endpoint.location.postal_code
+          from: client.geographicalContext.postalCode
+        - name: ocsf_src_endpoint.location.isp
+          from: securityContext.isp
+
+
+      utils:
+        temporaryFields:
+          - name: ocsf_os.name
+            expr: |
+              CASE
+                WHEN (device.os_platform IS NULL) THEN client.userAgent.os
+                ELSE device.os_platform
+              END
+          - name: ocsf_os.version
+            from: device.os_version
+          - name: ocsf_os.build
+            from: device.os_version
+          - name: ocsf_os.type_id
+            expr: |
+              CASE
+                WHEN (LOWER(device.os_platform) LIKE 'android%' OR LOWER(client.userAgent.os) LIKE 'android%') THEN CAST('201' AS INT)
+                WHEN (LOWER(device.os_platform) LIKE 'linux%' OR LOWER(client.userAgent.os) LIKE 'linux%') THEN CAST('200' AS INT)
+                WHEN (LOWER(device.os_platform) LIKE 'ubuntu%' OR LOWER(client.userAgent.os) LIKE 'ubuntu%') THEN CAST('200' AS INT)
+                WHEN (LOWER(device.os_platform) LIKE 'chrome os%' OR LOWER(client.userAgent.os) LIKE 'chrome os%') THEN CAST('200' AS INT)
+                WHEN (LOWER(device.os_platform) LIKE 'web os%' OR LOWER(client.userAgent.os) LIKE 'web os%') THEN CAST('200' AS INT)
+                WHEN (LOWER(device.os_platform) LIKE 'mac os%' OR LOWER(client.userAgent.os) LIKE 'mac os%') THEN CAST('300' AS INT)
+                WHEN (LOWER(device.os_platform) LIKE 'windows%' OR LOWER(client.userAgent.os) LIKE 'windows%') THEN CAST('100' AS INT)
+                WHEN (LOWER(device.os_platform) LIKE 'ios%' OR LOWER(client.userAgent.os) LIKE 'ios%') THEN CAST('301' AS INT)
+                ELSE CAST('0' AS INT)
+              END
+          - name: ocsf_os.type
+            expr: |
+              CASE
+                WHEN (LOWER(device.os_platform) LIKE 'android%' OR LOWER(client.userAgent.os) LIKE 'android%') THEN 'android'
+                WHEN (LOWER(device.os_platform) LIKE 'linux%' OR LOWER(client.userAgent.os) LIKE 'linux%') THEN 'windows'
+                WHEN (LOWER(device.os_platform) LIKE 'ubuntu%' OR LOWER(client.userAgent.os) LIKE 'ubuntu%') THEN 'linux'
+                WHEN (LOWER(device.os_platform) LIKE 'chrome os%' OR LOWER(client.userAgent.os) LIKE 'chrome os%') THEN 'linux'
+                WHEN (LOWER(device.os_platform) LIKE 'web os%' OR LOWER(client.userAgent.os) LIKE 'web os%') THEN 'linux'
+                WHEN (LOWER(device.os_platform) LIKE 'mac os%' OR LOWER(client.userAgent.os) LIKE 'mac os%') THEN 'macos'
+                WHEN (LOWER(device.os_platform) LIKE 'windows%' OR LOWER(client.userAgent.os) LIKE 'windows%') THEN 'windows'
+                WHEN (LOWER(device.os_platform) LIKE 'ios%' OR LOWER(client.userAgent.os) LIKE 'ios%') THEN 'ios'
+                ELSE 'unknown'
+              END
+
+        unreferencedColumns:
+          preserve: true
+          omitColumns:
+            - _time
+
+gold:
+  - name: account_change
+    input: okta_syslog
+    filter: ocsf_class_uid = 3001
+    fields:
+      - name: type_uid
+        expr: (ocsf_class_uid * 100) + ocsf_activity_id
+      - name: category_uid
+        from: ocsf_category_uid
+      - name: category_name
+        from: ocsf_category_name
+      - name: class_uid
+        from: ocsf_class_uid
+      - name: class_name
+        from: ocsf_class_name
+      - name: activity_id
+        from: ocsf_activity_id
+      - name: activity_name
+        from: ocsf_activity_name
+      - name: status
+        from: ocsf_status
+      - name: status_id
+        from: ocsf_status_id
+      - name: status_code
+        from: ocsf_status_code
+      - name: status_detail
+        from: ocsf_status_detail
+      - name: time
+        from: ocsf_time
+      - name: message
+        from: ocsf_message
+      - name: severity
+        from: ocsf_severity
+      - name: severity_id
+        from: ocsf_severity_id
+      - name: actor
+        from: ocsf_actor
+      - name: device
+        from: ocsf_device
+      - name: http_request
+        from: ocsf_http_request
+      - name: src_endpoint
+        from: ocsf_src_endpoint
+
+  - name: authentication
+    input: okta_syslog
+    filter: ocsf_class_uid = 3002
+    fields:
+      - name: type_uid
+        expr: (ocsf_class_uid * 100) + ocsf_activity_id
+      - name: category_uid
+        from: ocsf_category_uid
+      - name: category_name
+        from: ocsf_category_name
+      - name: class_uid
+        from: ocsf_class_uid
+      - name: class_name
+        from: ocsf_class_name
+      - name: activity_id
+        from: ocsf_activity_id
+      - name: activity_name
+        from: ocsf_activity_name
+      - name: status
+        from: ocsf_status
+      - name: status_id
+        from: ocsf_status_id
+      - name: status_code
+        from: ocsf_status_code
+      - name: status_detail
+        from: ocsf_status_detail
+      - name: time
+        from: ocsf_time
+      - name: message
+        from: ocsf_message
+      - name: severity
+        from: ocsf_severity
+      - name: severity_id
+        from: ocsf_severity_id
+      - name: actor
+        from: ocsf_actor
+      - name: device
+        from: ocsf_device
+      - name: http_request
+        from: ocsf_http_request
+      - name: src_endpoint
+        from: ocsf_src_endpoint
+
+  - name: authorize_session
+    input: okta_syslog
+    filter: ocsf_class_uid = 3003
+    fields:
+      - name: type_uid
+        expr: (ocsf_class_uid * 100) + ocsf_activity_id
+      - name: category_uid
+        from: ocsf_category_uid
+      - name: category_name
+        from: ocsf_category_name
+      - name: class_uid
+        from: ocsf_class_uid
+      - name: class_name
+        from: ocsf_class_name
+      - name: activity_id
+        from: ocsf_activity_id
+      - name: activity_name
+        from: ocsf_activity_name
+      - name: status
+        from: ocsf_status
+      - name: status_id
+        from: ocsf_status_id
+      - name: status_code
+        from: ocsf_status_code
+      - name: status_detail
+        from: ocsf_status_detail
+      - name: time
+        from: ocsf_time
+      - name: message
+        from: ocsf_message
+      - name: severity
+        from: ocsf_severity
+      - name: severity_id
+        from: ocsf_severity_id
+      - name: actor
+        from: ocsf_actor
+      - name: device
+        from: ocsf_device
+      - name: http_request
+        from: ocsf_http_request
+      - name: src_endpoint
+        from: ocsf_src_endpoint
+      - name: dst_endpoint.svc_name
+        expr: debugContext.debugData.url
+
+  - name: entity_management
+    input: okta_syslog
+    filter: ocsf_class_uid = 3004
+    fields:
+      - name: type_uid
+        expr: (ocsf_class_uid * 100) + ocsf_activity_id
+      - name: category_uid
+        from: ocsf_category_uid
+      - name: category_name
+        from: ocsf_category_name
+      - name: class_uid
+        from: ocsf_class_uid
+      - name: class_name
+        from: ocsf_class_name
+      - name: activity_id
+        from: ocsf_activity_id
+      - name: activity_name
+        from: ocsf_activity_name
+      - name: status
+        from: ocsf_status
+      - name: status_id
+        from: ocsf_status_id
+      - name: status_code
+        from: ocsf_status_code
+      - name: status_detail
+        from: ocsf_status_detail
+      - name: time
+        from: ocsf_time
+      - name: message
+        from: ocsf_message
+      - name: severity
+        from: ocsf_severity
+      - name: severity_id
+        from: ocsf_severity_id
+      - name: actor
+        from: ocsf_actor
+      - name: device
+        from: ocsf_device
+      - name: http_request
+        from: ocsf_http_request
+      - name: src_endpoint
+        from: ocsf_src_endpoint
+
+  - name: user_access
+    input: okta_syslog
+    filter: ocsf_class_uid = 3005
+    fields:
+      - name: type_uid
+        expr: (ocsf_class_uid * 100) + ocsf_activity_id
+      - name: category_uid
+        from: ocsf_category_uid
+      - name: category_name
+        from: ocsf_category_name
+      - name: class_uid
+        from: ocsf_class_uid
+      - name: class_name
+        from: ocsf_class_name
+      - name: activity_id
+        from: ocsf_activity_id
+      - name: activity_name
+        from: ocsf_activity_name
+      - name: status
+        from: ocsf_status
+      - name: status_id
+        from: ocsf_status_id
+      - name: status_code
+        from: ocsf_status_code
+      - name: status_detail
+        from: ocsf_status_detail
+      - name: time
+        from: ocsf_time
+      - name: message
+        from: ocsf_message
+      - name: severity
+        from: ocsf_severity
+      - name: severity_id
+        from: ocsf_severity_id
+      - name: actor
+        from: ocsf_actor
+      - name: device
+        from: ocsf_device
+      - name: http_request
+        from: ocsf_http_request
+      - name: src_endpoint
+        from: ocsf_src_endpoint
+
+  - name: group_management
+    input: okta_syslog
+    filter: ocsf_class_uid = 3006
+    fields:
+      - name: type_uid
+        expr: (ocsf_class_uid * 100) + ocsf_activity_id
+      - name: category_uid
+        from: ocsf_category_uid
+      - name: category_name
+        from: ocsf_category_name
+      - name: class_uid
+        from: ocsf_class_uid
+      - name: class_name
+        from: ocsf_class_name
+      - name: activity_id
+        from: ocsf_activity_id
+      - name: activity_name
+        from: ocsf_activity_name
+      - name: status
+        from: ocsf_status
+      - name: status_id
+        from: ocsf_status_id
+      - name: status_code
+        from: ocsf_status_code
+      - name: status_detail
+        from: ocsf_status_detail
+      - name: time
+        from: ocsf_time
+      - name: message
+        from: ocsf_message
+      - name: severity
+        from: ocsf_severity
+      - name: severity_id
+        from: ocsf_severity_id
+      - name: actor
+        from: ocsf_actor
+      - name: device
+        from: ocsf_device
+      - name: http_request
+        from: ocsf_http_request
+      - name: src_endpoint
+        from: ocsf_src_endpoint
