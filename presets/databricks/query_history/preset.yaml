@@ -1,6 +1,8 @@
 name: databricks_query_history
 author: Antimatter
 description: "Processes Databricks query logs from the system.query.history table."
+title: "Databricks - Query History"
+iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/databricks/query_history/icon.png"
 bronze:
   skipBronzeLoading: true
 silver:
