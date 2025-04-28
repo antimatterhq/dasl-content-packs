@@ -71,6 +71,14 @@ presets:
     description: "AWS WAF activity logs collected with AWS Security Lake"
     iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/aws_sec_lake/waf/icon.png"
 
+  - name: "aws_sec_lake_waf_v2"
+    source: "aws_sec_lake"
+    sourceType: "waf_v2"
+    title: "AWS - WAF format v2"
+    author: "Antimatter"
+    description: "Amazon Web Services Web Application Firewall v2 format v1 logs"
+    iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/aws_sec_lake/waf_v2/icon.png"
+
   - name: "azure_waf"
     source: "azure"
     sourceType: "waf"
