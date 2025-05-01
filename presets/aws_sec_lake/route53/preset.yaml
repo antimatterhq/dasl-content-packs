@@ -1,8 +1,6 @@
 name: aws_sec_lake_route53
 author: Antimatter
 description: "AWS Route53 Resolver query log data collected with AWS Security Lake"
-title: "AWS SecLake - Route53"
-iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/aws_sec_lake/route53/icon.png"
 autoloader:
   format: parquet
   multiline: true

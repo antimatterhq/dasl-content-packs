@@ -16,15 +16,6 @@ properties:
       include information about the preset's purpose, the data it is designed to work with, and any other relevant
       information.
     type: string
-  title:
-    description: >
-      A formatted, human-readable title for the preset. This text will be displayed in the UI.
-    type: string
-  iconURL:
-    description: >
-      A URL to an icon representing the preset. This icon will be displayed in the UI.
-    type: string
-    format: uri
   autoloader:
     description: >
       The databricks autoloader configuration for this preset. This configuration will be used to load data from the source
@@ -166,12 +157,6 @@ properties:
           $ref: '#/components/schemas/FieldUtils'
 
 components:
-  required:
-    - name
-    - author
-    - description
-    - title
-    - iconURL
   schemas:
     FieldSpec:
       description: >

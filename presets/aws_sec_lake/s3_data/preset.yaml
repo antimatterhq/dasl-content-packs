@@ -1,8 +1,6 @@
 name: aws_sec_lake_s3_data
 author: Antimatter
 description: "AWS S3 DataEvents data collected with AWS Security Lake"
-title: "AWS SecLake - S3"
-iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/aws_sec_lake/s3_data/icon.png"
 autoloader:
   format: parquet
   multiline: true

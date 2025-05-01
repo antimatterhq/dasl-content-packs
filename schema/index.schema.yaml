@@ -6,14 +6,37 @@ properties:
     items:
       type: object
       properties:
+        name:
+          description: The internal name of the preset.
+          type: string
         source:
           description: The source (cloud provider, etc.) of the data.
           type: string
         sourceType:
           description: The type of data (e.g. Route53, etc.). This can also be viewed as the service provided by the source.
           type: string
+        title:
+          description: A formatted, human-readable title for the preset.
+          type: string
+        author:
+          description: The organization or individual that authored the preset.
+          type: string
+        description:
+          description: |
+            A brief description of the preset including intended use, expectations,
+            etc. that a user may want to be aware of.
+          type: string
+        iconURL:
+          description: A URL to an icon representing the preset. This icon will b     e displayed in the UI.
+          type: string
+          format: uri
       required:
+        - name
         - source
         - sourceType
+        - title
+        - author
+        - description
+        - iconURL
 required:
   - presets

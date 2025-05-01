@@ -1,8 +1,6 @@
 name: okta_syslog
 author: Antimatter
 description: "Preset for OKTA syslog wrapped by Cribl"
-title: "OKTA - Syslog (Preview)"
-iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/okta/syslog/icon.png"
 autoloader:
   format: json
   cloudFiles:
