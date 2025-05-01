@@ -2,3 +2,6 @@ versions:
   - versionNumber: 1
     changes: Initial commit of temporary version test
     commit: d52fc042fd5baa0dca40ef2210a7467c9ef60a3a
+  - versionNumber: 2
+    changes: Complete change of every part of the preset for testing
+    commit: cea2b5db3fe8e0f2fc516107fb75ad4f474df61f
