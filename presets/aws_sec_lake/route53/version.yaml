@@ -1,0 +1,4 @@
+versions:
+  - versionNumber: 1
+    changes: Initial commit of AWS Security Lake Route53 Resolver query log presets
+    commit: df5cd227f8e31d20ace59be0051618bd4e41838d

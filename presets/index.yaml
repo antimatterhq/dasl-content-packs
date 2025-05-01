@@ -23,3 +23,5 @@ presets:
     sourceType: "httpreq"
   - source: "okta"
     sourceType: "syslog"
+  - source: "test"
+    sourceType: "tmp"

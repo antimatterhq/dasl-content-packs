@@ -1,0 +1,25 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+type: object
+properties:
+  versions:
+    type: array
+    items:
+      type: object
+      properties:
+        versionNumber:
+          type: integer
+          description: The number for this preset version
+        changes:
+          type: string
+          nullable: true
+          description: >
+            A change log of the preset, explaining the changes in a human-readable format
+        commit:
+          type: string
+          description: >
+            A git commit hash pointing to the canonical listing for a particular version of a preset
+        required:
+          - versionNumber
+          - commit
+required:
+  - versions
