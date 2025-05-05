@@ -159,11 +159,6 @@ properties:
           type: array
           items:
             $ref: '#/components/schemas/FieldSpec'
-        utils:
-          description: >
-            A list of utilities for handling fields, including managing unreferenced fields and extracting fields
-            from hierarchical or JSON objects.
-          $ref: '#/components/schemas/FieldUtils'
 
 components:
   required:
