@@ -1,0 +1,4 @@
+versions:
+  - versionNumber: 1
+    changes: Test aws_sec_lake lambda_execution preset
+    commit: cd77e25d3f6076a2de446e7a0b3b37e5af04a191
