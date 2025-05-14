@@ -1,0 +1,17 @@
+name: testing_syslog
+author: Antimatter
+description: "Syslog RFC 5242 basic reader."
+autoloader:
+  format: text
+silver:
+  transform:
+    - name: syslog_5242_test
+      fields:
+        - name: value
+          from: value
+gold:
+  - name: process_activity
+    input: syslog_5242_test
+    fields:
+      - name: message
+        from: value
