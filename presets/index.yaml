@@ -7,6 +7,14 @@ presets:
     description: "AWS CloudTrail Management Event collected with AWS Security Lake"
     iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/aws_sec_lake/cloudtrail_management/icon.png"
 
+  - name: "testing_syslog"
+    source: "testing"
+    sourceType: "syslog_5242"
+    title: "INTERNAL PRESET FOR TESTING - Syslog - RFC 5242"
+    author: "Antimatter"
+    description: "Simple Syslog RFC 5242 reader to test TEXT input mode"
+    iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/aws_sec_lake/cloudtrail_management/icon.png"
+
   - name: "aws_sec_lake_cloudtrail_management"
     source: "aws_sec_lake"
     sourceType: "cloudtrail_management"
