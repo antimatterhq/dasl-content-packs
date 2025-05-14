@@ -1,4 +1,4 @@
 versions:
   - versionNumber: 1
     changes: Initial commit of basic Syslog 5242 reader.
-    commit: 3f81977c2fc629c165315b67819308909ab614c3
+    commit: c1d9bb76b7c4083e7a6d15849d2a8fceb1e5d411
