@@ -2,3 +2,6 @@ versions:
   - versionNumber: 1
     changes: Initial commit of AWS CloudTrail IAM Events
     commit: 1bc670f135901c802877d274918a7de83c3fb7f1
+  - versionNumber: 2
+    changes: Fake upgrade for testing
+    commit: 9ceed86733db8893d60a20ada92f9c1df20a7ffc
