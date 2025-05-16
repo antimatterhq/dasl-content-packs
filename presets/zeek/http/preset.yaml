@@ -65,7 +65,7 @@ gold:
       - name: http_request.uid
         from: uid
       - name: http_request.length
-        from: cast(request_body_len as int)  # temporary workaround until table is fixed
+        expr: cast(request_body_len as int)  # temporary workaround until table is fixed
       - name: http_request.version
         from: version
       - name: http_request.url.url_string
@@ -81,7 +81,7 @@ gold:
       - name: metadata.product.vendor_name
         literal: Zeek HTTP
       - name: src_endpoint.hostname
-        from: hostname
+        from: host # is it actual http host, or host where Zeek is running?
       - name: src_endpoint.ip
         from: id_origin_host
       - name: dst_endpoint.ip
