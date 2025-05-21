@@ -70,8 +70,10 @@ gold:
         from: version
       - name: http_request.url.url_string
         from: uri
-      - name: http_request.url.uri
+      - name: http_request.url.path
         from: uri
+      - name: http_request.url.port
+        from: id_response_port
       - name: http_request.referrer
         from: referrer
       - name: http_response.code
@@ -79,7 +81,7 @@ gold:
       - name: http_response.length
         expr: cast(response_body_len as int)  # temporary workaround until table is fixed
       - name: metadata.product.vendor_name
-        literal: Zeek HTTP
+        literal: Zeek
       - name: src_endpoint.hostname
         from: host # is it actual http host, or host where Zeek is running?
       - name: src_endpoint.ip
