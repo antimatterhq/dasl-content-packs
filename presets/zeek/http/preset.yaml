@@ -82,6 +82,8 @@ gold:
         expr: cast(response_body_len as int)  # temporary workaround until table is fixed
       - name: metadata.product.vendor_name
         literal: Zeek
+      - name: metadata.uid
+        from: uid
       - name: src_endpoint.hostname
         from: host # is it actual http host, or host where Zeek is running?
       - name: src_endpoint.ip
