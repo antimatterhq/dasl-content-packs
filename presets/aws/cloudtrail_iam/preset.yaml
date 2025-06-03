@@ -8,7 +8,7 @@ autoloader:
   cloudFiles:
     schemaHints: |
       Records ARRAY<STRUCT<
-        eventTime: STRING,
+        eventTime: INT,
         eventVersion: STRING,
         userIdentity: STRING,
         eventSource: STRING,
@@ -24,7 +24,7 @@ autoloader:
         requestID: STRING,
         eventID: STRING,
         eventType: STRING,
-        apiVersion: STRING,
+        apiVersion: BOOLEAN,
         managementEvent: BOOLEAN,
         readOnly: STRING,
         resources: STRING,
@@ -52,7 +52,7 @@ silver:
     - name: aws_cloudtrail_account_change
       filter: | 
         raw.eventName in (
-          'ChangePassword', 'CreateLoginProfile', 'DeleteLoginProfile', 'UpdateLoginProfile', 'CreateUser', 'DeleteUser', 'UpdateUser', 'CreateVirtualMFADevice', 'DeactivateMFADevice', 'DeleteVirtualMFADevice', 'EnableMFADevice', 'ResyncMFADevice', 'UpdateSSHPublicKey', 'UploadSSHPublicKey', 'DeleteSSHPublicKey', 'UploadSigningCertificate', 'DeleteSigningCertificate', 'UpdateSigningCertificate', 'CreateServiceSpecificCredential', 'DeleteServiceSpecificCredential', 'ResetServiceSpecificCredential', 'UpdateServiceSpecificCredential', 'CreateAccessKey', 'DeleteAccessKey', 'UpdateAccessKey', 'CreateAccountAlias', 'DeleteAccountAlias', 'UpdateAccountPasswordPolicy', 'DeleteAccountPasswordPolicy', 'AttachRolePolicy', 'DetachRolePolicy', 'PutRolePolicy', 'DeleteRolePolicy', 'PutRolePermissionsBoundary', 'DeleteRolePermissionsBoundary', 'TagUser', 'UntagUser', 'TagRole', 'UntagRole'
+          'ChangePassword', 'CreateLoginProfile', 'DeleteLoginProfile', 'UpdateLoginProfile', 'CreateUser', 'DeleteUser', 'UpdateUser', 'CreateVirtualMFADevice', 'DeactivateMFADevice', 'DeleteVirtualMFADevice', 'EnableMFADevice', 'ResyncMFADevice', 'UpdateSSHPublicKey', 'UploadSSHPublicKey', 'DeleteSSHPublicKey', 'UploadSigningCertificate', 'DeleteSigningCertificate', 'UpdateSigningCertificate', 'CreateServiceSpecificCredential', 'DeleteServiceSpecificCredential', 'ResetServiceSpecificCredential', 'UpdateServiceSpecificCredential', 'CreateAccessKey', 'DeleteAccessKey', 'UpdateAccessKey', 'CreateAccountAlias', 'DeleteAccountAlias', 'UpdateAccountPasswordPolicy', 'DeleteAccountPasswordPolicy', 'AttachRolePolicy', 'DetachRolePolicy', 'PutRolePolicy', 'DeleteRolePolicy', 'PutRolePermissionsBoundary', 'DeleteRolePermissionsBoundary', 'TagUser', 'UntagUser', 'TagRole', 'UntagRole', 'Extra',
         )
       utils:
         unreferencedColumns:
@@ -65,15 +65,13 @@ silver:
             expr: "from_json(raw.tlsDetails, 'STRUCT<cipherSuite: STRING, clientProvidedHostHeader: STRING, tlsVersion: STRING>')"
           - name: addendum
             expr: "from_json(raw.addendum, 'STRUCT<reason: STRING, updatedFields: STRING, originalRequestID: STRING, originalEventID: STRING>')"
-          - name: resources
-            expr: "from_json(raw.resources, 'ARRAY<STRUCT<ARN: STRING, accountId: STRING, type: STRING>>')"
       fields:
         - name: time
           from: raw.eventTime
         - name: eventName
           from: raw.eventName
         - name: eventCategory
-          from: raw.eventCategory
+          from: raw.eventCategories
         - name: eventType
           from: raw.eventType
         - name: eventSource
@@ -108,8 +106,6 @@ silver:
           from: raw.apiVersion
         - name: managementEvent
           from: raw.managementEvent
-        - name: readOnly
-          expr: CAST(raw.readOnly AS BOOLEAN) 
         - name: eventVersion
           from: raw.eventVersion
         - name: recipientAccountId
@@ -129,7 +125,7 @@ silver:
         - name: resources
           from: resources
         - name: target.accessKeyId
-          expr: get_json_object(requestParameters, '$.accessKeyId')
+          expr: get_json_object(requestParameters, '$.accessKeyIds')
         - name: target.clientId
           expr: get_json_object(requestParameters, '$.clientId')
         - name: target.entityPath
@@ -178,6 +174,10 @@ silver:
       utils:
         unreferencedColumns:
           preserve: true
+          omitColumns:
+            - eventCategory
+            - tlsDetails
+            - userAgent
         temporaryFields:
           - name: userIdentity
             expr: | 
@@ -296,19 +296,13 @@ silver:
         raw.eventName in (
           'AttachUserPolicy', 'DetachUserPolicy', 'PutUserPolicy', 'DeleteUserPolicy', 'PutUserPermissionsBoundary', 'DeleteUserPermissionsBoundary'
         )
+      postFilter: | 
+        raw.eventName in (
+          'AttachUserPolicy', 'DetachUserPolicy', 'PutUserPolicy', 'DeleteUserPolicy', 'PutUserPermissionsBoundary', 'DeleteUserPermissionsBoundary'
+        )
       utils:
         unreferencedColumns:
-          preserve: true
-        temporaryFields:
-          - name: userIdentity
-            expr: | 
-              from_json(raw.userIdentity, 'STRUCT<accessKeyId: STRING, accountId: STRING, arn: STRING, invokedBy: STRING, onBehalfOf: STRUCT<userId: STRING, identityStoreArn: STRING>, inScopeOf: STRUCT<sourceArn: STRING, sourceAccount: STRING, issuerType: STRING, credentialsIssuedTo: STRING>, credentialId: STRING, principalId: STRING, identityProvider: STRING, sessionContext: STRUCT<attributes: STRUCT<creationDate: STRING, mfaAuthenticated: STRING>, ec2RoleDelivery: STRING, webIdFederationData: STRUCT<federatedProvider: STRING, attributes: MAP<STRING, STRING>>, sessionIssuer: STRUCT<accountId: STRING, arn: STRING, principalId: STRING, type: STRING, userName: STRING>>, type: STRING, userName: STRING, assumedRoot: STRING, sourceIdentity: STRING>')
-          - name: tlsDetails
-            expr: "from_json(raw.tlsDetails, 'STRUCT<cipherSuite: STRING, clientProvidedHostHeader: STRING, tlsVersion: STRING>')"
-          - name: addendum
-            expr: "from_json(raw.addendum, 'STRUCT<reason: STRING, updatedFields: STRING, originalRequestID: STRING, originalEventID: STRING>')"
-          - name: resources
-            expr: "from_json(raw.resources, 'ARRAY<STRUCT<ARN: STRING, accountId: STRING, type: STRING>>')"
+          preserve: false
       fields:
         - name: time
           from: raw.eventTime
@@ -1759,7 +1753,7 @@ gold:
 
 
 
-  - name: api_activity
+  - name: new_api_activity
     input: aws_cloudtrail_api_activity
     fields:
       - name: action
@@ -1999,6 +1993,5 @@ gold:
             'edgeDeviceDetails', edgeDeviceDetails,
             'tlsDetails', tlsDetails
           )) AS VARIANT)
-
 
 
