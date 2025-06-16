@@ -1,0 +1,2329 @@
+author: preset studio
+autoloader:
+  cloudFiles:
+    schemaHints: _time FLOAT, callerIpAddress STRING, category STRING, correlationId
+      STRING, cribl_pipe ARRAY<STRING>, durationMs STRING, index STRING, level STRING,
+      location STRING, operationName STRING, operationVersion STRING, properties VARIANT,
+      resourceId STRING, resultSignature STRING, sampled INT, sourcetype STRING, tenantId
+      STRING, time STRING
+  format: json
+bronze: {}
+description: Microsoft Entra
+gold:
+- fields:
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN 1\n            ELSE NULL\n             END"
+    name: activity_id
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN 'Logon'\n            ELSE NULL\n             END"
+    name: activity_name
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN 'iam'\n            ELSE NULL\n             END"
+    name: category_name
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN 3\n            ELSE NULL\n             END"
+    name: category_uid
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN 'authentication'\n            ELSE NULL\n            \
+      \ END"
+    name: class_name
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN 3002\n            ELSE NULL\n             END"
+    name: class_uid
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ServicePrincipalSignInLogs') THEN `sampled`::INT\n\
+      \            WHEN category::string IN ('ManagedIdentitySignInLogs',\n      \
+      \                        'SignInLogs')                    THEN 1\n         \
+      \   ELSE NULL\n             END"
+    name: count
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN `durationMs`::BIGINT\n            ELSE NULL\n        \
+      \     END"
+    name: duration
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs')   \
+      \                                                       THEN to_timestamp(`time`::STRING,\n\
+      \                                                                     concat('yyyy-MM-dd',\n\
+      \                                                                       chr(39),\n\
+      \                                                                       'T',\n\
+      \                                                                       chr(39),\n\
+      \                                                                       'HH:mm:ss.SSSSSSS',\n\
+      \                                                                       chr(39),\n\
+      \                                                                       'Z',\n\
+      \                                                                       chr(39)))\n\
+      \            WHEN category::string IN ('ManagedIdentitySignInLogs',\n      \
+      \                        'ServicePrincipalSignInLogs') THEN timestampadd(MILLISECOND,\n\
+      \                                                                   `durationMs`::BIGINT,\n\
+      \                                                                   to_timestamp(`time`::STRING,\n\
+      \                                                                     concat('yyyy-MM-dd',\n\
+      \                                                                       chr(39),\n\
+      \                                                                       'T',\n\
+      \                                                                       chr(39),\n\
+      \                                                                       'HH:mm:ss.SSSSSSS',\n\
+      \                                                                       chr(39),\n\
+      \                                                                       'Z',\n\
+      \                                                                       chr(39))))\n\
+      \            ELSE NULL\n             END"
+    name: end_time_dt
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN to_timestamp(`time`::STRING,\n                       \
+      \                            concat('yyyy-MM-dd',\n                        \
+      \                             chr(39),\n                                   \
+      \                  'T',\n                                                  \
+      \   chr(39),\n                                                     'HH:mm:ss.SSSSSSS',\n\
+      \                                                     chr(39),\n           \
+      \                                          'Z',\n                          \
+      \                           chr(39)))\n            ELSE NULL\n             END"
+    name: end_time
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN CONCAT(`operationName`::STRING,\n\
+      \                                                   ': ',\n                \
+      \                                   `resultSignature`::STRING)\n           \
+      \ ELSE NULL\n             END"
+    name: message
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN `correlationId`::STRING\n            ELSE NULL\n     \
+      \        END"
+    name: metadata.correlation_uid
+  - expr: "CASE\n    WHEN category::string IN ('ManagedIdentitySignInLogs',\n    \
+      \                          'ServicePrincipalSignInLogs',\n                 \
+      \             'SignInLogs') THEN NULLIF(`operationName`::STRING,\n         \
+      \                                          '')\n            ELSE NULL\n    \
+      \         END"
+    name: metadata.event_code
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs') THEN `sourcetype`::STRING\n\
+      \            WHEN category::string IN ('ServicePrincipalSignInLogs',\n     \
+      \                         'SignInLogs')                  THEN `category`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: metadata.log_name
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'SignInLogs') THEN `sourcetype`::STRING\n    \
+      \        WHEN category::string IN ('ManagedIdentitySignInLogs')            \
+      \                                    THEN 'Azure Active Directory'\n       \
+      \     ELSE NULL\n             END"
+    name: metadata.log_provider
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ServicePrincipalSignInLogs') THEN `operationVersion`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: metadata.log_version
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN to_timestamp(`time`::STRING,\n                       \
+      \                            concat('yyyy-MM-dd',\n                        \
+      \                             chr(39),\n                                   \
+      \                  'T',\n                                                  \
+      \   chr(39),\n                                                     'HH:mm:ss.SSSSSSS',\n\
+      \                                                     chr(39),\n           \
+      \                                          'Z',\n                          \
+      \                           chr(39)))\n            ELSE NULL\n             END"
+    name: metadata.logged_time_dt
+  - expr: "CASE\n    WHEN category::string IN ('ManagedIdentitySignInLogs',\n    \
+      \                          'SignInLogs') THEN current_timestamp()\n        \
+      \    WHEN category::string IN ('ServicePrincipalSignInLogs')               \
+      \                             THEN to_timestamp(`time`::STRING,\n          \
+      \                                                         concat('yyyy-MM-dd',\n\
+      \                                                                     chr(39),\n\
+      \                                                                     'T',\n\
+      \                                                                     chr(39),\n\
+      \                                                                     'HH:mm:ss.SSSSSSS',\n\
+      \                                                                     chr(39),\n\
+      \                                                                     'Z',\n\
+      \                                                                     chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: metadata.logged_time
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs') THEN\
+      \ to_timestamp(`time`::STRING,\n                                           \
+      \                          concat('yyyy-MM-dd',\n                          \
+      \                                             chr(39),\n                   \
+      \                                                    'T',\n                \
+      \                                                       chr(39),\n         \
+      \                                                              'HH:mm:ss.SSSSSSS',\n\
+      \                                                                       chr(39),\n\
+      \                                                                       'Z',\n\
+      \                                                                       chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: metadata.modified_time_dt
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN `time`::STRING\n            ELSE NULL\n             END"
+    name: metadata.original_time
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN CURRENT_TIMESTAMP()\n            ELSE NULL\n         \
+      \    END"
+    name: metadata.processed_time
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN `sourcetype`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: metadata.product.name
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN `properties`.`appId`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: metadata.product.uid
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN 'Microsoft'\n  \
+      \          ELSE NULL\n             END"
+    name: metadata.product.vendor_name
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN `operationVersion`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: metadata.product.version
+  - expr: 'CAST(NULL AS ARRAY<STRUCT<name: STRING, value: STRING, values: ARRAY<STRING>>>)'
+    name: metadata.tags
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN `tenantId`::STRING\n            ELSE NULL\n          \
+      \   END"
+    name: metadata.tenant_uid
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN '1.0.0'\n            ELSE NULL\n             END"
+    name: metadata.version
+  - expr: 'CAST(NULL AS ARRAY<STRUCT<name: STRING, reputation: STRUCT<base_score: FLOAT, provider: STRING, score: STRING, score_id: INT>, type: STRING, type_id: INT, value: STRING>>)'
+    name: observables
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs')   \
+      \                                                       THEN CASE\n        \
+      \                                                               WHEN NULLIF(`resultSignature`::STRING,\n\
+      \                                                                          \
+      \    '') = 'SUCCESS' THEN 'Informational'\n                                \
+      \                                       ELSE 'High'\n                      \
+      \                                             END\n            WHEN category::string\
+      \ IN ('ManagedIdentitySignInLogs',\n                              'ServicePrincipalSignInLogs')\
+      \ THEN 'Informational'\n            WHEN category::string IN ('SignInLogs')\
+      \                                                                          \
+      \  THEN CASE\n                                                     WHEN NULLIF(`resultSignature`::STRING,\n\
+      \                                                            '') = 'SUCCESS'\
+      \ THEN 'Informational'\n                                                   \
+      \  WHEN NULLIF(`resultSignature`::STRING,\n                                \
+      \                            '') = 'FAILURE' THEN 'Medium'\n               \
+      \                                      ELSE 'Unknown'\n                    \
+      \                             END\n            ELSE NULL\n             END"
+    name: severity
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs')   \
+      \                                                       THEN CASE\n        \
+      \                                                               WHEN `resultSignature`::STRING\
+      \ = 'SUCCESS' THEN 1\n                                                     \
+      \                  ELSE 4\n                                                \
+      \                   END\n            WHEN category::string IN ('ManagedIdentitySignInLogs',\n\
+      \                              'ServicePrincipalSignInLogs') THEN 1\n      \
+      \      WHEN category::string IN ('SignInLogs')                             \
+      \                                               THEN CASE\n                \
+      \                                     WHEN `resultSignature`::STRING = 'SUCCESS'\
+      \ THEN 1\n                                                     WHEN `resultSignature`::STRING\
+      \ = 'FAILURE' THEN 3\n                                                     ELSE\
+      \ 0\n                                                 END\n            ELSE\
+      \ NULL\n             END"
+    name: severity_id
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN to_timestamp(`time`::STRING,\n                       \
+      \                            concat('yyyy-MM-dd',\n                        \
+      \                             chr(39),\n                                   \
+      \                  'T',\n                                                  \
+      \   chr(39),\n                                                     'HH:mm:ss.SSSSSSS',\n\
+      \                                                     chr(39),\n           \
+      \                                          'Z',\n                          \
+      \                           chr(39)))\n            ELSE NULL\n             END"
+    name: start_time_dt
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN to_timestamp(`time`::STRING,\n                       \
+      \                            concat('yyyy-MM-dd',\n                        \
+      \                             chr(39),\n                                   \
+      \                  'T',\n                                                  \
+      \   chr(39),\n                                                     'HH:mm:ss.SSSSSSS',\n\
+      \                                                     chr(39),\n           \
+      \                                          'Z',\n                          \
+      \                           chr(39)))\n            ELSE NULL\n             END"
+    name: start_time
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN CASE\n                                               \
+      \      WHEN `resultSignature`::STRING = 'SUCCESS' THEN 'Success'\n         \
+      \                                            WHEN `resultSignature`::STRING\
+      \ = 'FAILURE' THEN 'Failure'\n                                             \
+      \        ELSE NULLIF(`resultSignature`::STRING,\n                          \
+      \                                  '')\n                                   \
+      \              END\n            ELSE NULL\n             END"
+    name: status
+  - expr: "CASE\n    WHEN category::string IN ('ServicePrincipalSignInLogs') THEN\
+      \ `resultSignature`::STRING\n            ELSE NULL\n             END"
+    name: status_code
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN `resultSignature`::STRING\n            ELSE NULL\n   \
+      \          END"
+    name: status_detail
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN CASE\n                                               \
+      \      WHEN `resultSignature`::STRING = 'SUCCESS' THEN 1\n                 \
+      \                                    WHEN `resultSignature`::STRING = 'FAILURE'\
+      \ THEN 2\n                                                     ELSE 99\n   \
+      \                                              END\n            ELSE NULL\n\
+      \             END"
+    name: status_id
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN to_timestamp(`time`::STRING,\n                       \
+      \                            concat('yyyy-MM-dd',\n                        \
+      \                             chr(39),\n                                   \
+      \                  'T',\n                                                  \
+      \   chr(39),\n                                                     'HH:mm:ss.SSSSSSS',\n\
+      \                                                     chr(39),\n           \
+      \                                          'Z',\n                          \
+      \                           chr(39)))\n            ELSE NULL\n             END"
+    name: time_dt
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN to_timestamp(`time`::STRING,\n                       \
+      \                            concat('yyyy-MM-dd',\n                        \
+      \                             chr(39),\n                                   \
+      \                  'T',\n                                                  \
+      \   chr(39),\n                                                     'HH:mm:ss.SSSSSSS',\n\
+      \                                                     chr(39),\n           \
+      \                                          'Z',\n                          \
+      \                           chr(39)))\n            ELSE NULL\n             END"
+    name: time
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN 0\n            ELSE NULL\n             END"
+    name: timezone_offset
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ServicePrincipalSignInLogs',\n              \
+      \                'SignInLogs') THEN 'authentication.Logon'\n            WHEN\
+      \ category::string IN ('ManagedIdentitySignInLogs')                        \
+      \                                                                          \
+      \          THEN 'authentication_logon'\n            ELSE NULL\n            \
+      \ END"
+    name: type_name
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN 3002 * 100 + 1\n            ELSE NULL\n             END"
+    name: type_uid
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN NULLIF(`operationName`::STRING,\n                    \
+      \                               '')\n            ELSE NULL\n             END"
+    name: api.operation
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs') THEN\
+      \ to_json(`properties`)::VARIANT\n            WHEN category::string IN ('ManagedIdentitySignInLogs')\
+      \    THEN parse_json(concat('{\"appId\":\"',\n                             \
+      \                                                `properties`.`appId`::STRING,\n\
+      \                                                                          \
+      \   '\", \"location\":',\n                                                 \
+      \                            `properties`.`location`::STRING,\n            \
+      \                                                                 '}'))\n  \
+      \          ELSE NULL\n             END"
+    name: api.request.data
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'SignInLogs') THEN NULLIF(`correlationId`::STRING,\n\
+      \                                                   '')\n            WHEN category::string\
+      \ IN ('ManagedIdentitySignInLogs')                                         \
+      \       THEN `dasl_id`::STRING\n            ELSE NULL\n             END"
+    name: api.request.uid
+  - expr: "CASE\n    WHEN category::string IN ('ServicePrincipalSignInLogs') THEN\
+      \ `index`::STRING\n            ELSE NULL\n             END"
+    name: api.service.name
+  - expr: "CASE\n    WHEN category::string IN ('ManagedIdentitySignInLogs',\n    \
+      \                          'ServicePrincipalSignInLogs') THEN `resourceId`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: api.service.uid
+  - expr: "CASE\n    WHEN category::string IN ('ServicePrincipalSignInLogs') THEN\
+      \ `operationVersion`::STRING\n            ELSE NULL\n             END"
+    name: api.service.version
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN NULLIF(`operationVersion`::STRING,\n                 \
+      \                                  '')\n            ELSE NULL\n            \
+      \ END"
+    name: api.version
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs')   \
+      \                                                                          \
+      \                         THEN `properties`.`tenantId`::STRING\n           \
+      \ WHEN category::string IN ('ManagedIdentitySignInLogs',\n                 \
+      \             'ServicePrincipalSignInLogs',\n                              'SignInLogs')\
+      \ THEN `tenantId`::STRING\n            ELSE NULL\n             END"
+    name: cloud.account.uid
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs') THEN 'Azure AD Tenant'\n\
+      \            WHEN category::string IN ('ServicePrincipalSignInLogs',\n     \
+      \                         'SignInLogs')                  THEN 'Azure Active\
+      \ Directory Tenant'\n            ELSE NULL\n             END"
+    name: cloud.account.type
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN 99\n            ELSE NULL\n             END"
+    name: cloud.account.type_id
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN 'azure'\n      \
+      \      ELSE NULL\n             END"
+    name: cloud.cloud_partition
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ServicePrincipalSignInLogs',\n              \
+      \                'SignInLogs') THEN 'Azure'\n            WHEN category::string\
+      \ IN ('ManagedIdentitySignInLogs')                                         \
+      \                                                                   THEN 'MS\
+      \ Azure'\n            ELSE NULL\n             END"
+    name: cloud.provider
+  - expr: "CASE\n    WHEN category::string IN ('ServicePrincipalSignInLogs') THEN\
+      \ `location`::STRING\n            ELSE NULL\n             END"
+    name: cloud.region
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN NULLIF(`properties`.`appId`::STRING,\n               \
+      \                                    '')\n            ELSE NULL\n          \
+      \   END"
+    name: actor.app_uid
+  - expr: 'CAST(NULL AS ARRAY<STRUCT<decision: STRING, policy: STRUCT<name: STRING, uid: STRING, desc: STRING, group: STRUCT<name: STRING, uid: STRING, desc: STRING, domain: STRING, privileges: ARRAY<STRING>, type: STRING>, is_applied: BOOLEAN, version: STRING>>>)'
+    name: actor.authorizations
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs') THEN\
+      \ 'Microsoft Entra'\n            WHEN category::string IN ('ManagedIdentitySignInLogs')\
+      \    THEN 'Azure Active Directory'\n            ELSE NULL\n             END"
+    name: actor.idp.name
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs') THEN\
+      \ `properties`.`tenantId`::STRING\n            WHEN category::string IN ('ServicePrincipalSignInLogs')\
+      \   THEN `tenantId`::STRING\n            ELSE NULL\n             END"
+    name: actor.idp.uid
+  - expr: "CASE\n    WHEN category::string IN ('ServicePrincipalSignInLogs') THEN\
+      \ 'Unknown'\n            ELSE NULL\n             END"
+    name: actor.idp.state
+  - expr: "CASE\n    WHEN category::string IN ('ServicePrincipalSignInLogs') THEN\
+      \ 0\n            ELSE NULL\n             END"
+    name: actor.idp.state_id
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs') THEN `tenantId`::STRING\n    \
+      \        ELSE NULL\n             END"
+    name: actor.idp.tenant_uid
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs')   \
+      \                                        THEN 'Microsoft Entra'\n          \
+      \  WHEN category::string IN ('ServicePrincipalSignInLogs',\n               \
+      \               'SignInLogs') THEN `sourcetype`::STRING\n            ELSE NULL\n\
+      \             END"
+    name: actor.invoked_by
+  - expr: "CASE\n    WHEN category::string IN ('ServicePrincipalSignInLogs',\n   \
+      \                           'SignInLogs') THEN to_timestamp(`time`::STRING,\n\
+      \                                                   concat('yyyy-MM-dd',\n \
+      \                                                    chr(39),\n            \
+      \                                         'T',\n                           \
+      \                          chr(39),\n                                      \
+      \               'HH:mm:ss.SSSSSSS',\n                                      \
+      \               chr(39),\n                                                 \
+      \    'Z',\n                                                     chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: actor.session.created_time_dt
+  - expr: "CASE\n    WHEN category::string IN ('ServicePrincipalSignInLogs',\n   \
+      \                           'SignInLogs') THEN to_timestamp(`time`::STRING,\n\
+      \                                                   concat('yyyy-MM-dd',\n \
+      \                                                    chr(39),\n            \
+      \                                         'T',\n                           \
+      \                          chr(39),\n                                      \
+      \               'HH:mm:ss.SSSSSSS',\n                                      \
+      \               chr(39),\n                                                 \
+      \    'Z',\n                                                     chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: actor.session.created_time
+  - expr: "CASE\n    WHEN category::string IN ('ServicePrincipalSignInLogs') THEN\
+      \ `tenantId`::STRING\n            WHEN category::string IN ('SignInLogs')  \
+      \               THEN `resourceId`::STRING\n            ELSE NULL\n         \
+      \    END"
+    name: actor.session.issuer
+  - expr: "CASE\n    WHEN category::string IN ('ServicePrincipalSignInLogs',\n   \
+      \                           'SignInLogs') THEN `correlationId`::STRING\n   \
+      \         ELSE NULL\n             END"
+    name: actor.session.uid
+  - expr: "CASE\n    WHEN category::string IN ('ServicePrincipalSignInLogs',\n   \
+      \                           'SignInLogs') THEN `correlationId`::STRING\n   \
+      \         ELSE NULL\n             END"
+    name: actor.session.uuid
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'SignInLogs') THEN `properties`.`userId`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: actor.user.uid
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs') THEN\
+      \ `properties`.`tenantId`::STRING\n            WHEN category::string IN ('SignInLogs')\
+      \                   THEN `tenantId`::STRING\n            ELSE NULL\n       \
+      \      END"
+    name: actor.user.account.uid
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs') THEN\
+      \ `index`::STRING\n            WHEN category::string IN ('SignInLogs')     \
+      \              THEN 'Azure Active Directory Tenant'\n            ELSE NULL\n\
+      \             END"
+    name: actor.user.account.type
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'SignInLogs') THEN 99\n            ELSE NULL\n\
+      \             END"
+    name: actor.user.account.type_id
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs') THEN\
+      \ `tenantId`::STRING\n            WHEN category::string IN ('SignInLogs')  \
+      \                 THEN `properties`.`tenantId`::STRING\n            ELSE NULL\n\
+      \             END"
+    name: actor.user.org.uid
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN `properties`.`tenantId`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: actor.user.org.ou_uid
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs') THEN\
+      \ 'AzureADUser'\n            WHEN category::string IN ('SignInLogs')       \
+      \            THEN 'Unknown'\n            ELSE NULL\n             END"
+    name: actor.user.type
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs') THEN\
+      \ 99\n            WHEN category::string IN ('SignInLogs')                  \
+      \ THEN 0\n            ELSE NULL\n             END"
+    name: actor.user.type_id
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN `properties`.`userId`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: actor.user.uid_alt
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ServicePrincipalSignInLogs') THEN CASE\n    \
+      \                                                                 WHEN `resultSignature`::STRING\
+      \ = 'SUCCESS' THEN 'Allowed'\n                                             \
+      \                        WHEN `resultSignature`::STRING = 'FAILURE' THEN 'Denied'\n\
+      \                                                                     WHEN `resultSignature`::STRING\
+      \ IS NOT NULL THEN `resultSignature`::STRING\n                             \
+      \                                        ELSE NULL\n                       \
+      \                                          END\n            WHEN category::string\
+      \ IN ('ManagedIdentitySignInLogs')                                         \
+      \                       THEN CASE\n                                        \
+      \                            WHEN `resultSignature`::STRING = 'SUCCESS' THEN\
+      \ 'Allowed'\n                                                              \
+      \      WHEN `resultSignature`::STRING IN ('FAILURE',\n                     \
+      \                                                                          \
+      \        'FAILed') THEN 'Denied'\n                                         \
+      \                           WHEN `resultSignature`::STRING IS NOT NULL THEN\
+      \ `resultSignature`::STRING\n                                              \
+      \                      ELSE NULL\n                                         \
+      \                       END\n            WHEN category::string IN ('SignInLogs')\
+      \                                                                          \
+      \     THEN CASE\n                                                     WHEN `resultSignature`::STRING\
+      \ = 'SUCCESS' THEN 'Allowed'\n                                             \
+      \        WHEN `resultSignature`::STRING = 'FAILURE' THEN 'Denied'\n        \
+      \                                             WHEN `resultSignature`::STRING\
+      \ IS NOT NULL THEN `resultSignature`::STRING\n                             \
+      \                        ELSE 'Unknown'\n                                  \
+      \               END\n            ELSE NULL\n             END"
+    name: action
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN CASE\n                                               \
+      \      WHEN `resultSignature`::STRING = 'SUCCESS' THEN 1\n                 \
+      \                                    WHEN `resultSignature`::STRING = 'FAILURE'\
+      \ THEN 2\n                                                     WHEN `resultSignature`::STRING\
+      \ IS NOT NULL THEN 99\n                                                    \
+      \ ELSE 0\n                                                 END\n           \
+      \ ELSE NULL\n             END"
+    name: action_id
+  - expr: 'CAST(NULL AS ARRAY<STRUCT<decision: STRING, policy: STRUCT<name: STRING, uid: STRING, desc: STRING, group: STRUCT<name: STRING, uid: STRING, desc: STRING, domain: STRING, privileges: ARRAY<STRING>, type: STRING>, is_applied: BOOLEAN, version: STRING>>>)'
+    name: authorizations
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN 'Unknown'\n            ELSE NULL\n             END"
+    name: confidence
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN 0\n            ELSE NULL\n             END"
+    name: confidence_id
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs')   \
+      \                                       THEN CASE\n                        \
+      \                                               WHEN `resultSignature`::STRING\
+      \ = 'SUCCESS' THEN 'Allowed'\n                                             \
+      \                          ELSE `resultSignature`::STRING\n                \
+      \                                                   END\n            WHEN category::string\
+      \ IN ('ManagedIdentitySignInLogs',\n                              'SignInLogs')\
+      \ THEN CASE\n                                                     WHEN `resultSignature`::STRING\
+      \ = 'SUCCESS' THEN 'Allowed'\n                                             \
+      \        WHEN `resultSignature`::STRING = 'FAILURE' THEN 'Blocked'\n       \
+      \                                              ELSE 'Unknown'\n            \
+      \                                     END\n            WHEN category::string\
+      \ IN ('ServicePrincipalSignInLogs')                                        \
+      \    THEN CASE\n                                                           \
+      \          WHEN `resultSignature`::STRING = 'SUCCESS' THEN 'Allowed'\n     \
+      \                                                                WHEN `resultSignature`::STRING\
+      \ = 'FAILURE' THEN 'Unauthorized'\n                                        \
+      \                             ELSE 'Unknown'\n                             \
+      \                                    END\n            ELSE NULL\n          \
+      \   END"
+    name: disposition
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs')   \
+      \                                       THEN CASE\n                        \
+      \                                               WHEN `resultSignature`::STRING\
+      \ = 'SUCCESS' THEN 1\n                                                     \
+      \                  ELSE 99\n                                               \
+      \                    END\n            WHEN category::string IN ('ManagedIdentitySignInLogs',\n\
+      \                              'SignInLogs') THEN CASE\n                   \
+      \                                  WHEN `resultSignature`::STRING = 'SUCCESS'\
+      \ THEN 1\n                                                     WHEN `resultSignature`::STRING\
+      \ = 'FAILURE' THEN 2\n                                                     ELSE\
+      \ 0\n                                                 END\n            WHEN\
+      \ category::string IN ('ServicePrincipalSignInLogs')                       \
+      \                     THEN CASE\n                                          \
+      \                           WHEN `resultSignature`::STRING = 'SUCCESS' THEN\
+      \ 1\n                                                                     WHEN\
+      \ `resultSignature`::STRING = 'FAILURE' THEN 26\n                          \
+      \                                           ELSE 0\n                       \
+      \                                          END\n            ELSE NULL\n    \
+      \         END"
+    name: disposition_id
+  - expr: "CASE\n    WHEN category::string IN ('ManagedIdentitySignInLogs') THEN FALSE\n\
+      \            ELSE NULL\n             END"
+    name: is_alert
+  - expr: 'CAST(NULL AS ARRAY<STRUCT<name:STRING,value:STRING>>)'
+    name: http_request.http_headers
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'SignInLogs') THEN `properties`.`userAgent`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: http_request.user_agent
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'SignInLogs')              THEN `properties`.`ipAddress`::STRING\n\
+      \            WHEN category::string IN ('ManagedIdentitySignInLogs',\n      \
+      \                        'ServicePrincipalSignInLogs') THEN NULLIF(`callerIpAddress`::STRING,\n\
+      \                                                                   '')\n  \
+      \          ELSE NULL\n             END"
+    name: src_endpoint.uid
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ServicePrincipalSignInLogs',\n              \
+      \                'SignInLogs') THEN `properties`.`ipAddress`::STRING\n     \
+      \       WHEN category::string IN ('ManagedIdentitySignInLogs')             \
+      \                                                                          \
+      \                     THEN `callerIpAddress`::STRING\n            ELSE NULL\n\
+      \             END"
+    name: src_endpoint.ip
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN get_json_object(`properties`.`location`::STRING,\n   \
+      \                                                '$.city')\n            ELSE\
+      \ NULL\n             END"
+    name: src_endpoint.location.city
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN CASE\n                                               \
+      \      WHEN `properties`.`location`::STRING IS NOT NULL THEN ARRAY(CAST(get_json_object(`properties`.`location`::STRING,\n\
+      \                                                                          \
+      \                                              '$.geoCoordinates.longitude')\
+      \ AS DOUBLE),\n                                                            \
+      \                                                 CAST(get_json_object(`properties`.`location`::STRING,\n\
+      \                                                                          \
+      \                                          '$.geoCoordinates.latitude') AS DOUBLE))\n\
+      \                                                     ELSE NULL\n          \
+      \                                       END\n            ELSE NULL\n       \
+      \      END"
+    name: src_endpoint.location.coordinates
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ServicePrincipalSignInLogs',\n              \
+      \                'SignInLogs') THEN UPPER(`location`::STRING)\n            WHEN\
+      \ category::string IN ('ManagedIdentitySignInLogs')                        \
+      \                                                                          \
+      \          THEN upper(nullif(get_json_object(`properties`.`location`::STRING,\n\
+      \                                                                          \
+      \     '$.countryOrRegion'),\n                                              \
+      \                          ''))\n            ELSE NULL\n             END"
+    name: src_endpoint.location.country
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ServicePrincipalSignInLogs',\n              \
+      \                'SignInLogs') THEN NULLIF(`properties`.`location`::STRING,\n\
+      \                                                   '')\n            WHEN category::string\
+      \ IN ('ManagedIdentitySignInLogs')                                         \
+      \                                                                   THEN CONCAT_WS(',\
+      \ ',\n                                                                  NULLIF(get_json_object(`properties`.`location`::STRING,\n\
+      \                                                                          \
+      \ '$.city'),\n                                                             \
+      \       ''),\n                                                             \
+      \     NULLIF(get_json_object(`properties`.`location`::STRING,\n            \
+      \                                                               '$.state'),\n\
+      \                                                                    ''),\n\
+      \                                                                  NULLIF(get_json_object(`properties`.`location`::STRING,\n\
+      \                                                                          \
+      \ '$.countryOrRegion'),\n                                                  \
+      \                  ''))\n            ELSE NULL\n             END"
+    name: src_endpoint.location.desc
+  - expr: "CASE\n    WHEN category::string IN ('ServicePrincipalSignInLogs') THEN\
+      \ FALSE\n            ELSE NULL\n             END"
+    name: src_endpoint.location.is_on_premises
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN CAST(get_json_object(`properties`.`location`::STRING,\n\
+      \                                                        '$.geoCoordinates.latitude')\
+      \ AS FLOAT)\n            ELSE NULL\n             END"
+    name: src_endpoint.location.lat
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN CAST(get_json_object(`properties`.`location`::STRING,\n\
+      \                                                        '$.geoCoordinates.longitude')\
+      \ AS FLOAT)\n            ELSE NULL\n             END"
+    name: src_endpoint.location.long
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs') THEN\
+      \ 'Microsoft Entra'\n            ELSE NULL\n             END"
+    name: src_endpoint.location.provider
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN get_json_object(`properties`.`location`::STRING,\n   \
+      \                                                '$.state')\n            ELSE\
+      \ NULL\n             END"
+    name: src_endpoint.location.region
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'SignInLogs') THEN `properties`.`userId`::STRING\n\
+      \            WHEN category::string IN ('ManagedIdentitySignInLogs')        \
+      \                                        THEN `properties`.`appId`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: src_endpoint.owner.uid
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs') THEN\
+      \ `tenantId`::STRING\n            WHEN category::string IN ('ManagedIdentitySignInLogs')\
+      \    THEN `properties`.`appId`::STRING\n            WHEN category::string IN\
+      \ ('SignInLogs')                   THEN `properties`.`tenantId`::STRING\n  \
+      \          ELSE NULL\n             END"
+    name: src_endpoint.owner.account.uid
+  - expr: "CASE\n    WHEN category::string IN ('ManagedIdentitySignInLogs') THEN 'Azure\
+      \ Service Principal'\n            ELSE NULL\n             END"
+    name: src_endpoint.owner.account.type
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs') THEN 99\n       \
+      \     WHEN category::string IN ('SignInLogs')                              \
+      \                                                THEN 0\n            ELSE NULL\n\
+      \             END"
+    name: src_endpoint.owner.account.type_id
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'SignInLogs') THEN `tenantId`::STRING\n            ELSE NULL\n\
+      \             END"
+    name: src_endpoint.owner.org.uid
+  - expr: "CASE\n    WHEN category::string IN ('ManagedIdentitySignInLogs') THEN `tenantId`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: src_endpoint.owner.org.ou_uid
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs') THEN\
+      \ 'Unknown'\n            WHEN category::string IN ('ManagedIdentitySignInLogs')\
+      \    THEN 'ManagedIdentity'\n            WHEN category::string IN ('SignInLogs')\
+      \                   THEN 'Azure AD User'\n            ELSE NULL\n          \
+      \   END"
+    name: src_endpoint.owner.type
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs')   \
+      \                                       THEN 0\n            WHEN category::string\
+      \ IN ('ManagedIdentitySignInLogs',\n                              'SignInLogs')\
+      \ THEN 99\n            ELSE NULL\n             END"
+    name: src_endpoint.owner.type_id
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'SignInLogs') THEN `properties`.`userId`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: src_endpoint.owner.uid_alt
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN 'Unknown'\n            ELSE NULL\n             END"
+    name: src_endpoint.type
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN 0\n            ELSE NULL\n             END"
+    name: src_endpoint.type_id
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'SignInLogs') THEN 'Unknown'\n            WHEN category::string\
+      \ IN ('ServicePrincipalSignInLogs')                                        \
+      \                                                                  THEN 'OAUTH\
+      \ 2.0'\n            ELSE NULL\n             END"
+    name: auth_protocol
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'SignInLogs') THEN 0\n            WHEN category::string IN ('ServicePrincipalSignInLogs')\
+      \                                                                          \
+      \                                THEN 6\n            ELSE NULL\n           \
+      \  END"
+    name: auth_protocol_id
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN regexp_extract(`resourceId`::STRING,\n\
+      \                                                   '.*/([^/]+)$',\n       \
+      \                                            1)\n            ELSE NULL\n   \
+      \          END"
+    name: dst_endpoint.name
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN `resourceId`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: dst_endpoint.instance_uid
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN get_json_object(`properties`.`location`::STRING,\n\
+      \                                                   '$.city')\n            ELSE\
+      \ NULL\n             END"
+    name: dst_endpoint.location.city
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN array(cast(get_json_object(`properties`.`location`::STRING,\n\
+      \                                                              '$.geoCoordinates.longitude')\
+      \ AS DOUBLE),\n                                                   cast(get_json_object(`properties`.`location`::STRING,\n\
+      \                                                          '$.geoCoordinates.latitude')\
+      \ AS DOUBLE))\n            ELSE NULL\n             END"
+    name: dst_endpoint.location.coordinates
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN upper(`location`::STRING)\n\
+      \            ELSE NULL\n             END"
+    name: dst_endpoint.location.country
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN concat_ws(', ',\n\
+      \                                                   get_json_object(`properties`.`location`::STRING,\n\
+      \                                                     '$.city'),\n         \
+      \                                          get_json_object(`properties`.`location`::STRING,\n\
+      \                                                     '$.state'),\n        \
+      \                                           get_json_object(`properties`.`location`::STRING,\n\
+      \                                                     '$.countryOrRegion'))\n\
+      \            ELSE NULL\n             END"
+    name: dst_endpoint.location.desc
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN get_json_object(`properties`.`location`::STRING,\n\
+      \                                                   '$.geoCoordinates.latitude')::float\n\
+      \            ELSE NULL\n             END"
+    name: dst_endpoint.location.lat
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN CAST(get_json_object(`properties`.`location`::STRING,\n\
+      \                                                        '$.geoCoordinates.longitude')\
+      \ AS FLOAT)\n            ELSE NULL\n             END"
+    name: dst_endpoint.location.long
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN get_json_object(`properties`.`location`::STRING,\n\
+      \                                                   '$.state')\n           \
+      \ ELSE NULL\n             END"
+    name: dst_endpoint.location.region
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN `properties`.`userId`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: dst_endpoint.owner.uid
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN `properties`.`userId`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: dst_endpoint.owner.account.uid
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN 'Azure AD User'\n\
+      \            ELSE NULL\n             END"
+    name: dst_endpoint.owner.account.type
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN 99\n           \
+      \ ELSE NULL\n             END"
+    name: dst_endpoint.owner.account.type_id
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN `properties`.`tenantId`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: dst_endpoint.owner.org.uid
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN 'Unknown'\n    \
+      \        ELSE NULL\n             END"
+    name: dst_endpoint.owner.type
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN 0\n            ELSE\
+      \ NULL\n             END"
+    name: dst_endpoint.owner.type_id
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN `properties`.`userId`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: dst_endpoint.owner.uid_alt
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN 99\n           \
+      \ ELSE NULL\n             END"
+    name: dst_endpoint.type_id
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ServicePrincipalSignInLogs',\n              \
+      \                'SignInLogs') THEN FALSE\n            ELSE NULL\n         \
+      \    END"
+    name: is_cleartext
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs') THEN\
+      \ TRUE\n            ELSE NULL\n             END"
+    name: is_remote
+  - expr: "CASE\n    WHEN category::string IN ('ManagedIdentitySignInLogs',\n    \
+      \                          'SignInLogs') THEN 'Unknown'\n            ELSE NULL\n\
+      \             END"
+    name: logon_type
+  - expr: "CASE\n    WHEN category::string IN ('ManagedIdentitySignInLogs',\n    \
+      \                          'SignInLogs') THEN 0\n            ELSE NULL\n   \
+      \          END"
+    name: logon_type_id
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs') THEN\
+      \ 'Azure Active Directory'\n            WHEN category::string IN ('ManagedIdentitySignInLogs')\
+      \    THEN 'Microsoft Entra'\n            WHEN category::string IN ('ServicePrincipalSignInLogs')\
+      \   THEN `sourcetype`::STRING\n            ELSE NULL\n             END"
+    name: service.name
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN `properties`.`appId`::STRING\n            ELSE NULL\n\
+      \             END"
+    name: service.uid
+  - expr: "CASE\n    WHEN category::string IN ('ServicePrincipalSignInLogs',\n   \
+      \                           'SignInLogs') THEN `operationVersion`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: service.version
+  - expr: "CASE\n    WHEN category::string IN ('ManagedIdentitySignInLogs',\n    \
+      \                          'SignInLogs') THEN 1\n            WHEN category::string\
+      \ IN ('ServicePrincipalSignInLogs')                                        \
+      \    THEN `sampled`::INT\n            ELSE NULL\n             END"
+    name: session.count
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN to_timestamp(`time`::STRING,\n                       \
+      \                            concat('yyyy-MM-dd',\n                        \
+      \                             chr(39),\n                                   \
+      \                  'T',\n                                                  \
+      \   chr(39),\n                                                     'HH:mm:ss.SSSSSSS',\n\
+      \                                                     chr(39),\n           \
+      \                                          'Z',\n                          \
+      \                           chr(39)))\n            ELSE NULL\n             END"
+    name: session.created_time_dt
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs') THEN to_timestamp(`time`::STRING,\n\
+      \                                                                   concat('yyyy-MM-dd',\n\
+      \                                                                     chr(39),\n\
+      \                                                                     'T',\n\
+      \                                                                     chr(39),\n\
+      \                                                                     'HH:mm:ss.SSSSSSS',\n\
+      \                                                                     chr(39),\n\
+      \                                                                     'Z',\n\
+      \                                                                     chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: session.created_time
+  - expr: "CASE\n    WHEN category::string IN ('ServicePrincipalSignInLogs') THEN\
+      \ `properties`.`appId`::STRING\n            ELSE NULL\n             END"
+    name: session.credential_uid
+  - expr: "CASE\n    WHEN category::string IN ('ServicePrincipalSignInLogs') THEN\
+      \ FALSE\n            ELSE NULL\n             END"
+    name: session.is_mfa
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ServicePrincipalSignInLogs',\n              \
+      \                'SignInLogs') THEN `tenantId`::STRING\n            WHEN category::string\
+      \ IN ('ManagedIdentitySignInLogs')                                         \
+      \                                                                   THEN `properties`.`appId`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: session.issuer
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN `correlationId`::STRING\n            ELSE NULL\n     \
+      \        END"
+    name: session.uid
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'ManagedIdentitySignInLogs',\n               \
+      \               'ServicePrincipalSignInLogs',\n                            \
+      \  'SignInLogs') THEN `correlationId`::STRING\n            ELSE NULL\n     \
+      \        END"
+    name: session.uuid
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'SignInLogs') THEN `properties`.`userId`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: user.uid
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'SignInLogs') THEN `tenantId`::STRING\n      \
+      \      ELSE NULL\n             END"
+    name: user.account.uid
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs') THEN\
+      \ 'Azure Active Directory Tenant'\n            WHEN category::string IN ('SignInLogs')\
+      \                   THEN 'Azure AD Tenant'\n            ELSE NULL\n        \
+      \     END"
+    name: user.account.type
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs',\n \
+      \                             'SignInLogs') THEN 99\n            ELSE NULL\n\
+      \             END"
+    name: user.account.type_id
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN `tenantId`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: user.org.uid
+  - expr: "CASE\n    WHEN category::string IN ('SignInLogs') THEN `tenantId`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: user.org.ou_uid
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs') THEN\
+      \ 'AzureADUser'\n            ELSE NULL\n             END"
+    name: user.type
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs') THEN\
+      \ 99\n            WHEN category::string IN ('SignInLogs')                  \
+      \ THEN 0\n            ELSE NULL\n             END"
+    name: user.type_id
+  - expr: "CASE\n    WHEN category::string IN ('NonInteractiveUserSignInLogs') THEN\
+      \ `properties`.`userId`::STRING\n            ELSE NULL\n             END"
+    name: user.uid_alt
+  input: entra_authentication
+  name: authentication
+- fields:
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN 99\n     \
+      \       WHEN category::string IN ('AuditLogs')        THEN CASE\n          \
+      \                                          WHEN `operationName`::STRING = 'Change\
+      \ user license' THEN 3\n                                                   \
+      \ ELSE 99\n                                                END\n           \
+      \ ELSE NULL\n             END"
+    name: activity_id
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN NULLIF(`operationName`::STRING,\n\
+      \                                                         '')\n            WHEN\
+      \ category::string IN ('AuditLogs')        THEN CASE\n                     \
+      \                               WHEN `operationName`::STRING = 'Change user\
+      \ license' THEN 'Update'\n                                                 \
+      \   ELSE NULLIF(`operationName`::STRING,\n                                 \
+      \                          '')\n                                           \
+      \     END\n            ELSE NULL\n             END"
+    name: activity_name
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN 'iam'\n            ELSE NULL\n         \
+      \    END"
+    name: category_name
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN 3\n            ELSE NULL\n             END"
+    name: category_uid
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN 'entity_management'\n            ELSE NULL\n\
+      \             END"
+    name: class_name
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN 3004\n            ELSE NULL\n          \
+      \   END"
+    name: class_uid
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN 1\n            ELSE NULL\n             END"
+    name: count
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN `durationMs`::BIGINT\n            ELSE NULL\n\
+      \             END"
+    name: duration
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN CAST((`_time`::DOUBLE\
+      \ + `durationMs`::BIGINT/1000.0) AS TIMESTAMP)\n            ELSE NULL\n    \
+      \         END"
+    name: end_time_dt
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN to_timestamp(`time`::STRING,\n         \
+      \                                         concat('yyyy-MM-dd',\n           \
+      \                                         chr(39),\n                       \
+      \                             'T',\n                                       \
+      \             chr(39),\n                                                   \
+      \ 'HH:mm:ss.SSSSSSS',\n                                                    chr(39),\n\
+      \                                                    'Z',\n                \
+      \                                    chr(39)))\n            ELSE NULL\n    \
+      \         END"
+    name: end_time
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN `operationName`::STRING\n            ELSE\
+      \ NULL\n             END"
+    name: message
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN `correlationId`::STRING\n            ELSE\
+      \ NULL\n             END"
+    name: metadata.correlation_uid
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN NULLIF(`operationName`::STRING,\n      \
+      \                                            '')\n            ELSE NULL\n  \
+      \           END"
+    name: metadata.event_code
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN `sourcetype`::STRING\n\
+      \            WHEN category::string IN ('AuditLogs')        THEN split(`resourceId`::STRING,\n\
+      \                                                  '/providers/')[1]\n     \
+      \       ELSE NULL\n             END"
+    name: metadata.log_provider
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN to_timestamp(`time`::STRING,\n         \
+      \                                         concat('yyyy-MM-dd',\n           \
+      \                                         chr(39),\n                       \
+      \                             'T',\n                                       \
+      \             chr(39),\n                                                   \
+      \ 'HH:mm:ss.SSSSSSS',\n                                                    chr(39),\n\
+      \                                                    'Z',\n                \
+      \                                    chr(39)))\n            ELSE NULL\n    \
+      \         END"
+    name: metadata.logged_time_dt
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN to_timestamp(`time`::STRING,\n         \
+      \                                         concat('yyyy-MM-dd',\n           \
+      \                                         chr(39),\n                       \
+      \                             'T',\n                                       \
+      \             chr(39),\n                                                   \
+      \ 'HH:mm:ss.SSSSSSS',\n                                                    chr(39),\n\
+      \                                                    'Z',\n                \
+      \                                    chr(39)))\n            ELSE NULL\n    \
+      \         END"
+    name: metadata.modified_time_dt
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN current_timestamp()\n\
+      \            WHEN category::string IN ('AuditLogs')        THEN to_timestamp(`time`::STRING,\n\
+      \                                                  concat('yyyy-MM-dd',\n  \
+      \                                                  chr(39),\n              \
+      \                                      'T',\n                              \
+      \                      chr(39),\n                                          \
+      \          'HH:mm:ss.SSSSSSS',\n                                           \
+      \         chr(39),\n                                                    'Z',\n\
+      \                                                    chr(39)))\n           \
+      \ ELSE NULL\n             END"
+    name: metadata.modified_time
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN `time`::STRING\n            ELSE NULL\n\
+      \             END"
+    name: metadata.original_time
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN current_timestamp()\n\
+      \            ELSE NULL\n             END"
+    name: metadata.processed_time_dt
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN CURRENT_TIMESTAMP()\n            ELSE NULL\n\
+      \             END"
+    name: metadata.processed_time
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN `sourcetype`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: metadata.product.name
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN `sourcetype`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: metadata.product.uid
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN `operationName`::STRING::STRING\n\
+      \            ELSE NULL\n             END"
+    name: metadata.product.feature.name
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN concat(`operationName`::STRING,\n\
+      \                                                         '@',\n           \
+      \                                              `operationVersion`::STRING)\n\
+      \            ELSE NULL\n             END"
+    name: metadata.product.feature.uid
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN `operationVersion`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: metadata.product.feature.version
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN regexp_extract(`resourceId`::STRING,\n\
+      \                                                         '/providers/([^\\\\\
+      .]+)\\\\.',\n                                                         1)\n \
+      \           ELSE NULL\n             END"
+    name: metadata.product.vendor_name
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN `cribl_pipe`\n\
+      \            ELSE NULL\n             END"
+    name: metadata.profiles
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN `tenantId`::STRING\n            ELSE NULL\n\
+      \             END"
+    name: metadata.tenant_uid
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN '1.0.0'\n            ELSE NULL\n       \
+      \      END"
+    name: metadata.version
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN 'Unknown'\n            ELSE NULL\n     \
+      \        END"
+    name: severity
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN 0\n            ELSE NULL\n             END"
+    name: severity_id
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN to_timestamp(`time`::STRING,\n         \
+      \                                         concat('yyyy-MM-dd',\n           \
+      \                                         chr(39),\n                       \
+      \                             'T',\n                                       \
+      \             chr(39),\n                                                   \
+      \ 'HH:mm:ss.SSSSSSS',\n                                                    chr(39),\n\
+      \                                                    'Z',\n                \
+      \                                    chr(39)))\n            ELSE NULL\n    \
+      \         END"
+    name: start_time_dt
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN to_timestamp(`time`::STRING,\n         \
+      \                                         concat('yyyy-MM-dd',\n           \
+      \                                         chr(39),\n                       \
+      \                             'T',\n                                       \
+      \             chr(39),\n                                                   \
+      \ 'HH:mm:ss.SSSSSSS',\n                                                    chr(39),\n\
+      \                                                    'Z',\n                \
+      \                                    chr(39)))\n            ELSE NULL\n    \
+      \         END"
+    name: start_time
+  - expr: "CASE\n    WHEN category::string IN ('AuditLogs') THEN NULLIF(`resultSignature`::STRING,\n\
+      \                                                  '')\n            ELSE NULL\n\
+      \             END"
+    name: status
+  - expr: "CASE\n    WHEN category::string IN ('AuditLogs') THEN `resultSignature`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: status_code
+  - expr: "CASE\n    WHEN category::string IN ('AuditLogs') THEN `resultSignature`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: status_detail
+  - expr: "CASE\n    WHEN category::string IN ('AuditLogs') THEN 99\n            ELSE\
+      \ NULL\n             END"
+    name: status_id
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN to_timestamp(`time`::STRING,\n         \
+      \                                         concat('yyyy-MM-dd',\n           \
+      \                                         chr(39),\n                       \
+      \                             'T',\n                                       \
+      \             chr(39),\n                                                   \
+      \ 'HH:mm:ss.SSSSSSS',\n                                                    chr(39),\n\
+      \                                                    'Z',\n                \
+      \                                    chr(39)))\n            ELSE NULL\n    \
+      \         END"
+    name: time_dt
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN to_timestamp(`time`::STRING,\n         \
+      \                                         concat('yyyy-MM-dd',\n           \
+      \                                         chr(39),\n                       \
+      \                             'T',\n                                       \
+      \             chr(39),\n                                                   \
+      \ 'HH:mm:ss.SSSSSSS',\n                                                    chr(39),\n\
+      \                                                    'Z',\n                \
+      \                                    chr(39)))\n            ELSE NULL\n    \
+      \         END"
+    name: time
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN 0\n            ELSE NULL\n             END"
+    name: timezone_offset
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN NULLIF(`operationName`::STRING,\n\
+      \                                                         '')\n            WHEN\
+      \ category::string IN ('AuditLogs')        THEN CONCAT('entity_management.',\n\
+      \                                                  CASE\n                  \
+      \                                    WHEN NULLIF(`operationName`::STRING,\n\
+      \                                                             '') = 'Change\
+      \ user license' THEN 'Update'\n                                            \
+      \          ELSE NULLIF(`operationName`::STRING,\n                          \
+      \                                   '')\n                                  \
+      \                END)\n            ELSE NULL\n             END"
+    name: type_name
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN 300499\n \
+      \           WHEN category::string IN ('AuditLogs')        THEN 3004 * 100 +\
+      \ (CASE\n                                                                  WHEN\
+      \ `operationName`::STRING = 'Change user license' THEN 3\n                 \
+      \                                                 ELSE 99\n                \
+      \                                              END)\n            ELSE NULL\n\
+      \             END"
+    name: type_uid
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN NULLIF(`operationName`::STRING,\n      \
+      \                                            '')\n            ELSE NULL\n  \
+      \           END"
+    name: api.operation
+  - expr: "CASE\n    WHEN category::string IN ('AuditLogs') THEN NULLIF(`correlationId`::STRING,\n\
+      \                                                  '')\n            ELSE NULL\n\
+      \             END"
+    name: api.request.uid
+  - expr: "CASE\n    WHEN category::string IN ('AuditLogs') THEN `sourcetype`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: api.service.name
+  - expr: "CASE\n    WHEN category::string IN ('AuditLogs') THEN `resourceId`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: api.service.uid
+  - expr: 'CAST(NULL AS ARRAY<STRUCT<name: STRING, value: STRING, values: ARRAY<STRING>>>)'
+    name: api.service.tags
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN NULLIF(`operationVersion`::STRING,\n   \
+      \                                               '')\n            ELSE NULL\n\
+      \             END"
+    name: api.version
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN `tenantId`::STRING\n            ELSE NULL\n\
+      \             END"
+    name: cloud.account.uid
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN 'Azure Active\
+      \ Directory Tenant'\n            WHEN category::string IN ('AuditLogs')    \
+      \    THEN 'AzureTenant'\n            ELSE NULL\n             END"
+    name: cloud.account.type
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN 99\n            ELSE NULL\n            \
+      \ END"
+    name: cloud.account.type_id
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN 'Azure'\n\
+      \            WHEN category::string IN ('AuditLogs')        THEN 'MS Azure'\n\
+      \            ELSE NULL\n             END"
+    name: cloud.provider
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN `operationName`::STRING\n\
+      \            WHEN category::string IN ('AuditLogs')        THEN 'Allowed'\n\
+      \            ELSE NULL\n             END"
+    name: action
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN 99\n     \
+      \       WHEN category::string IN ('AuditLogs')        THEN 1\n            ELSE\
+      \ NULL\n             END"
+    name: action_id
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN 'Unknown'\n            ELSE NULL\n     \
+      \        END"
+    name: confidence
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN 0\n            ELSE NULL\n             END"
+    name: confidence_id
+  - expr: "CASE\n    WHEN category::string IN ('AuditLogs') THEN 'Allowed'\n     \
+      \       ELSE NULL\n             END"
+    name: disposition
+  - expr: "CASE\n    WHEN category::string IN ('AuditLogs') THEN 1\n            ELSE\
+      \ NULL\n             END"
+    name: disposition_id
+  - expr: "CASE\n    WHEN category::string IN ('AuditLogs') THEN NULLIF(`callerIpAddress`::STRING,\n\
+      \                                                  '')\n            ELSE NULL\n\
+      \             END"
+    name: src_endpoint.uid
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs',\n             \
+      \                 'AuditLogs') THEN `callerIpAddress`::STRING\n            ELSE\
+      \ NULL\n             END"
+    name: src_endpoint.ip
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN 'ip_address'\n\
+      \            WHEN category::string IN ('AuditLogs')        THEN 'Unknown'\n\
+      \            ELSE NULL\n             END"
+    name: src_endpoint.type
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN 99\n     \
+      \       WHEN category::string IN ('AuditLogs')        THEN 0\n            ELSE\
+      \ NULL\n             END"
+    name: src_endpoint.type_id
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN `resourceId`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: entity.uid
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN `resourceId`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: entity.device.uid
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN `resourceId`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: entity.device.instance_uid
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN `callerIpAddress`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: entity.device.ip
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN 'unknown'\n\
+      \            ELSE NULL\n             END"
+    name: entity.device.type
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN 0\n      \
+      \      ELSE NULL\n             END"
+    name: entity.device.type_id
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN to_timestamp(`time`::STRING,\n\
+      \                                                         concat('yyyy-MM-dd',\n\
+      \                                                           chr(39),\n     \
+      \                                                      'T',\n              \
+      \                                             chr(39),\n                   \
+      \                                        'HH:mm:ss.SSSSSSS',\n             \
+      \                                              chr(39),\n                  \
+      \                                         'Z',\n                           \
+      \                                chr(39)))\n            ELSE NULL\n        \
+      \     END"
+    name: entity.device.created_time_dt
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN to_timestamp(`time`::STRING,\n\
+      \                                                         concat('yyyy-MM-dd',\n\
+      \                                                           chr(39),\n     \
+      \                                                      'T',\n              \
+      \                                             chr(39),\n                   \
+      \                                        'HH:mm:ss.SSSSSSS',\n             \
+      \                                              chr(39),\n                  \
+      \                                         'Z',\n                           \
+      \                                chr(39)))\n            ELSE NULL\n        \
+      \     END"
+    name: entity.device.created_time
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN to_timestamp(`time`::STRING,\n\
+      \                                                         concat('yyyy-MM-dd',\n\
+      \                                                           chr(39),\n     \
+      \                                                      'T',\n              \
+      \                                             chr(39),\n                   \
+      \                                        'HH:mm:ss.SSSSSSS',\n             \
+      \                                              chr(39),\n                  \
+      \                                         'Z',\n                           \
+      \                                chr(39)))\n            ELSE NULL\n        \
+      \     END"
+    name: entity.device.first_seen_time_dt
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN to_timestamp(`time`::STRING,\n\
+      \                                                         concat('yyyy-MM-dd',\n\
+      \                                                           chr(39),\n     \
+      \                                                      'T',\n              \
+      \                                             chr(39),\n                   \
+      \                                        'HH:mm:ss.SSSSSSS',\n             \
+      \                                              chr(39),\n                  \
+      \                                         'Z',\n                           \
+      \                                chr(39)))\n            ELSE NULL\n        \
+      \     END"
+    name: entity.device.first_seen_time
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN to_timestamp(`time`::STRING,\n\
+      \                                                         concat('yyyy-MM-dd',\n\
+      \                                                           chr(39),\n     \
+      \                                                      'T',\n              \
+      \                                             chr(39),\n                   \
+      \                                        'HH:mm:ss.SSSSSSS',\n             \
+      \                                              chr(39),\n                  \
+      \                                         'Z',\n                           \
+      \                                chr(39)))\n            ELSE NULL\n        \
+      \     END"
+    name: entity.device.last_seen_time_dt
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN to_timestamp(`time`::STRING,\n\
+      \                                                         concat('yyyy-MM-dd',\n\
+      \                                                           chr(39),\n     \
+      \                                                      'T',\n              \
+      \                                             chr(39),\n                   \
+      \                                        'HH:mm:ss.SSSSSSS',\n             \
+      \                                              chr(39),\n                  \
+      \                                         'Z',\n                           \
+      \                                chr(39)))\n            ELSE NULL\n        \
+      \     END"
+    name: entity.device.last_seen_time
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN to_timestamp(`time`::STRING,\n\
+      \                                                         concat('yyyy-MM-dd',\n\
+      \                                                           chr(39),\n     \
+      \                                                      'T',\n              \
+      \                                             chr(39),\n                   \
+      \                                        'HH:mm:ss.SSSSSSS',\n             \
+      \                                              chr(39),\n                  \
+      \                                         'Z',\n                           \
+      \                                chr(39)))\n            ELSE NULL\n        \
+      \     END"
+    name: entity.device.modified_time_dt
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN to_timestamp(`time`::STRING,\n\
+      \                                                         concat('yyyy-MM-dd',\n\
+      \                                                           chr(39),\n     \
+      \                                                      'T',\n              \
+      \                                             chr(39),\n                   \
+      \                                        'HH:mm:ss.SSSSSSS',\n             \
+      \                                              chr(39),\n                  \
+      \                                         'Z',\n                           \
+      \                                chr(39)))\n            ELSE NULL\n        \
+      \     END"
+    name: entity.device.modified_time
+  - expr: 'CAST(NULL AS ARRAY<STRUCT<name: STRING, uid: STRING, hostname: STRING, ip: STRING, mac: STRING, namespace: STRING, subnet_prefix: INT, type: STRING, type_id: INT>>)'
+    name: entity.device.network_interfaces
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN `tenantId`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: entity.device.org.uid
+  - expr: "CASE\n    WHEN category::string IN ('ProvisioningLogs') THEN `tenantId`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: entity.org.uid
+  input: entra_entity_management
+  name: entity_management
+- fields:
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ CASE\n                                                                   \
+      \  WHEN `properties`.`requestMethod`::STRING = 'GET' THEN 2\n              \
+      \                                                       WHEN `properties`.`requestMethod`::STRING\
+      \ = 'POST' THEN 1\n                                                        \
+      \             WHEN `properties`.`requestMethod`::STRING IN ('PUT',\n       \
+      \                                                                          \
+      \                                  'PATCH') THEN 3\n                       \
+      \                                              WHEN `properties`.`requestMethod`::STRING\
+      \ = 'DELETE' THEN 4\n                                                      \
+      \               ELSE 99\n                                                  \
+      \               END\n            ELSE NULL\n             END"
+    name: activity_id
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ CASE\n                                                                   \
+      \  WHEN `properties`.`requestMethod`::STRING = 'GET' THEN 'Read'\n         \
+      \                                                            WHEN `properties`.`requestMethod`::STRING\
+      \ = 'POST' THEN 'Create'\n                                                 \
+      \                    WHEN `properties`.`requestMethod`::STRING IN ('PUT',\n\
+      \                                                                          \
+      \                                         'PATCH') THEN 'Update'\n         \
+      \                                                            WHEN `properties`.`requestMethod`::STRING\
+      \ = 'DELETE' THEN 'Delete'\n                                               \
+      \                      ELSE `properties`.`requestMethod`::STRING\n         \
+      \                                                        END\n            ELSE\
+      \ NULL\n             END"
+    name: activity_name
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ 'application'\n            ELSE NULL\n             END"
+    name: category_name
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ 6\n            ELSE NULL\n             END"
+    name: category_uid
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ 'api_activity'\n            ELSE NULL\n             END"
+    name: class_name
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ 6003\n            ELSE NULL\n             END"
+    name: class_uid
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ 1\n            ELSE NULL\n             END"
+    name: count
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `durationMs`::BIGINT\n            ELSE NULL\n             END"
+    name: duration
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ to_timestamp(`properties`.`timeGenerated`::STRING,\n                     \
+      \                                              concat('yyyy-MM-dd',\n      \
+      \                                                               chr(39),\n \
+      \                                                                    'T',\n\
+      \                                                                     chr(39),\n\
+      \                                                                     'HH:mm:ss.SSSSSSS',\n\
+      \                                                                     chr(39),\n\
+      \                                                                     'Z',\n\
+      \                                                                     chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: end_time
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `correlationId`::STRING\n            ELSE NULL\n             END"
+    name: metadata.correlation_uid
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ NULLIF(`operationName`::STRING,\n                                        \
+      \                           '')\n            ELSE NULL\n             END"
+    name: metadata.event_code
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `level`::STRING::string\n            ELSE NULL\n             END"
+    name: metadata.log_level
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `category`::STRING\n            ELSE NULL\n             END"
+    name: metadata.log_name
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `sourcetype`::STRING\n            ELSE NULL\n             END"
+    name: metadata.log_provider
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `operationVersion`::STRING\n            ELSE NULL\n             END"
+    name: metadata.log_version
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ to_timestamp(`time`::STRING,\n                                           \
+      \                        concat('yyyy-MM-dd',\n                            \
+      \                                         chr(39),\n                       \
+      \                                              'T',\n                      \
+      \                                               chr(39),\n                 \
+      \                                                    'HH:mm:ss.SSSSSSS',\n \
+      \                                                                    chr(39),\n\
+      \                                                                     'Z',\n\
+      \                                                                     chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: metadata.logged_time_dt
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ to_timestamp(`time`::STRING,\n                                           \
+      \                        concat('yyyy-MM-dd',\n                            \
+      \                                         chr(39),\n                       \
+      \                                              'T',\n                      \
+      \                                               chr(39),\n                 \
+      \                                                    'HH:mm:ss.SSSSSSS',\n \
+      \                                                                    chr(39),\n\
+      \                                                                     'Z',\n\
+      \                                                                     chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: metadata.logged_time
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`timeGenerated`::STRING\n            ELSE NULL\n            \
+      \ END"
+    name: metadata.original_time
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `tenantId`::STRING\n            ELSE NULL\n             END"
+    name: metadata.tenant_uid
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`requestId`::STRING\n            ELSE NULL\n             END"
+    name: metadata.uid
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ '1.0.0'\n            ELSE NULL\n             END"
+    name: metadata.version
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ CASE lower(`level`::STRING)\n                                            \
+      \                         WHEN 'informational' THEN 'Informational'\n      \
+      \                                                               WHEN 'verbose'\
+      \ THEN 'Low'\n                                                             \
+      \        WHEN 'low' THEN 'Low'\n                                           \
+      \                          WHEN 'warning' THEN 'Medium'\n                  \
+      \                                                   WHEN 'medium' THEN 'Medium'\n\
+      \                                                                     WHEN 'high'\
+      \ THEN 'High'\n                                                            \
+      \         WHEN 'error' THEN 'High'\n                                       \
+      \                              WHEN 'critical' THEN 'Critical'\n           \
+      \                                                          WHEN 'fatal' THEN\
+      \ 'Fatal'\n                                                                \
+      \     ELSE `level`::STRING\n                                               \
+      \                  END\n            ELSE NULL\n             END"
+    name: severity
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ CASE lower(`level`::STRING)\n                                            \
+      \                         WHEN 'informational' THEN 1\n                    \
+      \                                                 WHEN 'verbose' THEN 2\n  \
+      \                                                                   WHEN 'low'\
+      \ THEN 2\n                                                                 \
+      \    WHEN 'warning' THEN 3\n                                               \
+      \                      WHEN 'medium' THEN 3\n                              \
+      \                                       WHEN 'high' THEN 4\n               \
+      \                                                      WHEN 'error' THEN 4\n\
+      \                                                                     WHEN 'critical'\
+      \ THEN 5\n                                                                 \
+      \    WHEN 'fatal' THEN 6\n                                                 \
+      \                    ELSE 99\n                                             \
+      \                    END\n            ELSE NULL\n             END"
+    name: severity_id
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ to_timestamp(`time`::STRING,\n                                           \
+      \                        concat('yyyy-MM-dd',\n                            \
+      \                                         chr(39),\n                       \
+      \                                              'T',\n                      \
+      \                                               chr(39),\n                 \
+      \                                                    'HH:mm:ss.SSSSSSS',\n \
+      \                                                                    chr(39),\n\
+      \                                                                     'Z',\n\
+      \                                                                     chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: start_time_dt
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ TO_TIMESTAMP(`time`::STRING,\n                                           \
+      \                        concat('yyyy-MM-dd',\n                            \
+      \                                         chr(39),\n                       \
+      \                                              'T',\n                      \
+      \                                               chr(39),\n                 \
+      \                                                    'HH:mm:ss.SSSSSSS',\n \
+      \                                                                    chr(39),\n\
+      \                                                                     'Z',\n\
+      \                                                                     chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: start_time
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ CASE\n                                                                   \
+      \  WHEN `properties`.`responseStatusCode`::INT >= 200\n                    \
+      \                                                      AND `properties`.`responseStatusCode`::INT\
+      \ < 300 THEN 'Success'\n                                                   \
+      \                  WHEN `properties`.`responseStatusCode`::INT >= 400\n    \
+      \                                                                      AND `properties`.`responseStatusCode`::INT\
+      \ < 600 THEN 'Failure'\n                                                   \
+      \                  WHEN `properties`.`responseStatusCode`::INT IS NULL THEN\
+      \ 'Unknown'\n                                                              \
+      \       ELSE `resultSignature`::STRING\n                                   \
+      \                              END\n            ELSE NULL\n             END"
+    name: status
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `resultSignature`::STRING\n            ELSE NULL\n             END"
+    name: status_code
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `resultSignature`::STRING\n            ELSE NULL\n             END"
+    name: status_detail
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ CASE\n                                                                   \
+      \  WHEN `properties`.`responseStatusCode`::INT >= 200\n                    \
+      \                                                      AND `properties`.`responseStatusCode`::INT\
+      \ < 300 THEN 1\n                                                           \
+      \          WHEN `properties`.`responseStatusCode`::INT >= 400\n            \
+      \                                                              AND `properties`.`responseStatusCode`::INT\
+      \ < 600 THEN 2\n                                                           \
+      \          WHEN `properties`.`responseStatusCode`::INT IS NULL THEN 0\n    \
+      \                                                                 ELSE 99\n\
+      \                                                                 END\n    \
+      \        ELSE NULL\n             END"
+    name: status_id
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ to_timestamp(`time`::STRING,\n                                           \
+      \                        concat('yyyy-MM-dd',\n                            \
+      \                                         chr(39),\n                       \
+      \                                              'T',\n                      \
+      \                                               chr(39),\n                 \
+      \                                                    'HH:mm:ss.SSSSSSS',\n \
+      \                                                                    chr(39),\n\
+      \                                                                     'Z',\n\
+      \                                                                     chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: time_dt
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ to_timestamp(`time`::STRING,\n                                           \
+      \                        concat('yyyy-MM-dd',\n                            \
+      \                                         chr(39),\n                       \
+      \                                              'T',\n                      \
+      \                                               chr(39),\n                 \
+      \                                                    'HH:mm:ss.SSSSSSS',\n \
+      \                                                                    chr(39),\n\
+      \                                                                     'Z',\n\
+      \                                                                     chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: time
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ 0\n            ELSE NULL\n             END"
+    name: timezone_offset
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ CONCAT('api_activity.',\n                                                \
+      \                   CASE\n                                                 \
+      \                      WHEN `properties`.`requestMethod`::STRING = 'GET' THEN\
+      \ 'Read'\n                                                                 \
+      \      WHEN `properties`.`requestMethod`::STRING = 'POST' THEN 'Create'\n  \
+      \                                                                     WHEN `properties`.`requestMethod`::STRING\
+      \ IN ('PUT',\n                                                             \
+      \                                                   'PATCH') THEN 'Update'\n\
+      \                                                                       WHEN\
+      \ `properties`.`requestMethod`::STRING = 'DELETE' THEN 'Delete'\n          \
+      \                                                             ELSE `properties`.`requestMethod`::STRING\n\
+      \                                                                   END)\n \
+      \           ELSE NULL\n             END"
+    name: type_name
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ 6003 * 100 + CASE\n                                                      \
+      \                            WHEN `properties`.`requestMethod`::STRING = 'GET'\
+      \ THEN 2\n                                                                 \
+      \                 WHEN `properties`.`requestMethod`::STRING = 'POST' THEN 1\n\
+      \                                                                          \
+      \        WHEN `properties`.`requestMethod`::STRING IN ('PUT',\n            \
+      \                                                                          \
+      \                                          'PATCH') THEN 3\n               \
+      \                                                                   WHEN `properties`.`requestMethod`::STRING\
+      \ = 'DELETE' THEN 4\n                                                      \
+      \                            ELSE 99\n                                     \
+      \                                         END\n            ELSE NULL\n     \
+      \        END"
+    name: type_uid
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ NULLIF(`operationName`::STRING,\n                                        \
+      \                           '')\n            ELSE NULL\n             END"
+    name: api.operation
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`requestId`::STRING\n            ELSE NULL\n             END"
+    name: api.request.uid
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`responseStatusCode`::INT\n            ELSE NULL\n          \
+      \   END"
+    name: api.response.code
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ 'Microsoft Graph'\n            ELSE NULL\n             END"
+    name: api.service.name
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ regexp_extract(`properties`.`requestUri`::STRING,\n                      \
+      \                                             '^https?://([^/]+)',\n       \
+      \                                                            1)\n          \
+      \  ELSE NULL\n             END"
+    name: api.service.uid
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`apiVersion`::STRING\n            ELSE NULL\n             END"
+    name: api.service.version
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ coalesce(`properties`.`apiVersion`::STRING,\n                            \
+      \                                       `operationVersion`::STRING)\n      \
+      \      ELSE NULL\n             END"
+    name: api.version
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `tenantId`::STRING\n            ELSE NULL\n             END"
+    name: cloud.account.uid
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ 'Tenant'\n            ELSE NULL\n             END"
+    name: cloud.account.type
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ 99\n            ELSE NULL\n             END"
+    name: cloud.account.type_id
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ 'azure'\n            ELSE NULL\n             END"
+    name: cloud.cloud_partition
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ 'Azure'\n            ELSE NULL\n             END"
+    name: cloud.provider
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `location`::STRING\n            ELSE NULL\n             END"
+    name: cloud.region
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ NULLIF(`properties`.`appId`::STRING,\n                                   \
+      \                                '')\n            ELSE NULL\n             END"
+    name: actor.app_uid
+  - expr: 'CAST(NULL AS ARRAY<STRUCT<decision: STRING, policy: STRUCT<name: STRING, uid: STRING, desc: STRING, `group`: STRUCT<name: STRING, uid: STRING, desc: STRING, domain: STRING, privileges: ARRAY<STRING>, type: STRING>, is_applied: BOOLEAN, version: STRING>>>)'
+    name: actor.authorizations
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ CASE\n                                                                   \
+      \  WHEN `properties`.`identityProvider`::STRING IS NOT NULL\n              \
+      \                                                            AND `properties`.`identityProvider`::STRING\
+      \ != '' THEN regexp_extract(`properties`.`identityProvider`::STRING,\n     \
+      \                                                                          \
+      \                                                    'https?://([^/]+)',\n \
+      \                                                                          \
+      \                                                        1)\n              \
+      \                                                       ELSE NULL\n        \
+      \                                                         END\n            ELSE\
+      \ NULL\n             END"
+    name: actor.idp.name
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`__UDI_RequiredFields_TenantId`::STRING\n            ELSE NULL\n\
+      \             END"
+    name: actor.idp.uid
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ CASE\n                                                                   \
+      \  WHEN `properties`.`identityProvider`::STRING = '' THEN NULL\n           \
+      \                                                          ELSE regexp_extract(`properties`.`identityProvider`::STRING,\n\
+      \                                                                          \
+      \  'https?://([^/]+)',\n                                                   \
+      \                         1)\n                                             \
+      \                    END\n            ELSE NULL\n             END"
+    name: actor.idp.domain
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`identityProvider`::STRING\n            ELSE NULL\n         \
+      \    END"
+    name: actor.idp.issuer
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ CASE\n                                                                   \
+      \  WHEN `properties`.`identityProvider`::STRING = '' THEN 'Unknown'\n      \
+      \                                                               ELSE `properties`.`identityProvider`::STRING\n\
+      \                                                                 END\n    \
+      \        ELSE NULL\n             END"
+    name: actor.idp.state
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ CASE\n                                                                   \
+      \  WHEN `properties`.`identityProvider`::STRING = '' THEN 0\n              \
+      \                                                       ELSE 99\n          \
+      \                                                       END\n            ELSE\
+      \ NULL\n             END"
+    name: actor.idp.state_id
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`tenantId`::STRING\n            ELSE NULL\n             END"
+    name: actor.idp.tenant_uid
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`identityProvider`::STRING::string\n            ELSE NULL\n \
+      \            END"
+    name: actor.idp.url_string
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `operationName`::STRING::string\n            ELSE NULL\n             END"
+    name: actor.invoked_by
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ to_timestamp(from_unixtime(`properties`.`C_Iat`::BIGINT))\n            ELSE\
+      \ NULL\n             END"
+    name: actor.session.created_time_dt
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ to_timestamp(`properties`.`tokenIssuedAt`::STRING,\n                     \
+      \                                              concat('yyyy-MM-dd',\n      \
+      \                                                               chr(39),\n \
+      \                                                                    'T',\n\
+      \                                                                     chr(39),\n\
+      \                                                                     'HH:mm:ss.SSSSSSS',\n\
+      \                                                                     chr(39),\n\
+      \                                                                     'Z',\n\
+      \                                                                     chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: actor.session.created_time
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`identityProvider`::STRING\n            ELSE NULL\n         \
+      \    END"
+    name: actor.session.issuer
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ CASE\n                                                                   \
+      \  WHEN `properties`.`C_Sid`::STRING <> '' THEN `properties`.`C_Sid`::STRING\n\
+      \                                                                     ELSE `properties`.`signInActivityId`::STRING\n\
+      \                                                                 END\n    \
+      \        ELSE NULL\n             END"
+    name: actor.session.uid
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`signInActivityId`::STRING\n            ELSE NULL\n         \
+      \    END"
+    name: actor.session.uid_alt
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`C_Sid`::STRING\n            ELSE NULL\n             END"
+    name: actor.session.uuid
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`userId`::STRING\n            ELSE NULL\n             END"
+    name: actor.user.uid
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`__UDI_RequiredFields_TenantId`::STRING\n            ELSE NULL\n\
+      \             END"
+    name: actor.user.account.uid
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ 'Azure AD Tenant'\n            ELSE NULL\n             END"
+    name: actor.user.account.type
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ 99\n            ELSE NULL\n             END"
+    name: actor.user.account.type_id
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `tenantId`::STRING\n            ELSE NULL\n             END"
+    name: actor.user.org.uid
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`C_Idtyp`::STRING\n            ELSE NULL\n             END"
+    name: actor.user.type
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ 99\n            ELSE NULL\n             END"
+    name: actor.user.type_id
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`UserPrincipalObjectID`::STRING\n            ELSE NULL\n    \
+      \         END"
+    name: actor.user.uid_alt
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ 'Observed'\n            ELSE NULL\n             END"
+    name: action
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ 3\n            ELSE NULL\n             END"
+    name: action_id
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN CAST(NULL AS STRING)\n            ELSE CAST(NULL AS STRING)\n             END"
+    name: confidence
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ 0\n            ELSE NULL\n             END"
+    name: confidence_id
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ CASE\n                                                                   \
+      \  WHEN `properties`.`responseStatusCode`::INT < 400 THEN 'Allowed'\n      \
+      \                                                               WHEN `properties`.`responseStatusCode`::INT\
+      \ >= 400\n                                                                 \
+      \         AND `properties`.`responseStatusCode`::INT < 500 THEN 'Unauthorized'\n\
+      \                                                                     WHEN `properties`.`responseStatusCode`::INT\
+      \ >= 500 THEN 'Error'\n                                                    \
+      \                 ELSE 'Unknown'\n                                         \
+      \                        END\n            ELSE NULL\n             END"
+    name: disposition
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ CASE\n                                                                   \
+      \  WHEN `properties`.`responseStatusCode`::INT < 400 THEN 1\n              \
+      \                                                       WHEN `properties`.`responseStatusCode`::INT\
+      \ >= 400\n                                                                 \
+      \         AND `properties`.`responseStatusCode`::INT < 500 THEN 26\n       \
+      \                                                              WHEN `properties`.`responseStatusCode`::INT\
+      \ >= 500 THEN 27\n                                                         \
+      \            ELSE 0\n                                                      \
+      \           END\n            ELSE NULL\n             END"
+    name: disposition_id
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ CASE\n                                                                   \
+      \  WHEN locate('?',\n                                                      \
+      \                      `properties`.`requestUri`::STRING) > 0 THEN substr(`properties`.`requestUri`::STRING,\n\
+      \                                                                          \
+      \                                                locate('?',\n             \
+      \                                                                          \
+      \                                     `properties`.`requestUri`::STRING) + 1)\n\
+      \                                                                     ELSE NULL\n\
+      \                                                                 END\n    \
+      \        ELSE NULL\n             END"
+    name: http_request.args
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`requestMethod`::STRING\n            ELSE NULL\n            \
+      \ END"
+    name: http_request.http_method
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`requestId`::STRING\n            ELSE NULL\n             END"
+    name: http_request.uid
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ SPLIT_PART(SPLIT_PART(`properties`.`requestUri`::STRING,\n               \
+      \                                                               '://',\n   \
+      \                                                                          \
+      \ 2),\n                                                                   '/',\n\
+      \                                                                   1)\n   \
+      \         ELSE NULL\n             END"
+    name: http_request.url.domain
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ parse_url(`properties`.`requestUri`::STRING,\n                           \
+      \                                        'HOST')\n            ELSE NULL\n  \
+      \           END"
+    name: http_request.url.hostname
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ parse_url(`properties`.`requestUri`::STRING,\n                           \
+      \                                        'PATH')\n            ELSE NULL\n  \
+      \           END"
+    name: http_request.url.path
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ CAST(parse_url(`properties`.`requestUri`::STRING,\n                      \
+      \                                                  'PORT') AS INT)\n       \
+      \     ELSE NULL\n             END"
+    name: http_request.url.port
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ CASE\n                                                                   \
+      \  WHEN `properties`.`requestUri`::STRING LIKE '%?%' THEN substring(`properties`.`requestUri`::STRING,\n\
+      \                                                                          \
+      \                                                    locate('?',\n         \
+      \                                                                          \
+      \                                             `properties`.`requestUri`::STRING)\
+      \ + 1)\n                                                                   \
+      \  ELSE NULL\n                                                             \
+      \    END\n            ELSE NULL\n             END"
+    name: http_request.url.query_string
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ split(`properties`.`requestUri`::STRING,\n                               \
+      \                                    '://')[0]\n            ELSE NULL\n    \
+      \         END"
+    name: http_request.url.scheme
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ CASE\n                                                                   \
+      \  WHEN size(split(parse_url(`properties`.`requestUri`::STRING,\n          \
+      \                                                                          \
+      \   'HOST'),\n                                                             \
+      \                    '\\.')) > 2 THEN array_join(slice(split(parse_url(`properties`.`requestUri`::STRING,\n\
+      \                                                                          \
+      \                                                'HOST'),\n                \
+      \                                                                          \
+      \                          '\\.'),\n                                       \
+      \                                                                       1,\n\
+      \                                                                          \
+      \                                    size(split(parse_url(`properties`.`requestUri`::STRING,\n\
+      \                                                                          \
+      \                                                 'HOST'),\n               \
+      \                                                                          \
+      \                            '\\.')) - 2),\n                               \
+      \                                                                    '.')\n\
+      \                                                                     ELSE NULL\n\
+      \                                                                 END\n    \
+      \        ELSE NULL\n             END"
+    name: http_request.url.subdomain
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`requestUri`::STRING\n            ELSE NULL\n             END"
+    name: http_request.url.url_string
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`userAgent`::STRING\n            ELSE NULL\n             END"
+    name: http_request.user_agent
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`responseSizeBytes`::BIGINT::INT\n            ELSE NULL\n   \
+      \          END"
+    name: http_response.body_length
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`responseStatusCode`::INT\n            ELSE NULL\n          \
+      \   END"
+    name: http_response.code
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`durationMs`::BIGINT::INT\n            ELSE NULL\n          \
+      \   END"
+    name: http_response.latency
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ CAST(`properties`.`responseSizeBytes`::BIGINT AS INT)\n            ELSE NULL\n\
+      \             END"
+    name: http_response.length
+  - expr: 'CAST(NULL AS ARRAY<STRUCT<name:STRING,uid:STRING,data:VARIANT,labels:ARRAY<STRING>,tags:ARRAY<STRUCT<name:STRING,value:STRING,values:ARRAY<STRING>>>,type:STRING,data_classification:STRUCT<category:STRING,category_id:INT,classifier_details:STRUCT<name:STRING,type:STRING,uid:STRING>,confidentiality:STRING,confidentiality_id:INT,discovery_details:ARRAY<STRUCT<count:INT,occurrence_details:STRUCT<cell_name:STRING,column_name:STRING,column_number:INT,end_line:INT,json_path:STRING,page_number:INT,record_index_in_array:INT,row_number:INT,start_line:INT>,type:STRING,value:STRING>>,policy:STRUCT<name:STRING,uid:STRING,desc:STRING,`group`:STRUCT<name:STRING,uid:STRING,desc:STRING,domain:STRING,privileges:ARRAY<STRING>,type:STRING>,is_applied:BOOLEAN,version:STRING>,size:BIGINT,src_url:STRING,status:STRING,status_details:ARRAY<STRING>,status_id:INT,total:INT,uid:STRING>,data_classifications:ARRAY<STRUCT<category:STRING,category_id:INT,classifier_details:STRUCT<name:STRING,type:STRING,uid:STRING>,confidentiality:STRING,confidentiality_id:INT,discovery_details:ARRAY<STRUCT<count:INT,occurrence_details:STRUCT<cell_name:STRING,column_name:STRING,column_number:INT,end_line:INT,json_path:STRING,page_number:INT,record_index_in_array:INT,row_number:INT,start_line:INT>,type:STRING,value:STRING>>,policy:STRUCT<name:STRING,uid:STRING,desc:STRING,`group`:STRUCT<name:STRING,uid:STRING,desc:STRING,domain:STRING,privileges:ARRAY<STRING>,type:STRING>,is_applied:BOOLEAN,version:STRING>,size:BIGINT,src_url:STRING,status:STRING,status_details:ARRAY<STRING>,status_id:INT,total:INT,uid:STRING>>,agent_list:ARRAY<STRUCT<name:STRING,policies:ARRAY<STRUCT<name:STRING,uid:STRING,desc:STRING,`group`:STRUCT<name:STRING,uid:STRING,desc:STRING,domain:STRING,privileges:ARRAY<STRING>,type:STRING>,is_applied:BOOLEAN,version:STRING>>,type:STRING,type_id:INT,uid:STRING,uid_alt:STRING,vendor_name:STRING,version:STRING>>,cloud_partition:STRING,criticality:STRING,`group`:STRUCT<name:STRING,uid:STRING,desc:STRING,domain:STRING,privileges:ARRAY<STRING>,type:STRING>,hostname:STRING,ip:STRING,namespace:STRING,owner:STRUCT<name:STRING,uid:STRING,account:STRUCT<name:STRING,uid:STRING,labels:ARRAY<STRING>,tags:ARRAY<STRUCT<name:STRING,value:STRING,values:ARRAY<STRING>>>,type:STRING,type_id:INT>,credential_uid:STRING,domain:STRING,email_addr:STRING,forward_addr:STRING,full_name:STRING,groups:ARRAY<STRUCT<name:STRING,uid:STRING,desc:STRING,domain:STRING,privileges:ARRAY<STRING>,type:STRING>>,has_mfa:BOOLEAN,ldap_person:STRUCT<cost_center:STRING,created_time_dt:TIMESTAMP,created_time:TIMESTAMP,deleted_time_dt:TIMESTAMP,deleted_time:TIMESTAMP,email_addrs:ARRAY<STRING>,employee_uid:STRING,given_name:STRING,hire_time_dt:TIMESTAMP,hire_time:TIMESTAMP,job_title:STRING,labels:ARRAY<STRING>,last_login_time_dt:TIMESTAMP,last_login_time:TIMESTAMP,ldap_cn:STRING,ldap_dn:STRING,leave_time_dt:TIMESTAMP,leave_time:TIMESTAMP,location:STRUCT<aerial_height:STRING,city:STRING,continent:STRING,coordinates:ARRAY<FLOAT>,country:STRING,desc:STRING,geodetic_altitude:STRING,geodetic_vertical_accuracy:STRING,geohash:STRING,horizontal_accuracy:STRING,is_on_premises:BOOLEAN,isp:STRING,lat:FLOAT,long:FLOAT,postal_code:STRING,pressure_altitude:STRING,provider:STRING,region:STRING>,manager:VARIANT,modified_time_dt:TIMESTAMP,modified_time:TIMESTAMP,office_location:STRING,phone_number:STRING,surname:STRING,tags:ARRAY<STRUCT<name:STRING,value:STRING,values:ARRAY<STRING>>>>,org:STRUCT<name:STRING,uid:STRING,ou_name:STRING,ou_uid:STRING>,phone_number:STRING,risk_level:STRING,risk_level_id:INT,risk_score:INT,type:STRING,type_id:INT,uid_alt:STRING>,region:STRING,version:STRING>>)'
+    name: resources
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`ipAddress`::STRING\n            ELSE NULL\n             END"
+    name: src_endpoint.ip
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`userId`::STRING\n            ELSE NULL\n             END"
+    name: src_endpoint.owner.uid
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `tenantId`::STRING\n            ELSE NULL\n             END"
+    name: src_endpoint.owner.account.uid
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ CASE\n                                                                   \
+      \  WHEN `properties`.`roles`::STRING IS NULL\n                             \
+      \                                             OR trim(`properties`.`roles`::STRING)\
+      \ = '' THEN array()\n                                                      \
+      \               ELSE split(`properties`.`roles`::STRING,\n                 \
+      \                                                           ' ')\n         \
+      \                                                        END\n            ELSE\
+      \ NULL\n             END"
+    name: src_endpoint.owner.account.labels
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`C_Idtyp`::STRING\n            ELSE NULL\n             END"
+    name: src_endpoint.owner.account.type
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ 99\n            ELSE NULL\n             END"
+    name: src_endpoint.owner.account.type_id
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`tenantId`::STRING::string\n            ELSE NULL\n         \
+      \    END"
+    name: src_endpoint.owner.org.uid
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`tenantId`::STRING\n            ELSE NULL\n             END"
+    name: src_endpoint.owner.org.ou_uid
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`C_Idtyp`::STRING\n            ELSE NULL\n             END"
+    name: src_endpoint.owner.type
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ 99\n            ELSE NULL\n             END"
+    name: src_endpoint.owner.type_id
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`UserPrincipalObjectID`::STRING\n            ELSE NULL\n    \
+      \         END"
+    name: src_endpoint.owner.uid_alt
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ 'unknown'\n            ELSE NULL\n             END"
+    name: src_endpoint.type
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ 0\n            ELSE NULL\n             END"
+    name: src_endpoint.type_id
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`durationMs`::BIGINT::long\n            ELSE NULL\n         \
+      \    END"
+    name: trace.duration
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ timestampadd(MILLISECOND,\n                                              \
+      \                     `durationMs`::BIGINT,\n                              \
+      \                                     to_timestamp(`time`::STRING,\n       \
+      \                                                              concat('yyyy-MM-dd',\n\
+      \                                                                       chr(39),\n\
+      \                                                                       'T',\n\
+      \                                                                       chr(39),\n\
+      \                                                                       'HH:mm:ss.SSSSSSS',\n\
+      \                                                                       chr(39),\n\
+      \                                                                       'Z',\n\
+      \                                                                       chr(39))))\n\
+      \            ELSE NULL\n             END"
+    name: trace.end_time_dt
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ timestampadd(MILLISECOND,\n                                              \
+      \                     `durationMs`::BIGINT,\n                              \
+      \                                     to_timestamp(`time`::STRING,\n       \
+      \                                                              concat('yyyy-MM-dd',\n\
+      \                                                                       chr(39),\n\
+      \                                                                       'T',\n\
+      \                                                                       chr(39),\n\
+      \                                                                       'HH:mm:ss.SSSSSSS',\n\
+      \                                                                       chr(39),\n\
+      \                                                                       'Z',\n\
+      \                                                                       chr(39))))\n\
+      \            ELSE NULL\n             END"
+    name: trace.end_time
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `operationName`::STRING\n            ELSE NULL\n             END"
+    name: trace.service.name
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ parse_url(`properties`.`requestUri`::STRING,\n                           \
+      \                                        'HOST')\n            ELSE NULL\n  \
+      \           END"
+    name: trace.service.uid
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `operationVersion`::STRING\n            ELSE NULL\n             END"
+    name: trace.service.version
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`durationMs`::BIGINT\n            ELSE NULL\n             END"
+    name: trace.span.duration
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ timestampadd(MILLISECOND,\n                                              \
+      \                     `properties`.`durationMs`::BIGINT,\n                 \
+      \                                                  to_timestamp(`properties`.`timeGenerated`::STRING,\n\
+      \                                                                     concat('yyyy-MM-dd',\n\
+      \                                                                       chr(39),\n\
+      \                                                                       'T',\n\
+      \                                                                       chr(39),\n\
+      \                                                                       'HH:mm:ss.SSSSSSS',\n\
+      \                                                                       chr(39),\n\
+      \                                                                       'Z',\n\
+      \                                                                       chr(39))))\n\
+      \            ELSE NULL\n             END"
+    name: trace.span.end_time_dt
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ timestampadd(MILLISECOND,\n                                              \
+      \                     `properties`.`durationMs`::BIGINT,\n                 \
+      \                                                  to_timestamp(`properties`.`timeGenerated`::STRING,\n\
+      \                                                                     concat('yyyy-MM-dd',\n\
+      \                                                                       chr(39),\n\
+      \                                                                       'T',\n\
+      \                                                                       chr(39),\n\
+      \                                                                       'HH:mm:ss.SSSSSSS',\n\
+      \                                                                       chr(39),\n\
+      \                                                                       'Z',\n\
+      \                                                                       chr(39))))\n\
+      \            ELSE NULL\n             END"
+    name: trace.span.end_time
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `operationName`::STRING\n            ELSE NULL\n             END"
+    name: trace.span.operation
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `operationName`::STRING::string\n            ELSE NULL\n             END"
+    name: trace.span.service.name
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`appId`::STRING\n            ELSE NULL\n             END"
+    name: trace.span.service.uid
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `operationVersion`::STRING\n            ELSE NULL\n             END"
+    name: trace.span.service.version
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ to_timestamp(`properties`.`timeGenerated`::STRING,\n                     \
+      \                                              concat('yyyy-MM-dd',\n      \
+      \                                                               chr(39),\n \
+      \                                                                    'T',\n\
+      \                                                                     chr(39),\n\
+      \                                                                     'HH:mm:ss.SSSSSSS',\n\
+      \                                                                     chr(39),\n\
+      \                                                                     'Z',\n\
+      \                                                                     chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: trace.span.start_time_dt
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ to_timestamp(`properties`.`timeGenerated`::STRING,\n                     \
+      \                                              concat('yyyy-MM-dd',\n      \
+      \                                                               chr(39),\n \
+      \                                                                    'T',\n\
+      \                                                                     chr(39),\n\
+      \                                                                     'HH:mm:ss.SSSSSSS',\n\
+      \                                                                     chr(39),\n\
+      \                                                                     'Z',\n\
+      \                                                                     chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: trace.span.start_time
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `resultSignature`::STRING\n            ELSE NULL\n             END"
+    name: trace.span.status_code
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`requestId`::STRING\n            ELSE NULL\n             END"
+    name: trace.span.uid
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ to_timestamp(`time`::STRING,\n                                           \
+      \                        concat('yyyy-MM-dd',\n                            \
+      \                                         chr(39),\n                       \
+      \                                              'T',\n                      \
+      \                                               chr(39),\n                 \
+      \                                                    'HH:mm:ss.SSSSSSS',\n \
+      \                                                                    chr(39),\n\
+      \                                                                     'Z',\n\
+      \                                                                     chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: trace.start_time_dt
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ to_timestamp(`time`::STRING,\n                                           \
+      \                        concat('yyyy-MM-dd',\n                            \
+      \                                         chr(39),\n                       \
+      \                                              'T',\n                      \
+      \                                               chr(39),\n                 \
+      \                                                    'HH:mm:ss.SSSSSSS',\n \
+      \                                                                    chr(39),\n\
+      \                                                                     'Z',\n\
+      \                                                                     chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: trace.start_time
+  - expr: "CASE\n    WHEN category::string IN ('MicrosoftGraphActivityLogs') THEN\
+      \ `properties`.`requestId`::STRING\n            ELSE NULL\n             END"
+    name: trace.uid
+  input: entra_api_activity
+  name: api_activity
+iconURL: fillme
+name: fillme
+silver:
+  transform:
+  - fields:
+    - expr: '`location`::STRING'
+      name: location
+    - expr: '`properties`:[''appId'']::STRING'
+      name: properties.appId
+    - expr: '`properties`:[''tenantId'']::STRING'
+      name: properties.tenantId
+    - expr: '`properties`:[''location'']::STRING'
+      name: properties.location
+    - expr: '`properties`:[''ipAddress'']::STRING'
+      name: properties.ipAddress
+    - expr: '`properties`:[''userId'']::STRING'
+      name: properties.userId
+    - expr: '`properties`:[''userAgent'']::STRING'
+      name: properties.userAgent
+    - expr: '`resultSignature`::STRING'
+      name: resultSignature
+    - expr: 'TRANSFORM(`cribl_pipe`::ARRAY<VARIANT>, elem -> `elem`::STRING) '
+      name: cribl_pipe
+    - expr: '`category`::STRING'
+      name: category
+    - expr: '`operationName`::STRING'
+      name: operationName
+    - expr: '`resourceId`::STRING'
+      name: resourceId
+    - expr: '`tenantId`::STRING'
+      name: tenantId
+    - expr: '`index`::STRING'
+      name: index
+    - expr: '`sampled`::INT'
+      name: sampled
+    - expr: '`callerIpAddress`::STRING'
+      name: callerIpAddress
+    - expr: '`_time`::DOUBLE'
+      name: _time
+    - expr: '`sourcetype`::STRING'
+      name: sourcetype
+    - expr: '`correlationId`::STRING'
+      name: correlationId
+    - expr: '`durationMs`::BIGINT'
+      name: durationMs
+    - expr: '`operationVersion`::STRING'
+      name: operationVersion
+    - expr: '`time`::STRING'
+      name: time
+    filter: category::string IN ('NonInteractiveUserSignInLogs','ManagedIdentitySignInLogs','ServicePrincipalSignInLogs','SignInLogs')
+    name: entra_authentication
+  - fields:
+    - expr: '`properties`:[''tenantId'']::STRING'
+      name: properties.tenantId
+    - expr: '`resultSignature`::STRING'
+      name: resultSignature
+    - expr: 'TRANSFORM(`cribl_pipe`::ARRAY<VARIANT>, elem -> `elem`::STRING) '
+      name: cribl_pipe
+    - expr: '`category`::STRING'
+      name: category
+    - expr: '`operationName`::STRING'
+      name: operationName
+    - expr: '`resourceId`::STRING'
+      name: resourceId
+    - expr: '`tenantId`::STRING'
+      name: tenantId
+    - expr: '`index`::STRING'
+      name: index
+    - expr: '`sampled`::INT'
+      name: sampled
+    - expr: '`callerIpAddress`::STRING'
+      name: callerIpAddress
+    - expr: '`_time`::DOUBLE'
+      name: _time
+    - expr: '`sourcetype`::STRING'
+      name: sourcetype
+    - expr: '`correlationId`::STRING'
+      name: correlationId
+    - expr: '`durationMs`::BIGINT'
+      name: durationMs
+    - expr: '`operationVersion`::STRING'
+      name: operationVersion
+    - expr: '`time`::STRING'
+      name: time
+    filter: category::string IN ('ProvisioningLogs','AuditLogs')
+    name: entra_entity_management
+  - fields:
+    - expr: '`location`::STRING'
+      name: location
+    - expr: '`properties`:[''location'']::STRING'
+      name: properties.location
+    - expr: '`properties`:[''operationId'']::STRING'
+      name: properties.operationId
+    - expr: '`properties`:[''timeGenerated'']::STRING'
+      name: properties.timeGenerated
+    - expr: '`properties`:[''__UDI_RequiredFields_UniqueId'']::STRING'
+      name: properties.__UDI_RequiredFields_UniqueId
+    - expr: '`properties`:[''appId'']::STRING'
+      name: properties.appId
+    - expr: '`properties`:[''clientAuthMethod'']::STRING'
+      name: properties.clientAuthMethod
+    - expr: '`properties`:[''tenantId'']::STRING'
+      name: properties.tenantId
+    - expr: '`properties`:[''roles'']::STRING'
+      name: properties.roles
+    - expr: '`properties`:[''C_Sid'']::STRING'
+      name: properties.C_Sid
+    - expr: '`properties`:[''__UDI_RequiredFields_EventTime'']::BIGINT'
+      name: properties.__UDI_RequiredFields_EventTime
+    - expr: '`properties`:[''__UDI_RequiredFields_TenantId'']::STRING'
+      name: properties.__UDI_RequiredFields_TenantId
+    - expr: '`properties`:[''scopes'']::STRING'
+      name: properties.scopes
+    - expr: '`properties`:[''requestId'']::STRING'
+      name: properties.requestId
+    - expr: '`properties`:[''userAgent'']::STRING'
+      name: properties.userAgent
+    - expr: '`properties`:[''durationMs'']::BIGINT'
+      name: properties.durationMs
+    - expr: url_encode(`properties`:['requestUri']::STRING)
+      name: properties.requestUri
+    - expr: '`properties`:[''apiVersion'']::STRING'
+      name: properties.apiVersion
+    - expr: hex(unbase64(replace(replace(concat(`properties`:['signInActivityId']::STRING,repeat('=',(4
+        - length(`properties`:['signInActivityId']::STRING) % 4) % 4)),'-','+'),'_','/')))::string
+      name: properties.signInActivityId
+    - expr: '`properties`:[''C_DeviceId'']::STRING'
+      name: properties.C_DeviceId
+    - expr: '`properties`:[''identityProvider'']::STRING'
+      name: properties.identityProvider
+    - expr: '`properties`:[''tokenIssuedAt'']::STRING'
+      name: properties.tokenIssuedAt
+    - expr: '`properties`:[''clientRequestId'']::STRING'
+      name: properties.clientRequestId
+    - expr: '`properties`:[''ipAddress'']::STRING'
+      name: properties.ipAddress
+    - expr: '`properties`:[''__UDI_RequiredFields_RegionScope'']::STRING'
+      name: properties.__UDI_RequiredFields_RegionScope
+    - expr: '`properties`:[''userId'']::STRING'
+      name: properties.userId
+    - expr: '`properties`:[''responseSizeBytes'']::BIGINT'
+      name: properties.responseSizeBytes
+    - expr: '`properties`:[''C_Idtyp'']::STRING'
+      name: properties.C_Idtyp
+    - expr: '`properties`:[''responseStatusCode'']::INT'
+      name: properties.responseStatusCode
+    - expr: '`properties`:[''UserPrincipalObjectID'']::STRING'
+      name: properties.UserPrincipalObjectID
+    - expr: '`properties`:[''wids'']::STRING'
+      name: properties.wids
+    - expr: '`properties`:[''requestMethod'']::STRING'
+      name: properties.requestMethod
+    - expr: '`properties`:[''C_Iat'']::BIGINT'
+      name: properties.C_Iat
+    - expr: '`resultSignature`::STRING'
+      name: resultSignature
+    - expr: 'TRANSFORM(`cribl_pipe`::ARRAY<VARIANT>, elem -> `elem`::STRING) '
+      name: cribl_pipe
+    - expr: '`category`::STRING'
+      name: category
+    - expr: '`operationName`::STRING'
+      name: operationName
+    - expr: '`resourceId`::STRING'
+      name: resourceId
+    - expr: '`tenantId`::STRING'
+      name: tenantId
+    - expr: '`level`::STRING'
+      name: level
+    - expr: '`index`::STRING'
+      name: index
+    - expr: '`sampled`::INT'
+      name: sampled
+    - expr: '`callerIpAddress`::STRING'
+      name: callerIpAddress
+    - expr: '`_time`::DOUBLE'
+      name: _time
+    - expr: '`sourcetype`::STRING'
+      name: sourcetype
+    - expr: '`correlationId`::STRING'
+      name: correlationId
+    - expr: '`durationMs`::BIGINT'
+      name: durationMs
+    - expr: '`operationVersion`::STRING'
+      name: operationVersion
+    - expr: '`time`::STRING'
+      name: time
+    filter: category::string IN ('MicrosoftGraphActivityLogs')
+    name: entra_api_activity
+title: fillme
