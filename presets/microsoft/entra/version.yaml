@@ -1,0 +1,4 @@
+versions:
+  - versionNumber: 1
+    changes: Initial commit of Microsoft Entra preset
+    commit: 34f9eeae4b41bc273fce197f832629edd08849b2
