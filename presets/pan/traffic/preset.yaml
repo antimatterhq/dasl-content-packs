@@ -1,0 +1,1574 @@
+author: preset studio
+autoloader:
+  cloudFiles:
+    schemaHints: message STRING, severity INT, facility INT, host STRING, appname
+      STRING, procid STRING, msgid STRING, severityName STRING, facilityName STRING,
+      _time FLOAT, action STRING, action_source STRING, application STRING, application_category
+      STRING, application_container STRING, application_risk STRING, application_subcategory
+      STRING, application_technology STRING, bytes STRING, bytes_received STRING,
+      bytes_sent STRING, captive_portal STRING, config_version STRING, destination_address
+      STRING, destination_edl STRING, destination_location STRING, destination_port
+      STRING, device_name STRING, device_sn STRING, dg_hierarchy_level_1 STRING, dg_hierarchy_level_2
+      STRING, dg_hierarchy_level_3 STRING, dg_hierarchy_level_4 STRING, from_zone
+      STRING, http2_connection STRING, inbound_interface STRING, inbound_interface_details_port
+      STRING, inbound_interface_details_slot STRING, inbound_interface_details_type
+      STRING, is_client_to_server STRING, is_container STRING, is_decrypted STRING,
+      is_phishing STRING, is_prisma_network STRING, is_prisma_users STRING, is_proxy
+      STRING, is_saas_application STRING, is_server_to_client STRING, is_url_denied
+      STRING, log_setting STRING, log_type STRING, nat STRING, nat_destination STRING,
+      nat_destination_port STRING, nat_source STRING, nat_source_port STRING, non_standard_destination_port
+      STRING, outbound_interface STRING, outbound_interface_details_port STRING, outbound_interface_details_slot
+      STRING, outbound_interface_details_type STRING, packets_received STRING, packets_sent
+      STRING, packets_total STRING, panorama_sn STRING, protocol STRING, repeat_count
+      STRING, rule STRING, rule_uuid STRING, sanctioned_state_of_app STRING, sequence_no
+      STRING, session_duration STRING, session_end_reason STRING, session_id STRING,
+      session_start_time STRING, source_address STRING, source_location STRING, source_port
+      STRING, subtype STRING, time_generated STRING, time_generated_high_resolution
+      STRING, time_received STRING, to_zone STRING, url_category STRING, virtual_location
+      STRING, virtual_system_id STRING, virtual_system_name STRING, cribl_pipe STRING
+  format: json
+bronze: {}
+description: Palo Alto logs
+gold:
+- fields:
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'deny') THEN 6\n            WHEN subtype::string IN ('start')    \
+      \                                       THEN CASE\n                        \
+      \                       WHEN `subtype`::STRING = 'start' THEN 1\n          \
+      \                                     WHEN `subtype`::STRING = 'end' THEN 2\n\
+      \                                               ELSE 6\n                   \
+      \                        END\n            ELSE NULL\n             END"
+    name: activity_id
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'deny') THEN 'Traffic'\n            WHEN subtype::string IN ('start')\
+      \                                           THEN CASE\n                    \
+      \                           WHEN `subtype`::STRING = 'start' THEN 'Open'\n \
+      \                                              WHEN `subtype`::STRING = 'end'\
+      \ THEN 'Close'\n                                               ELSE 'Traffic'\n\
+      \                                           END\n            ELSE NULL\n   \
+      \          END"
+    name: activity_name
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN 'network'\n            ELSE NULL\n          \
+      \   END"
+    name: category_name
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN 4\n            ELSE NULL\n             END"
+    name: category_uid
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN 'network_activity'\n            ELSE NULL\n \
+      \            END"
+    name: class_name
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN 4001\n            ELSE NULL\n             END"
+    name: class_uid
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `repeat_count`::INT\n            ELSE NULL\n\
+      \             END"
+    name: count
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','start') THEN ((UNIX_MICROS(TO_TIMESTAMP(`time_generated_high_resolution`::STRING,\n\
+      \                                                                  concat('yyyy-MM-dd',\n\
+      \                                                                    chr(39),\n\
+      \                                                                    'T',\n\
+      \                                                                    chr(39),\n\
+      \                                                                    'HH:mm:ss.SSSSSSS',\n\
+      \                                                                    chr(39),\n\
+      \                                                                    'Z',\n\
+      \                                                                    chr(39))))\
+      \ - UNIX_MICROS(TO_TIMESTAMP(`session_start_time`::STRING,\n               \
+      \                                                                          \
+      \      concat('yyyy-MM-dd',\n                                              \
+      \                                                   chr(39),\n             \
+      \                                                                          \
+      \          'T',\n                                                          \
+      \                                       chr(39),\n                         \
+      \                                                                        'HH:mm:ss.SSSSSSS',\n\
+      \                                                                          \
+      \                       chr(39),\n                                         \
+      \                                                        'Z',\n            \
+      \                                                                          \
+      \           chr(39))))) / 1000)\n            WHEN subtype::string IN ('end','deny')\
+      \   THEN CAST(`session_duration`::BIGINT * 1000 AS BIGINT)\n            ELSE\
+      \ NULL\n             END"
+    name: duration
+  - expr: "CASE\n    WHEN subtype::string IN ('drop')       THEN timestampadd(SECOND,\n\
+      \                                            `session_duration`::BIGINT,\n \
+      \                                           to_timestamp(`session_start_time`::STRING,\n\
+      \                                              concat('yyyy-MM-dd',\n      \
+      \                                          chr(39),\n                      \
+      \                          'T',\n                                          \
+      \      chr(39),\n                                                'HH:mm:ss.SSSSSSS',\n\
+      \                                                chr(39),\n                \
+      \                                'Z',\n                                    \
+      \            chr(39))))\n            WHEN subtype::string IN ('end','deny')\
+      \ THEN TO_TIMESTAMP(`time_generated_high_resolution`::STRING,\n            \
+      \                                      concat('yyyy-MM-dd',\n              \
+      \                                      chr(39),\n                          \
+      \                          'T',\n                                          \
+      \          chr(39),\n                                                    'HH:mm:ss.SSSSSSS',\n\
+      \                                                    chr(39),\n            \
+      \                                        'Z',\n                            \
+      \                        chr(39)))\n            WHEN subtype::string IN ('start')\
+      \      THEN to_timestamp(`time_received`::STRING,\n                        \
+      \                     concat('yyyy-MM-dd',\n                               \
+      \                chr(39),\n                                               'T',\n\
+      \                                               chr(39),\n                 \
+      \                              'HH:mm:ss.SSSSSSS',\n                       \
+      \                        chr(39),\n                                        \
+      \       'Z',\n                                               chr(39)))\n   \
+      \         ELSE NULL\n             END"
+    name: end_time_dt
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'deny') THEN TO_TIMESTAMP(`time_generated_high_resolution`::STRING,\n\
+      \                                            concat('yyyy-MM-dd',\n        \
+      \                                      chr(39),\n                          \
+      \                    'T',\n                                              chr(39),\n\
+      \                                              'HH:mm:ss.SSSSSSS',\n       \
+      \                                       chr(39),\n                         \
+      \                     'Z',\n                                              chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: end_time
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `message`::STRING\n            ELSE NULL\n  \
+      \           END"
+    name: message
+  - expr: "CASE\n    WHEN subtype::string IN ('drop')                            \
+      \                 THEN `dasl_id`::STRING\n            WHEN subtype::string IN\
+      \ ('end','start',\n                             'deny') THEN `session_id`::BIGINT::string\n\
+      \            ELSE NULL\n             END"
+    name: metadata.correlation_uid
+  - expr: "CASE\n    WHEN subtype::string IN ('end','deny') THEN `log_type`::STRING\n\
+      \            WHEN subtype::string IN ('start')      THEN `msgid`::STRING\n \
+      \           ELSE NULL\n             END"
+    name: metadata.event_code
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN NULLIF(`severityName`::STRING,\n            \
+      \                                        '')\n            ELSE NULL\n      \
+      \       END"
+    name: metadata.log_level
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start') THEN `msgid`::STRING\n            WHEN subtype::string IN\
+      \ ('deny')                                             THEN `facilityName`::STRING::string\n\
+      \            ELSE NULL\n             END"
+    name: metadata.log_name
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'deny') THEN `msgid`::STRING\n            WHEN subtype::string IN\
+      \ ('start')                                           THEN `host`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: metadata.log_provider
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'deny') THEN to_timestamp(`time_received`::STRING,\n             \
+      \                               concat('yyyy-MM-dd',\n                     \
+      \                         chr(39),\n                                       \
+      \       'T',\n                                              chr(39),\n     \
+      \                                         'HH:mm:ss.SSSSSSS',\n            \
+      \                                  chr(39),\n                              \
+      \                'Z',\n                                              chr(39)))\n\
+      \            WHEN subtype::string IN ('start')                             \
+      \              THEN to_timestamp(`time_generated`::STRING,\n               \
+      \                              concat('yyyy-MM-dd',\n                      \
+      \                         chr(39),\n                                       \
+      \        'T',\n                                               chr(39),\n   \
+      \                                            'HH:mm:ss.SSSSSSS',\n         \
+      \                                      chr(39),\n                          \
+      \                     'Z',\n                                               chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: metadata.logged_time_dt
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN TO_TIMESTAMP(`time_received`::STRING,\n     \
+      \                                               concat('yyyy-MM-dd',\n     \
+      \                                                 chr(39),\n               \
+      \                                       'T',\n                             \
+      \                         chr(39),\n                                       \
+      \               'HH:mm:ss.SSSSSSS',\n                                      \
+      \                chr(39),\n                                                \
+      \      'Z',\n                                                      chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: metadata.logged_time
+  - expr: "CASE\n    WHEN subtype::string IN ('drop') THEN to_timestamp(`time_generated_high_resolution`::STRING,\n\
+      \                                            concat('yyyy-MM-dd',\n        \
+      \                                      chr(39),\n                          \
+      \                    'T',\n                                              chr(39),\n\
+      \                                              'HH:mm:ss.SSSSSSS',\n       \
+      \                                       chr(39),\n                         \
+      \                     'Z',\n                                              chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: metadata.modified_time_dt
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `time_generated_high_resolution`::STRING\n  \
+      \          ELSE NULL\n             END"
+    name: metadata.original_time
+  - expr: "CASE\n    WHEN subtype::string IN ('end','deny') THEN TO_TIMESTAMP(FROM_UNIXTIME(`_time`::DOUBLE))\n\
+      \            ELSE NULL\n             END"
+    name: metadata.processed_time_dt
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','start') THEN current_timestamp()\n\
+      \            WHEN subtype::string IN ('end','deny')   THEN to_timestamp(from_unixtime(`_time`::DOUBLE))\n\
+      \            ELSE NULL\n             END"
+    name: metadata.processed_time
+  - expr: "CASE\n    WHEN subtype::string IN ('start','deny') THEN NULLIF(`device_name`::STRING,\n\
+      \                                                    '')\n            ELSE NULL\n\
+      \             END"
+    name: metadata.product.name
+  - expr: "CASE\n    WHEN subtype::string IN ('start','deny') THEN `device_sn`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: metadata.product.uid
+  - expr: "CASE\n    WHEN subtype::string IN ('start','deny') THEN `log_type`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: metadata.product.feature.name
+  - expr: "CASE\n    WHEN subtype::string IN ('deny') THEN `log_type`::STRING\n  \
+      \          ELSE NULL\n             END"
+    name: metadata.product.feature.uid
+  - expr: "CASE\n    WHEN subtype::string IN ('start') THEN `config_version`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: metadata.product.feature.version
+  - expr: "CASE\n    WHEN subtype::string IN ('start','deny') THEN 'Palo Alto Networks'\n\
+      \            ELSE NULL\n             END"
+    name: metadata.product.vendor_name
+  - expr: "CASE\n    WHEN subtype::string IN ('start','deny') THEN `config_version`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: metadata.product.version
+  - expr: 'CAST(NULL AS ARRAY<STRUCT<name:STRING,value:STRING,values:ARRAY<STRING>>>)'
+    name: metadata.tags
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN '1.0.0'\n            ELSE NULL\n            \
+      \ END"
+    name: metadata.version
+  - expr: 'CAST(NULL AS ARRAY<STRUCT<name:STRING,reputation:STRUCT<base_score:FLOAT,provider:STRING,score:STRING,score_id:INT>,type:STRING,type_id:INT,value:STRING>>)'
+    name: observables
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `message`::STRING\n            ELSE NULL\n  \
+      \           END"
+    name: raw_data
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'deny') THEN CASE\n                                              WHEN\
+      \ LOWER(`severityName`::STRING) IN ('debug',\n                             \
+      \                                                        'info') THEN 'Informational'\n\
+      \                                              WHEN LOWER(`severityName`::STRING)\
+      \ = 'notice' THEN 'Low'\n                                              WHEN\
+      \ LOWER(`severityName`::STRING) = 'warning' THEN 'Medium'\n                \
+      \                              WHEN LOWER(`severityName`::STRING) IN ('err',\n\
+      \                                                                          \
+      \           'error') THEN 'High'\n                                         \
+      \     WHEN LOWER(`severityName`::STRING) IN ('crit',\n                     \
+      \                                                                'critical',\n\
+      \                                                                          \
+      \           'alert') THEN 'Critical'\n                                     \
+      \         WHEN LOWER(`severityName`::STRING) IN ('emerg',\n                \
+      \                                                                     'emergency')\
+      \ THEN 'Fatal'\n                                              ELSE `severityName`::STRING\n\
+      \                                          END\n            WHEN subtype::string\
+      \ IN ('start')                                           THEN CASE\n       \
+      \                                        WHEN LOWER(`severityName`::STRING)\
+      \ IN ('debug',\n                                                           \
+      \                           'info') THEN 'Informational'\n                 \
+      \                              WHEN LOWER(`severityName`::STRING) = 'notice'\
+      \ THEN 'Low'\n                                               WHEN LOWER(`severityName`::STRING)\
+      \ = 'warning' THEN 'Medium'\n                                              \
+      \ WHEN LOWER(`severityName`::STRING) IN ('err',\n                          \
+      \                                                            'error') THEN 'High'\n\
+      \                                               WHEN LOWER(`severityName`::STRING)\
+      \ IN ('crit',\n                                                            \
+      \                          'critical',\n                                   \
+      \                                                   'alert') THEN 'Critical'\n\
+      \                                               WHEN LOWER(`severityName`::STRING)\
+      \ IN ('emerg',\n                                                           \
+      \                           'emergency') THEN 'Fatal'\n                    \
+      \                           ELSE 'Unknown'\n                               \
+      \            END\n            ELSE NULL\n             END"
+    name: severity
+  - expr: "CASE\n    WHEN subtype::string IN ('drop')  THEN CASE\n               \
+      \                               WHEN LOWER(`severityName`::STRING) IN ('debug',\n\
+      \                                                                          \
+      \           'info') THEN 1\n                                              WHEN\
+      \ LOWER(`severityName`::STRING) = 'notice' THEN 2\n                        \
+      \                      WHEN LOWER(`severityName`::STRING) = 'warning' THEN 3\n\
+      \                                              WHEN LOWER(`severityName`::STRING)\
+      \ IN ('err',\n                                                             \
+      \                        'error') THEN 4\n                                 \
+      \             WHEN LOWER(`severityName`::STRING) IN ('crit',\n             \
+      \                                                                        'critical',\n\
+      \                                                                          \
+      \           'alert') THEN 5\n                                              WHEN\
+      \ LOWER(`severityName`::STRING) IN ('emerg',\n                             \
+      \                                                        'emergency') THEN 6\n\
+      \                                              ELSE 99\n                   \
+      \                       END\n            WHEN subtype::string IN ('end')   THEN\
+      \ CASE\n                                             WHEN LOWER(`severityName`::STRING)\
+      \ = 'info' THEN 1\n                                             WHEN LOWER(`severityName`::STRING)\
+      \ = 'low' THEN 2\n                                             WHEN LOWER(`severityName`::STRING)\
+      \ = 'medium' THEN 3\n                                             WHEN LOWER(`severityName`::STRING)\
+      \ = 'high' THEN 4\n                                             WHEN LOWER(`severityName`::STRING)\
+      \ = 'critical' THEN 5\n                                             WHEN LOWER(`severityName`::STRING)\
+      \ = 'fatal' THEN 6\n                                             ELSE 99\n \
+      \                                        END\n            WHEN subtype::string\
+      \ IN ('start') THEN CASE\n                                               WHEN\
+      \ LOWER(`severityName`::STRING) IN ('debug',\n                             \
+      \                                                         'info') THEN 1\n \
+      \                                              WHEN LOWER(`severityName`::STRING)\
+      \ = 'notice' THEN 2\n                                               WHEN LOWER(`severityName`::STRING)\
+      \ = 'warning' THEN 3\n                                               WHEN LOWER(`severityName`::STRING)\
+      \ = 'error' THEN 4\n                                               WHEN LOWER(`severityName`::STRING)\
+      \ IN ('critical',\n                                                        \
+      \                              'crit') THEN 5\n                            \
+      \                   WHEN LOWER(`severityName`::STRING) = 'alert' THEN 6\n  \
+      \                                             WHEN LOWER(`severityName`::STRING)\
+      \ IN ('emerg',\n                                                           \
+      \                           'emergency') THEN 6\n                          \
+      \                     ELSE 0\n                                           END\n\
+      \            WHEN subtype::string IN ('deny')  THEN CASE\n                 \
+      \                             WHEN LOWER(`severityName`::STRING) = 'info' THEN\
+      \ 1\n                                              WHEN LOWER(`severityName`::STRING)\
+      \ = 'notice' THEN 2\n                                              WHEN LOWER(`severityName`::STRING)\
+      \ = 'warning' THEN 3\n                                              WHEN LOWER(`severityName`::STRING)\
+      \ IN ('err',\n                                                             \
+      \                        'error') THEN 4\n                                 \
+      \             WHEN LOWER(`severityName`::STRING) IN ('crit',\n             \
+      \                                                                        'critical')\
+      \ THEN 5\n                                              WHEN LOWER(`severityName`::STRING)\
+      \ IN ('alert',\n                                                           \
+      \                          'emerg',\n                                      \
+      \                                               'emergency') THEN 6\n      \
+      \                                        WHEN LOWER(`severityName`::STRING)\
+      \ = 'debug' THEN 0\n                                              ELSE 99\n\
+      \                                          END\n            ELSE NULL\n    \
+      \         END"
+    name: severity_id
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN TO_TIMESTAMP(`session_start_time`::STRING,\n\
+      \                                                    concat('yyyy-MM-dd',\n\
+      \                                                      chr(39),\n          \
+      \                                            'T',\n                        \
+      \                              chr(39),\n                                  \
+      \                    'HH:mm:ss.SSSSSSS',\n                                 \
+      \                     chr(39),\n                                           \
+      \           'Z',\n                                                      chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: start_time_dt
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN to_timestamp(`session_start_time`::STRING,\n\
+      \                                                    concat('yyyy-MM-dd',\n\
+      \                                                      chr(39),\n          \
+      \                                            'T',\n                        \
+      \                              chr(39),\n                                  \
+      \                    'HH:mm:ss.SSSSSSS',\n                                 \
+      \                     chr(39),\n                                           \
+      \           'Z',\n                                                      chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: start_time
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start') THEN CASE\n                                             \
+      \  WHEN `action`::STRING = 'allow' THEN 'Success'\n                        \
+      \                       WHEN `action`::STRING = 'deny' THEN 'Failure'\n    \
+      \                                           ELSE `action`::STRING\n        \
+      \                                   END\n            WHEN subtype::string IN\
+      \ ('deny')                                             THEN 'Failure'\n    \
+      \        ELSE NULL\n             END"
+    name: status
+  - expr: "CASE\n    WHEN subtype::string IN ('deny') THEN `session_end_reason`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: status_code
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `session_end_reason`::STRING\n            ELSE\
+      \ NULL\n             END"
+    name: status_detail
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start') THEN CASE\n                                             \
+      \  WHEN `action`::STRING = 'allow' THEN 1\n                                \
+      \               WHEN `action`::STRING = 'deny' THEN 2\n                    \
+      \                           ELSE 99\n                                      \
+      \     END\n            WHEN subtype::string IN ('deny')                    \
+      \                         THEN 2\n            ELSE NULL\n             END"
+    name: status_id
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN TO_TIMESTAMP(`time_generated_high_resolution`::STRING,\n\
+      \                                                    concat('yyyy-MM-dd',\n\
+      \                                                      chr(39),\n          \
+      \                                            'T',\n                        \
+      \                              chr(39),\n                                  \
+      \                    'HH:mm:ss.SSSSSSS',\n                                 \
+      \                     chr(39),\n                                           \
+      \           'Z',\n                                                      chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: time_dt
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN to_timestamp(`time_generated_high_resolution`::STRING,\n\
+      \                                                    concat('yyyy-MM-dd',\n\
+      \                                                      chr(39),\n          \
+      \                                            'T',\n                        \
+      \                              chr(39),\n                                  \
+      \                    'HH:mm:ss.SSSSSSS',\n                                 \
+      \                     chr(39),\n                                           \
+      \           'Z',\n                                                      chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: time
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN 0\n            ELSE NULL\n             END"
+    name: timezone_offset
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'deny') THEN 'network_activity.Traffic'\n            WHEN subtype::string\
+      \ IN ('start')                                           THEN 'network_activity'\n\
+      \            ELSE NULL\n             END"
+    name: type_name
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'deny') THEN 400106\n            WHEN subtype::string IN ('start')\
+      \                                           THEN 4001 * 100 + CASE\n       \
+      \                                                     WHEN `subtype`::STRING\
+      \ = 'start' THEN 1\n                                                       \
+      \     WHEN `subtype`::STRING = 'end' THEN 2\n                              \
+      \                              ELSE 6\n                                    \
+      \                    END\n            ELSE NULL\n             END"
+    name: type_uid
+  - expr: "CASE\n    WHEN subtype::string IN ('drop')         THEN `appname`::STRING\n\
+      \            WHEN subtype::string IN ('start','deny') THEN `application`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: actor.app_name
+  - expr: 'CAST(NULL AS ARRAY<STRUCT<decision:STRING,policy:STRUCT<name:STRING,uid:STRING,desc:STRING,group:STRUCT<name:STRING,uid:STRING,desc:STRING,domain:STRING,privileges:ARRAY<STRING>,type:STRING>,is_applied:BOOLEAN,version:STRING>>>)'
+    name: actor.authorizations
+  - expr: "CASE\n    WHEN subtype::string IN ('deny') THEN `appname`::STRING\n   \
+      \         ELSE NULL\n             END"
+    name: actor.process.name
+  - expr: "CASE\n    WHEN subtype::string IN ('deny') THEN ''\n            ELSE NULL\n\
+      \             END"
+    name: actor.process.cmd_line
+  - expr: "CASE\n    WHEN subtype::string IN ('deny') THEN to_timestamp(`time_generated_high_resolution`::STRING,\n\
+      \                                            concat('yyyy-MM-dd',\n        \
+      \                                      chr(39),\n                          \
+      \                    'T',\n                                              chr(39),\n\
+      \                                              'HH:mm:ss.SSSSSSS',\n       \
+      \                                       chr(39),\n                         \
+      \                     'Z',\n                                              chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: actor.process.created_time_dt
+  - expr: "CASE\n    WHEN subtype::string IN ('deny') THEN TRY_CAST(`procid`::STRING\
+      \ AS INT)\n            ELSE NULL\n             END"
+    name: actor.process.pid
+  - expr: "CASE\n    WHEN subtype::string IN ('deny') THEN to_timestamp(`session_start_time`::STRING,\n\
+      \                                            concat('yyyy-MM-dd',\n        \
+      \                                      chr(39),\n                          \
+      \                    'T',\n                                              chr(39),\n\
+      \                                              'HH:mm:ss.SSSSSSS',\n       \
+      \                                       chr(39),\n                         \
+      \                     'Z',\n                                              chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: actor.process.session.created_time_dt
+  - expr: "CASE\n    WHEN subtype::string IN ('deny') THEN to_timestamp(`session_start_time`::STRING,\n\
+      \                                            concat('yyyy-MM-dd',\n        \
+      \                                      chr(39),\n                          \
+      \                    'T',\n                                              chr(39),\n\
+      \                                              'HH:mm:ss.SSSSSSS',\n       \
+      \                                       chr(39),\n                         \
+      \                     'Z',\n                                              chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: actor.process.session.created_time
+  - expr: "CASE\n    WHEN subtype::string IN ('deny') THEN `session_end_reason`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: actor.process.session.expiration_reason
+  - expr: "CASE\n    WHEN subtype::string IN ('deny') THEN to_timestamp(`time_generated_high_resolution`::STRING,\n\
+      \                                            concat('yyyy-MM-dd',\n        \
+      \                                      chr(39),\n                          \
+      \                    'T',\n                                              chr(39),\n\
+      \                                              'HH:mm:ss.SSSSSSS',\n       \
+      \                                       chr(39),\n                         \
+      \                     'Z',\n                                              chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: actor.process.session.expiration_time
+  - expr: "CASE\n    WHEN subtype::string IN ('deny') THEN CAST(`session_id`::BIGINT\
+      \ AS STRING)\n            ELSE NULL\n             END"
+    name: actor.process.session.uid
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','start',\n                  \
+      \           'deny') THEN `repeat_count`::INT\n            ELSE NULL\n      \
+      \       END"
+    name: actor.session.count
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','start',\n                  \
+      \           'deny') THEN to_timestamp(`session_start_time`::STRING,\n      \
+      \                                      concat('yyyy-MM-dd',\n              \
+      \                                chr(39),\n                                \
+      \              'T',\n                                              chr(39),\n\
+      \                                              'HH:mm:ss.SSSSSSS',\n       \
+      \                                       chr(39),\n                         \
+      \                     'Z',\n                                              chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: actor.session.created_time_dt
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','start',\n                  \
+      \           'deny') THEN TO_TIMESTAMP(`session_start_time`::STRING,\n      \
+      \                                      concat('yyyy-MM-dd',\n              \
+      \                                chr(39),\n                                \
+      \              'T',\n                                              chr(39),\n\
+      \                                              'HH:mm:ss.SSSSSSS',\n       \
+      \                                       chr(39),\n                         \
+      \                     'Z',\n                                              chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: actor.session.created_time
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','start',\n                  \
+      \           'deny') THEN `session_end_reason`::STRING\n            ELSE NULL\n\
+      \             END"
+    name: actor.session.expiration_reason
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','deny') THEN timestampadd(SECOND,\n\
+      \                                                   `session_duration`::BIGINT,\n\
+      \                                                   to_timestamp(`session_start_time`::STRING,\n\
+      \                                                     concat('yyyy-MM-dd',\n\
+      \                                                       chr(39),\n         \
+      \                                              'T',\n                      \
+      \                                 chr(39),\n                               \
+      \                        'HH:mm:ss.SSSSSSS',\n                             \
+      \                          chr(39),\n                                      \
+      \                 'Z',\n                                                   \
+      \    chr(39))))\n            ELSE NULL\n             END"
+    name: actor.session.expiration_time_dt
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','deny') THEN TIMESTAMPADD(SECOND,\n\
+      \                                                   `session_duration`::BIGINT,\n\
+      \                                                   TO_TIMESTAMP(`session_start_time`::STRING,\n\
+      \                                                     concat('yyyy-MM-dd',\n\
+      \                                                       chr(39),\n         \
+      \                                              'T',\n                      \
+      \                                 chr(39),\n                               \
+      \                        'HH:mm:ss.SSSSSSS',\n                             \
+      \                          chr(39),\n                                      \
+      \                 'Z',\n                                                   \
+      \    chr(39))))\n            ELSE NULL\n             END"
+    name: actor.session.expiration_time
+  - expr: "CASE\n    WHEN subtype::string IN ('drop') THEN `is_client_to_server`::BOOLEAN\n\
+      \            ELSE NULL\n             END"
+    name: actor.session.is_remote
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','start',\n                  \
+      \           'deny') THEN CAST(`session_id`::BIGINT AS STRING)\n            ELSE\
+      \ NULL\n             END"
+    name: actor.session.uid
+  - expr: "CASE\n    WHEN subtype::string IN ('deny') THEN `session_id`::BIGINT::string\n\
+      \            ELSE NULL\n             END"
+    name: actor.session.uuid
+  - expr: "CASE\n    WHEN subtype::string IN ('drop')        THEN CASE\n         \
+      \                                     WHEN LOWER(`action`::STRING) IN ('allow',\n\
+      \                                                                          \
+      \     'allowed',\n                                                         \
+      \                      'permit') THEN 'Allowed'\n                          \
+      \                    WHEN LOWER(`action`::STRING) IN ('deny',\n            \
+      \                                                                   'drop',\n\
+      \                                                                          \
+      \     'blocked',\n                                                         \
+      \                      'reject') THEN 'Denied'\n                           \
+      \                   WHEN LOWER(`action`::STRING) IN ('observe',\n          \
+      \                                                                     'observed',\n\
+      \                                                                          \
+      \     'log',\n                                                             \
+      \                  'logged') THEN 'Observed'\n                             \
+      \                 WHEN LOWER(`action`::STRING) IN ('modified',\n           \
+      \                                                                    'altered',\n\
+      \                                                                          \
+      \     'changed') THEN 'Modified'\n                                         \
+      \     ELSE `action`::STRING\n                                          END\n\
+      \            WHEN subtype::string IN ('end','start') THEN CASE\n           \
+      \                                          WHEN LOWER(`action`::STRING) IN ('allow',\n\
+      \                                                                          \
+      \            'allowed',\n                                                  \
+      \                                    'permit') THEN 'Allowed'\n            \
+      \                                         WHEN LOWER(`action`::STRING) IN ('deny',\n\
+      \                                                                          \
+      \            'drop',\n                                                     \
+      \                                 'blocked',\n                             \
+      \                                                         'reject') THEN 'Denied'\n\
+      \                                                     ELSE `action`::STRING\n\
+      \                                                 END\n            WHEN subtype::string\
+      \ IN ('deny')        THEN CASE\n                                           \
+      \   WHEN LOWER(`action`::STRING) IN ('deny',\n                             \
+      \                                                  'reset-both',\n         \
+      \                                                                      'drop',\n\
+      \                                                                          \
+      \     'blocked',\n                                                         \
+      \                      'reject') THEN 'Denied'\n                           \
+      \                   ELSE `action`::STRING\n                                \
+      \          END\n            ELSE NULL\n             END"
+    name: action
+  - expr: "CASE\n    WHEN subtype::string IN ('drop')        THEN CASE\n         \
+      \                                     WHEN LOWER(`action`::STRING) IN ('allow',\n\
+      \                                                                          \
+      \     'allowed',\n                                                         \
+      \                      'permit') THEN 1\n                                  \
+      \            WHEN LOWER(`action`::STRING) IN ('deny',\n                    \
+      \                                                           'drop',\n      \
+      \                                                                         'blocked',\n\
+      \                                                                          \
+      \     'reject') THEN 2\n                                              WHEN LOWER(`action`::STRING)\
+      \ IN ('observe',\n                                                         \
+      \                      'observed',\n                                       \
+      \                                        'log',\n                          \
+      \                                                     'logged') THEN 3\n   \
+      \                                           WHEN LOWER(`action`::STRING) IN\
+      \ ('modified',\n                                                           \
+      \                    'altered',\n                                          \
+      \                                     'changed') THEN 4\n                  \
+      \                            ELSE 99\n                                     \
+      \     END\n            WHEN subtype::string IN ('end','start') THEN CASE\n \
+      \                                                    WHEN LOWER(`action`::STRING)\
+      \ = 'allow' THEN 1\n                                                     WHEN\
+      \ LOWER(`action`::STRING) = 'deny' THEN 2\n                                \
+      \                     ELSE 99\n                                            \
+      \     END\n            WHEN subtype::string IN ('deny')        THEN CASE\n \
+      \                                             WHEN LOWER(`action`::STRING) IN\
+      \ ('deny',\n                                                               \
+      \                'reset-both') THEN 2\n                                    \
+      \          ELSE 99\n                                          END\n        \
+      \    ELSE NULL\n             END"
+    name: action_id
+  - expr: 'CAST(NULL AS ARRAY<STRUCT<decision:STRING,policy:STRUCT<name:STRING,uid:STRING,desc:STRING,group:STRUCT<name:STRING,uid:STRING,desc:STRING,domain:STRING,privileges:ARRAY<STRING>,type:STRING>,is_applied:BOOLEAN,version:STRING>>>)'
+    name: authorizations
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','start',\n                  \
+      \           'deny') THEN 'Unknown'\n            WHEN subtype::string IN ('end')\
+      \                                               THEN CASE\n                \
+      \                             WHEN `application_risk`::INT IS NULL THEN 'Unknown'\n\
+      \                                             WHEN `application_risk`::INT =\
+      \ 1 THEN 'Low'\n                                             WHEN `application_risk`::INT\
+      \ = 2 THEN 'Medium'\n                                             WHEN `application_risk`::INT\
+      \ = 3 THEN 'High'\n                                             ELSE CAST(`application_risk`::INT\
+      \ AS STRING)\n                                         END\n            ELSE\
+      \ NULL\n             END"
+    name: confidence
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','start',\n                  \
+      \           'deny') THEN 0\n            WHEN subtype::string IN ('end')    \
+      \                                           THEN CASE\n                    \
+      \                         WHEN `application_risk`::INT IS NULL THEN 0\n    \
+      \                                         WHEN `application_risk`::INT = 1 THEN\
+      \ 1\n                                             WHEN `application_risk`::INT\
+      \ = 2 THEN 2\n                                             WHEN `application_risk`::INT\
+      \ = 3 THEN 3\n                                             ELSE 99\n       \
+      \                                  END\n            ELSE NULL\n            \
+      \ END"
+    name: confidence_id
+  - expr: "CASE\n    WHEN subtype::string IN ('drop')        THEN CASE\n         \
+      \                                     WHEN `subtype`::STRING = 'drop' THEN 'Dropped'\n\
+      \                                              WHEN `subtype`::STRING = 'reset'\
+      \ THEN 'Reset'\n                                              WHEN `action`::STRING\
+      \ = 'allow' THEN 'Allowed'\n                                              ELSE\
+      \ COALESCE(`subtype`::STRING,\n                                            \
+      \         `action`::STRING)\n                                          END\n\
+      \            WHEN subtype::string IN ('end','start') THEN CASE\n           \
+      \                                          WHEN `action`::STRING = 'allow' THEN\
+      \ 'Allowed'\n                                                     WHEN `action`::STRING\
+      \ = 'deny' THEN 'Blocked'\n                                                \
+      \     ELSE `action`::STRING\n                                              \
+      \   END\n            WHEN subtype::string IN ('deny')        THEN CASE\n   \
+      \                                           WHEN LOWER(`action`::STRING) = 'reset-both'\
+      \ THEN 'Reset'\n                                              WHEN LOWER(`action`::STRING)\
+      \ = 'deny' THEN 'Blocked'\n                                              ELSE\
+      \ `action`::STRING\n                                          END\n        \
+      \    ELSE NULL\n             END"
+    name: disposition
+  - expr: "CASE\n    WHEN subtype::string IN ('drop')  THEN CASE\n               \
+      \                               WHEN `subtype`::STRING = 'drop' THEN 6\n   \
+      \                                           WHEN `subtype`::STRING = 'reset'\
+      \ THEN 21\n                                              WHEN `action`::STRING\
+      \ = 'allow' THEN 1\n                                              ELSE 99\n\
+      \                                          END\n            WHEN subtype::string\
+      \ IN ('end')   THEN CASE\n                                             WHEN\
+      \ `action`::STRING = 'allow' THEN 1\n                                      \
+      \       WHEN `action`::STRING = 'deny' THEN 2\n                            \
+      \                 ELSE 99\n                                         END\n  \
+      \          WHEN subtype::string IN ('start') THEN CASE\n                   \
+      \                            WHEN `action`::STRING = 'allow' THEN 1\n      \
+      \                                         WHEN `action`::STRING = 'deny' THEN\
+      \ 2\n                                               ELSE 0\n               \
+      \                            END\n            WHEN subtype::string IN ('deny')\
+      \  THEN CASE\n                                              WHEN LOWER(`action`::STRING)\
+      \ = 'reset-both' THEN 21\n                                              WHEN\
+      \ LOWER(`action`::STRING) = 'deny' THEN 2\n                                \
+      \              ELSE 99\n                                          END\n    \
+      \        ELSE NULL\n             END"
+    name: disposition_id
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `rule`::STRING\n            ELSE NULL\n     \
+      \        END"
+    name: firewall_rule.name
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `rule_uuid`::STRING\n            ELSE NULL\n\
+      \             END"
+    name: firewall_rule.uid
+  - expr: "CASE\n    WHEN subtype::string IN ('drop') THEN FALSE\n            ELSE\
+      \ NULL\n             END"
+    name: is_alert
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `rule`::STRING\n            ELSE NULL\n     \
+      \        END"
+    name: policy.name
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `rule_uuid`::STRING\n            ELSE NULL\n\
+      \             END"
+    name: policy.uid
+  - expr: "CASE\n    WHEN subtype::string IN ('drop') THEN CASE\n                \
+      \                              WHEN `action_source`::STRING = 'from-policy'\
+      \ THEN TRUE\n                                              ELSE FALSE\n    \
+      \                                      END\n            WHEN subtype::string\
+      \ IN ('deny') THEN TRUE\n            ELSE NULL\n             END"
+    name: policy.is_applied
+  - expr: "CASE\n    WHEN subtype::string IN ('end','deny') THEN `config_version`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: policy.version
+  - expr: "CASE\n    WHEN subtype::string IN ('drop') THEN CAST(`application_risk`::INT\
+      \ AS STRING)\n            ELSE NULL\n             END"
+    name: risk_details
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','start',\n                  \
+      \           'deny') THEN CASE\n                                            \
+      \  WHEN `application_risk`::INT = 0 THEN 'Info'\n                          \
+      \                    WHEN `application_risk`::INT = 1 THEN 'Low'\n         \
+      \                                     WHEN `application_risk`::INT = 2 THEN\
+      \ 'Medium'\n                                              WHEN `application_risk`::INT\
+      \ = 3 THEN 'High'\n                                              WHEN `application_risk`::INT\
+      \ = 4 THEN 'Critical'\n                                              ELSE CAST(`application_risk`::INT\
+      \ AS STRING)\n                                          END\n            WHEN\
+      \ subtype::string IN ('end')                                               THEN\
+      \ CASE\n                                             WHEN `application_risk`::INT\
+      \ = 0 THEN 'Info'\n                                             WHEN `application_risk`::INT\
+      \ = 1 THEN 'Low'\n                                             WHEN `application_risk`::INT\
+      \ = 2 THEN 'Medium'\n                                             WHEN `application_risk`::INT\
+      \ = 3 THEN 'High'\n                                             WHEN `application_risk`::INT\
+      \ = 4 THEN 'Critical'\n                                             ELSE 'Other'\n\
+      \                                         END\n            ELSE NULL\n     \
+      \        END"
+    name: risk_level
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'deny') THEN CASE\n                                              WHEN\
+      \ `application_risk`::INT IN (0,\n                                         \
+      \                                      1,\n                                \
+      \                                               2,\n                       \
+      \                                                        3,\n              \
+      \                                                                 4) THEN `application_risk`::INT\n\
+      \                                              ELSE 99\n                   \
+      \                       END\n            WHEN subtype::string IN ('start') \
+      \                                          THEN CASE\n                     \
+      \                          WHEN `application_risk`::INT IN (1,\n           \
+      \                                                                     2,\n \
+      \                                                                          \
+      \     3,\n                                                                 \
+      \               4) THEN `application_risk`::INT\n                          \
+      \                     ELSE 99\n                                           END\n\
+      \            ELSE NULL\n             END"
+    name: risk_level_id
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `application_risk`::INT\n            ELSE NULL\n\
+      \             END"
+    name: risk_score
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `application`::STRING\n            ELSE NULL\n\
+      \             END"
+    name: app_name
+  - expr: "CASE\n    WHEN subtype::string IN ('drop') THEN CONCAT(`from_zone`::STRING,\n\
+      \                                            '->',\n                       \
+      \                     `to_zone`::STRING)\n            WHEN subtype::string IN\
+      \ ('end')  THEN CASE\n                                             WHEN `from_zone`::STRING\
+      \ = `to_zone`::STRING THEN 'Internal'\n                                    \
+      \         WHEN UPPER(`to_zone`::STRING) LIKE '%INTERNET%'\n                \
+      \                                  OR UPPER(`from_zone`::STRING) LIKE '%INTERNET%'\
+      \ THEN 'External'\n                                             ELSE 'Internal'\n\
+      \                                         END\n            ELSE NULL\n     \
+      \        END"
+    name: connection_info.boundary
+  - expr: "CASE\n    WHEN subtype::string IN ('drop') THEN 99\n            WHEN subtype::string\
+      \ IN ('end')  THEN CASE\n                                             WHEN `from_zone`::STRING\
+      \ = `to_zone`::STRING THEN 2\n                                             WHEN\
+      \ UPPER(`to_zone`::STRING) LIKE '%INTERNET%'\n                             \
+      \                     OR UPPER(`from_zone`::STRING) LIKE '%INTERNET%' THEN 3\n\
+      \                                             ELSE 2\n                     \
+      \                    END\n            ELSE NULL\n             END"
+    name: connection_info.boundary_id
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'deny') THEN CASE\n                                              WHEN\
+      \ `is_client_to_server`::BOOLEAN THEN 'Outbound'\n                         \
+      \                     WHEN `is_server_to_client`::BOOLEAN THEN 'Inbound'\n \
+      \                                             ELSE 'Unknown'\n             \
+      \                             END\n            WHEN subtype::string IN ('start')\
+      \                                           THEN CASE\n                    \
+      \                           WHEN `is_server_to_client`::BOOLEAN THEN 'Inbound'\n\
+      \                                               WHEN `is_client_to_server`::BOOLEAN\
+      \ THEN 'Outbound'\n                                               ELSE 'Unknown'\n\
+      \                                           END\n            ELSE NULL\n   \
+      \          END"
+    name: connection_info.direction
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN CASE\n                                      \
+      \                WHEN `is_client_to_server`::BOOLEAN THEN 2\n              \
+      \                                        WHEN `is_server_to_client`::BOOLEAN\
+      \ THEN 1\n                                                      ELSE 0\n   \
+      \                                               END\n            ELSE NULL\n\
+      \             END"
+    name: connection_info.direction_id
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN lower(`protocol`::STRING)\n            ELSE NULL\n\
+      \             END"
+    name: connection_info.protocol_name
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start') THEN CASE LOWER(`protocol`::STRING)\n                   \
+      \                            WHEN 'tcp' THEN 6\n                           \
+      \                    WHEN 'udp' THEN 17\n                                  \
+      \             ELSE NULL\n                                           END\n  \
+      \          WHEN subtype::string IN ('deny')                                \
+      \             THEN CASE LOWER(`protocol`::STRING)\n                        \
+      \                      WHEN 'tcp' THEN 6\n                                 \
+      \             WHEN 'udp' THEN 17\n                                         \
+      \     WHEN 'icmp' THEN 1\n                                              WHEN\
+      \ 'icmpv6' THEN 58\n                                              ELSE NULL\n\
+      \                                          END\n            ELSE NULL\n    \
+      \         END"
+    name: connection_info.protocol_num
+  - expr: "CASE\n    WHEN subtype::string IN ('drop')         THEN CASE\n        \
+      \                                      WHEN `destination_address`::STRING RLIKE\
+      \ ':' THEN 'IPv6'\n                                              WHEN `destination_address`::STRING\
+      \ RLIKE '\\.' THEN 'IPv4'\n                                              ELSE\
+      \ 'Unknown'\n                                          END\n            WHEN\
+      \ subtype::string IN ('end')          THEN 'IPv4'\n            WHEN subtype::string\
+      \ IN ('start','deny') THEN CAST(NULL AS STRING)\n            ELSE NULL\n   \
+      \          END"
+    name: connection_info.protocol_ver
+  - expr: "CASE\n    WHEN subtype::string IN ('drop')         THEN CASE\n        \
+      \                                      WHEN `destination_address`::STRING RLIKE\
+      \ ':' THEN 6\n                                              WHEN `destination_address`::STRING\
+      \ RLIKE '\\.' THEN 4\n                                              ELSE 0\n\
+      \                                          END\n            WHEN subtype::string\
+      \ IN ('end')          THEN 99\n            WHEN subtype::string IN ('start','deny')\
+      \ THEN 0\n            ELSE NULL\n             END"
+    name: connection_info.protocol_ver_id
+  - expr: "CASE\n    WHEN subtype::string IN ('end','start') THEN `repeat_count`::INT\n\
+      \            ELSE NULL\n             END"
+    name: connection_info.session.count
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start') THEN to_timestamp(`session_start_time`::STRING,\n       \
+      \                                      concat('yyyy-MM-dd',\n              \
+      \                                 chr(39),\n                               \
+      \                'T',\n                                               chr(39),\n\
+      \                                               'HH:mm:ss.SSSSSSS',\n      \
+      \                                         chr(39),\n                       \
+      \                        'Z',\n                                            \
+      \   chr(39)))\n            ELSE NULL\n             END"
+    name: connection_info.session.created_time_dt
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start') THEN TO_TIMESTAMP(`session_start_time`::STRING,\n       \
+      \                                      concat('yyyy-MM-dd',\n              \
+      \                                 chr(39),\n                               \
+      \                'T',\n                                               chr(39),\n\
+      \                                               'HH:mm:ss.SSSSSSS',\n      \
+      \                                         chr(39),\n                       \
+      \                        'Z',\n                                            \
+      \   chr(39)))\n            ELSE NULL\n             END"
+    name: connection_info.session.created_time
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start') THEN `session_end_reason`::STRING\n            ELSE NULL\n\
+      \             END"
+    name: connection_info.session.expiration_reason
+  - expr: "CASE\n    WHEN subtype::string IN ('drop') THEN timestampadd(SECOND,\n\
+      \                                            `session_duration`::BIGINT,\n \
+      \                                           to_timestamp(`session_start_time`::STRING,\n\
+      \                                              concat('yyyy-MM-dd',\n      \
+      \                                          chr(39),\n                      \
+      \                          'T',\n                                          \
+      \      chr(39),\n                                                'HH:mm:ss.SSSSSSS',\n\
+      \                                                chr(39),\n                \
+      \                                'Z',\n                                    \
+      \            chr(39))))\n            ELSE NULL\n             END"
+    name: connection_info.session.expiration_time_dt
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start') THEN timestampadd(SECOND,\n                             \
+      \                `session_duration`::BIGINT,\n                             \
+      \                to_timestamp(`session_start_time`::STRING,\n              \
+      \                                 concat('yyyy-MM-dd',\n                   \
+      \                              chr(39),\n                                  \
+      \               'T',\n                                                 chr(39),\n\
+      \                                                 'HH:mm:ss.SSSSSSS',\n    \
+      \                                             chr(39),\n                   \
+      \                              'Z',\n                                      \
+      \           chr(39))))\n            ELSE NULL\n             END"
+    name: connection_info.session.expiration_time
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start') THEN CAST(`session_id`::BIGINT AS STRING)\n            ELSE\
+      \ NULL\n             END"
+    name: connection_info.session.uid
+  - expr: "CASE\n    WHEN subtype::string IN ('drop') THEN CAST(`session_id`::BIGINT\
+      \ AS STRING)\n            ELSE NULL\n             END"
+    name: connection_info.session.uuid
+  - expr: "CASE\n    WHEN subtype::string IN ('drop')       THEN `dasl_id`::STRING\n\
+      \            WHEN subtype::string IN ('end','deny') THEN `session_id`::BIGINT::string\n\
+      \            ELSE NULL\n             END"
+    name: connection_info.uid
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN CONCAT(`destination_address`::STRING,\n     \
+      \                                               ':',\n                     \
+      \                               CAST(`destination_port`::INT AS STRING))\n \
+      \           ELSE NULL\n             END"
+    name: dst_endpoint.uid
+  - expr: "CASE\n    WHEN subtype::string IN ('start') THEN `device_sn`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: dst_endpoint.hw_info.serial_number
+  - expr: "CASE\n    WHEN subtype::string IN ('start') THEN 'Palo Alto Networks'\n\
+      \            ELSE NULL\n             END"
+    name: dst_endpoint.hw_info.vendor_name
+  - expr: "CASE\n    WHEN subtype::string IN ('drop')         THEN `inbound_interface`::STRING\n\
+      \            WHEN subtype::string IN ('start','deny') THEN `outbound_interface`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: dst_endpoint.interface_name
+  - expr: "CASE\n    WHEN subtype::string IN ('drop') THEN `inbound_interface`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: dst_endpoint.interface_uid
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `destination_address`::STRING\n            ELSE\
+      \ NULL\n             END"
+    name: dst_endpoint.ip
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end') THEN CASE\n          \
+      \                                          WHEN `destination_location`::STRING\
+      \ RLIKE '^[A-Za-z]{2}$' THEN UPPER(`destination_location`::STRING)\n       \
+      \                                             ELSE NULL\n                  \
+      \                              END\n            WHEN subtype::string IN ('deny')\
+      \       THEN NULLIF(UPPER(`destination_location`::STRING),\n               \
+      \                             '')\n            ELSE NULL\n             END"
+    name: dst_endpoint.location.country
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'deny') THEN NULLIF(`destination_location`::STRING,\n            \
+      \                                '')\n            ELSE NULL\n             END"
+    name: dst_endpoint.location.desc
+  - expr: "CASE\n    WHEN subtype::string IN ('drop')       THEN 'Unknown'\n     \
+      \       WHEN subtype::string IN ('end','deny') THEN 'server'\n            WHEN\
+      \ subtype::string IN ('start')      THEN 'unknown'\n            ELSE NULL\n\
+      \             END"
+    name: dst_endpoint.type
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','start') THEN 0\n           \
+      \ WHEN subtype::string IN ('end','deny')   THEN 99\n            ELSE NULL\n\
+      \             END"
+    name: dst_endpoint.type_id
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `to_zone`::STRING\n            ELSE NULL\n  \
+      \           END"
+    name: dst_endpoint.zone
+  - expr: "CASE\n    WHEN subtype::string IN ('end') THEN CASE\n                 \
+      \                            WHEN `is_container`::BOOLEAN THEN `application_container`::STRING\n\
+      \                                         END\n            ELSE NULL\n     \
+      \        END"
+    name: dst_endpoint.container.image.name
+  - expr: "CASE\n    WHEN subtype::string IN ('end') THEN CASE\n                 \
+      \                            WHEN `is_container`::BOOLEAN THEN `application_container`::STRING\n\
+      \                                             ELSE NULL\n                  \
+      \                       END\n            ELSE NULL\n             END"
+    name: dst_endpoint.container.name
+  - expr: 'CAST(NULL AS ARRAY<STRUCT<name:STRING,value:STRING,values:ARRAY<STRING>>>)'
+    name: dst_endpoint.container.tags
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `destination_port`::INT\n            ELSE NULL\n\
+      \             END"
+    name: dst_endpoint.port
+  - expr: "CASE\n    WHEN subtype::string IN ('end','deny') THEN CASE\n          \
+      \                                          WHEN `nat_destination`::STRING IS\
+      \ NOT NULL\n                                                         AND `nat_destination`::STRING\
+      \ <> ''\n                                                         AND `nat_destination_port`::INT\
+      \ != 0 THEN CONCAT(`nat_destination`::STRING,\n                            \
+      \                                                                         ':',\n\
+      \                                                                          \
+      \                           CAST(`nat_destination_port`::INT AS STRING))\n \
+      \                                                   ELSE NULL\n            \
+      \                                    END\n            ELSE NULL\n          \
+      \   END"
+    name: dst_endpoint.proxy_endpoint.uid
+  - expr: "CASE\n    WHEN subtype::string IN ('end') THEN 'Unknown'\n            ELSE\
+      \ NULL\n             END"
+    name: dst_endpoint.proxy_endpoint.hw_info.cpu_architecture
+  - expr: "CASE\n    WHEN subtype::string IN ('end') THEN 0\n            ELSE NULL\n\
+      \             END"
+    name: dst_endpoint.proxy_endpoint.hw_info.cpu_architecture_id
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `device_sn`::STRING\n            ELSE NULL\n\
+      \             END"
+    name: dst_endpoint.proxy_endpoint.hw_info.serial_number
+  - expr: "CASE\n    WHEN subtype::string IN ('end','deny') THEN 'Palo Alto Networks'\n\
+      \            ELSE NULL\n             END"
+    name: dst_endpoint.proxy_endpoint.hw_info.vendor_name
+  - expr: "CASE\n    WHEN subtype::string IN ('drop')                            \
+      \                 THEN CASE\n                                              WHEN\
+      \ `nat`::BOOLEAN\n                                                   OR `is_proxy`::BOOLEAN\
+      \ THEN `outbound_interface`::STRING\n                                      \
+      \        ELSE NULL\n                                          END\n        \
+      \    WHEN subtype::string IN ('end','start',\n                             'deny')\
+      \ THEN `outbound_interface`::STRING::string\n            ELSE NULL\n       \
+      \      END"
+    name: dst_endpoint.proxy_endpoint.interface_name
+  - expr: "CASE\n    WHEN subtype::string IN ('end') THEN CASE\n                 \
+      \                            WHEN `nat`::BOOLEAN THEN `outbound_interface`::STRING\n\
+      \                                             ELSE NULL\n                  \
+      \                       END\n            ELSE NULL\n             END"
+    name: dst_endpoint.proxy_endpoint.interface_uid
+  - expr: "CASE\n    WHEN subtype::string IN ('end','deny') THEN `nat_destination`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: dst_endpoint.proxy_endpoint.ip
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN 'Unknown'\n            ELSE NULL\n          \
+      \   END"
+    name: dst_endpoint.proxy_endpoint.type
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN 0\n            ELSE NULL\n             END"
+    name: dst_endpoint.proxy_endpoint.type_id
+  - expr: "CASE\n    WHEN subtype::string IN ('end','deny') THEN `to_zone`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: dst_endpoint.proxy_endpoint.zone
+  - expr: "CASE\n    WHEN subtype::string IN ('drop')         THEN CASE\n        \
+      \                                      WHEN `nat`::BOOLEAN\n               \
+      \                                    OR `is_proxy`::BOOLEAN THEN `nat_destination_port`::INT\n\
+      \                                              ELSE NULL\n                 \
+      \                         END\n            WHEN subtype::string IN ('end') \
+      \         THEN CASE\n                                             WHEN `nat`::BOOLEAN\
+      \ THEN `nat_destination_port`::INT\n                                       \
+      \      ELSE NULL\n                                         END\n           \
+      \ WHEN subtype::string IN ('start','deny') THEN `nat_destination_port`::INT\n\
+      \            ELSE NULL\n             END"
+    name: dst_endpoint.proxy_endpoint.port
+  - expr: "CASE\n    WHEN subtype::string IN ('end','deny') THEN CAST(to_json(NAMED_STRUCT('ip',\n\
+      \                                                               `nat_destination`::STRING,\n\
+      \                                                               'port',\n  \
+      \                                                             `nat_destination_port`::INT))\
+      \ AS VARIANT)\n            WHEN subtype::string IN ('start')      THEN CAST(to_json(named_struct('ip',\n\
+      \                                                          '',\n           \
+      \                                               'port',\n                  \
+      \                                        `nat_destination_port`::INT)) AS VARIANT)\n\
+      \            ELSE NULL\n             END"
+    name: dst_endpoint.proxy_endpoint.proxy_endpoint
+  - expr: "CASE\n    WHEN subtype::string IN ('end') THEN `source_address`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: src_endpoint.name
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'deny') THEN CONCAT(`source_address`::STRING,\n                  \
+      \                          ':',\n                                          \
+      \  CAST(`source_port`::INT AS STRING))\n            ELSE NULL\n            \
+      \ END"
+    name: src_endpoint.uid
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `inbound_interface`::STRING\n            ELSE\
+      \ NULL\n             END"
+    name: src_endpoint.interface_name
+  - expr: "CASE\n    WHEN subtype::string IN ('end','deny') THEN `inbound_interface`::STRING::string\n\
+      \            ELSE NULL\n             END"
+    name: src_endpoint.interface_uid
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `source_address`::STRING\n            ELSE NULL\n\
+      \             END"
+    name: src_endpoint.ip
+  - expr: "CASE\n    WHEN subtype::string IN ('drop') THEN UPPER(NULLIF(`source_location`::STRING,\n\
+      \                                                  ''))\n            WHEN subtype::string\
+      \ IN ('end')  THEN CASE\n                                             WHEN `source_location`::STRING\
+      \ RLIKE '^[A-Za-z]{2}$' THEN UPPER(NULLIF(`source_location`::STRING,\n     \
+      \                                                                          \
+      \                                ''))\n                                    \
+      \         ELSE NULL\n                                         END\n        \
+      \    WHEN subtype::string IN ('deny') THEN CASE\n                          \
+      \                    WHEN `source_location`::STRING RLIKE '^[A-Z]{2}$' THEN\
+      \ UPPER(NULLIF(`source_location`::STRING,\n                                \
+      \                                                                          \
+      \   ''))\n                                              ELSE NULL\n        \
+      \                                  END\n            ELSE NULL\n            \
+      \ END"
+    name: src_endpoint.location.country
+  - expr: "CASE\n    WHEN subtype::string IN ('end') THEN `source_location`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: src_endpoint.location.desc
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','start') THEN 'unknown'\n   \
+      \         ELSE NULL\n             END"
+    name: src_endpoint.type
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN 0\n            ELSE NULL\n             END"
+    name: src_endpoint.type_id
+  - expr: "CASE\n    WHEN subtype::string IN ('deny') THEN split(`inbound_interface`::STRING,\n\
+      \                                            '\\.')[1]\n            ELSE NULL\n\
+      \             END"
+    name: src_endpoint.vlan_uid
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN NULLIF(`from_zone`::STRING,\n               \
+      \                                     '')\n            ELSE NULL\n         \
+      \    END"
+    name: src_endpoint.zone
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `source_port`::INT\n            ELSE NULL\n \
+      \            END"
+    name: src_endpoint.port
+  - expr: "CASE\n    WHEN subtype::string IN ('end','deny') THEN CONCAT(`nat_source`::STRING,\n\
+      \                                                  ':',\n                  \
+      \                                CAST(`nat_source_port`::INT AS STRING))\n \
+      \           ELSE NULL\n             END"
+    name: src_endpoint.proxy_endpoint.uid
+  - expr: "CASE\n    WHEN subtype::string IN ('start') THEN `device_name`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: src_endpoint.proxy_endpoint.hostname
+  - expr: "CASE\n    WHEN subtype::string IN ('start','deny') THEN `device_sn`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: src_endpoint.proxy_endpoint.hw_info.serial_number
+  - expr: "CASE\n    WHEN subtype::string IN ('start','deny') THEN 'Palo Alto Networks'\n\
+      \            ELSE NULL\n             END"
+    name: src_endpoint.proxy_endpoint.hw_info.vendor_name
+  - expr: "CASE\n    WHEN subtype::string IN ('end','deny') THEN `outbound_interface`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: src_endpoint.proxy_endpoint.interface_name
+  - expr: "CASE\n    WHEN subtype::string IN ('end','deny') THEN `outbound_interface`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: src_endpoint.proxy_endpoint.interface_uid
+  - expr: "CASE\n    WHEN subtype::string IN ('end','deny') THEN `nat_source`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: src_endpoint.proxy_endpoint.ip
+  - expr: "CASE\n    WHEN subtype::string IN ('start') THEN CASE\n               \
+      \                                WHEN `is_proxy`::BOOLEAN THEN 'proxy'\n   \
+      \                                            WHEN `nat`::BOOLEAN THEN 'nat'\n\
+      \                                               ELSE 'unknown'\n           \
+      \                                END\n            WHEN subtype::string IN ('deny')\
+      \  THEN 'nat'\n            ELSE NULL\n             END"
+    name: src_endpoint.proxy_endpoint.type
+  - expr: "CASE\n    WHEN subtype::string IN ('end')   THEN 0\n            WHEN subtype::string\
+      \ IN ('start') THEN CASE\n                                               WHEN\
+      \ `is_proxy`::BOOLEAN\n                                                    OR\
+      \ `nat`::BOOLEAN THEN 99\n                                               ELSE\
+      \ 0\n                                           END\n            WHEN subtype::string\
+      \ IN ('deny')  THEN 99\n            ELSE NULL\n             END"
+    name: src_endpoint.proxy_endpoint.type_id
+  - expr: "CASE\n    WHEN subtype::string IN ('end','deny') THEN `to_zone`::STRING\n\
+      \            ELSE NULL\n             END"
+    name: src_endpoint.proxy_endpoint.zone
+  - expr: "CASE\n    WHEN subtype::string IN ('end','deny') THEN `nat_source_port`::INT\n\
+      \            WHEN subtype::string IN ('start')      THEN CASE\n            \
+      \                                   WHEN `nat`::BOOLEAN\n                  \
+      \                                  OR `is_proxy`::BOOLEAN THEN `nat_destination_port`::INT\n\
+      \                                               ELSE NULL\n                \
+      \                           END\n            ELSE NULL\n             END"
+    name: src_endpoint.proxy_endpoint.port
+  - expr: "CASE\n    WHEN subtype::string IN ('end','deny') THEN CASE\n          \
+      \                                          WHEN `nat_source`::STRING IS NOT\
+      \ NULL\n                                                         AND `nat_source`::STRING\
+      \ <> '' THEN CAST(to_json(named_struct('ip',\n                             \
+      \                                                                          \
+      \     `nat_source`::STRING,\n                                              \
+      \                                                              'port',\n   \
+      \                                                                          \
+      \                               `nat_source_port`::INT)) AS VARIANT)\n     \
+      \                                               ELSE CAST(NULL AS VARIANT)\n\
+      \                                                END\n            WHEN subtype::string\
+      \ IN ('start')      THEN CASE\n                                            \
+      \   WHEN `is_proxy`::BOOLEAN\n                                             \
+      \       OR `nat`::BOOLEAN THEN CAST(to_json(named_struct('ip',\n           \
+      \                                                                          \
+      \     '',\n                                                                \
+      \                          'port',\n                                       \
+      \                                                   `nat_destination_port`::INT))\
+      \ AS VARIANT)\n                                               ELSE CAST(NULL\
+      \ AS VARIANT)\n                                           END\n            ELSE\
+      \ NULL\n             END"
+    name: src_endpoint.proxy_endpoint.proxy_endpoint
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `bytes`::LONG\n            ELSE NULL\n      \
+      \       END"
+    name: traffic.bytes
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `bytes_received`::BIGINT\n            ELSE NULL\n\
+      \             END"
+    name: traffic.bytes_in
+  - expr: "CASE\n    WHEN subtype::string IN ('start') THEN `bytes`::LONG - (`bytes_sent`::BIGINT\
+      \ + `bytes_received`::BIGINT)\n            ELSE NULL\n             END"
+    name: traffic.bytes_missed
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `bytes_sent`::BIGINT\n            ELSE NULL\n\
+      \             END"
+    name: traffic.bytes_out
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN CAST(`packets_total`::BIGINT AS BIGINT)\n   \
+      \         ELSE NULL\n             END"
+    name: traffic.packets
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `packets_received`::BIGINT\n            ELSE\
+      \ NULL\n             END"
+    name: traffic.packets_in
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `packets_sent`::BIGINT\n            ELSE NULL\n\
+      \             END"
+    name: traffic.packets_out
+  - expr: "CASE\n    WHEN subtype::string IN ('end')          THEN CASE\n        \
+      \                                     WHEN lower(`from_zone`::STRING) NOT LIKE\
+      \ '%internet%'\n                                                  AND lower(`to_zone`::STRING)\
+      \ NOT LIKE '%internet%' THEN 'Internal'\n                                  \
+      \           ELSE 'External'\n                                         END\n\
+      \            WHEN subtype::string IN ('start','deny') THEN 'Unknown'\n     \
+      \       ELSE NULL\n             END"
+    name: proxy_connection_info.boundary
+  - expr: "CASE\n    WHEN subtype::string IN ('end')          THEN CASE\n        \
+      \                                     WHEN lower(`from_zone`::STRING) NOT LIKE\
+      \ '%internet%'\n                                                  AND lower(`to_zone`::STRING)\
+      \ NOT LIKE '%internet%' THEN 2\n                                           \
+      \  ELSE 3\n                                         END\n            WHEN subtype::string\
+      \ IN ('start','deny') THEN 0\n            ELSE NULL\n             END"
+    name: proxy_connection_info.boundary_id
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start') THEN CASE\n                                             \
+      \  WHEN `is_client_to_server`::BOOLEAN THEN 'Outbound'\n                   \
+      \                            WHEN `is_server_to_client`::BOOLEAN THEN 'Inbound'\n\
+      \                                               ELSE 'Unknown'\n           \
+      \                                END\n            WHEN subtype::string IN ('deny')\
+      \                                             THEN CASE\n                  \
+      \                            WHEN `is_client_to_server`::BOOLEAN\n         \
+      \                                          AND `is_server_to_client`::BOOLEAN\
+      \ THEN 'Lateral'\n                                              WHEN `is_client_to_server`::BOOLEAN\
+      \ THEN 'Outbound'\n                                              WHEN `is_server_to_client`::BOOLEAN\
+      \ THEN 'Inbound'\n                                              ELSE 'Unknown'\n\
+      \                                          END\n            ELSE NULL\n    \
+      \         END"
+    name: proxy_connection_info.direction
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start') THEN CASE\n                                             \
+      \  WHEN `is_client_to_server`::BOOLEAN THEN 2\n                            \
+      \                   WHEN `is_server_to_client`::BOOLEAN THEN 1\n           \
+      \                                    ELSE 0\n                              \
+      \             END\n            WHEN subtype::string IN ('deny')            \
+      \                                 THEN CASE\n                              \
+      \                WHEN `is_client_to_server`::BOOLEAN\n                     \
+      \                              AND `is_server_to_client`::BOOLEAN THEN 3\n \
+      \                                             WHEN `is_client_to_server`::BOOLEAN\
+      \ THEN 2\n                                              WHEN `is_server_to_client`::BOOLEAN\
+      \ THEN 1\n                                              ELSE 0\n           \
+      \                               END\n            ELSE NULL\n             END"
+    name: proxy_connection_info.direction_id
+  - expr: "CASE\n    WHEN subtype::string IN ('drop')                            \
+      \                 THEN LOWER(NULLIF(`protocol`::STRING,\n                  \
+      \                                ''))\n            WHEN subtype::string IN ('end','start',\n\
+      \                             'deny') THEN NULLIF(`protocol`::STRING,\n    \
+      \                                        '')\n            ELSE NULL\n      \
+      \       END"
+    name: proxy_connection_info.protocol_name
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','start',\n                  \
+      \           'deny') THEN CASE LOWER(`protocol`::STRING)\n                  \
+      \                            WHEN 'tcp' THEN 6\n                           \
+      \                   WHEN 'udp' THEN 17\n                                   \
+      \           ELSE NULL\n                                          END\n     \
+      \       WHEN subtype::string IN ('end')                                    \
+      \           THEN CASE LOWER(`protocol`::STRING)\n                          \
+      \                   WHEN 'tcp' THEN 6\n                                    \
+      \         WHEN 'udp' THEN 17\n                                             WHEN\
+      \ 'icmp' THEN 1\n                                             ELSE NULL\n  \
+      \                                       END\n            ELSE NULL\n       \
+      \      END"
+    name: proxy_connection_info.protocol_num
+  - expr: "CASE\n    WHEN subtype::string IN ('drop') THEN CASE\n                \
+      \                              WHEN `source_address`::STRING LIKE '%:%' THEN\
+      \ 'IPv6'\n                                              WHEN `source_address`::STRING\
+      \ LIKE '%.%' THEN 'IPv4'\n                                              ELSE\
+      \ 'Unknown'\n                                          END\n            WHEN\
+      \ subtype::string IN ('end')  THEN 'Unknown'\n            WHEN subtype::string\
+      \ IN ('deny') THEN CASE\n                                              WHEN\
+      \ `source_address`::STRING LIKE '%:%' THEN '6'\n                           \
+      \                   WHEN `source_address`::STRING LIKE '%.%' THEN '4'\n    \
+      \                                          ELSE 'Unknown'\n                \
+      \                          END\n            ELSE NULL\n             END"
+    name: proxy_connection_info.protocol_ver
+  - expr: "CASE\n    WHEN subtype::string IN ('drop') THEN CASE\n                \
+      \                              WHEN `source_address`::STRING LIKE '%:%' THEN\
+      \ 6\n                                              WHEN `source_address`::STRING\
+      \ LIKE '%.%' THEN 4\n                                              ELSE 0\n\
+      \                                          END\n            WHEN subtype::string\
+      \ IN ('end')  THEN 0\n            WHEN subtype::string IN ('deny') THEN 99\n\
+      \            ELSE NULL\n             END"
+    name: proxy_connection_info.protocol_ver_id
+  - expr: "CASE\n    WHEN subtype::string IN ('start','deny') THEN `repeat_count`::INT\n\
+      \            ELSE NULL\n             END"
+    name: proxy_connection_info.session.count
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN TO_TIMESTAMP(`session_start_time`::STRING,\n\
+      \                                                    concat('yyyy-MM-dd',\n\
+      \                                                      chr(39),\n          \
+      \                                            'T',\n                        \
+      \                              chr(39),\n                                  \
+      \                    'HH:mm:ss.SSSSSSS',\n                                 \
+      \                     chr(39),\n                                           \
+      \           'Z',\n                                                      chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: proxy_connection_info.session.created_time_dt
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN to_timestamp(`session_start_time`::STRING,\n\
+      \                                                    concat('yyyy-MM-dd',\n\
+      \                                                      chr(39),\n          \
+      \                                            'T',\n                        \
+      \                              chr(39),\n                                  \
+      \                    'HH:mm:ss.SSSSSSS',\n                                 \
+      \                     chr(39),\n                                           \
+      \           'Z',\n                                                      chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: proxy_connection_info.session.created_time
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `session_end_reason`::STRING\n            ELSE\
+      \ NULL\n             END"
+    name: proxy_connection_info.session.expiration_reason
+  - expr: "CASE\n    WHEN subtype::string IN ('drop') THEN timestampadd(SECOND,\n\
+      \                                            `session_duration`::BIGINT,\n \
+      \                                           to_timestamp(`session_start_time`::STRING,\n\
+      \                                              concat('yyyy-MM-dd',\n      \
+      \                                          chr(39),\n                      \
+      \                          'T',\n                                          \
+      \      chr(39),\n                                                'HH:mm:ss.SSSSSSS',\n\
+      \                                                chr(39),\n                \
+      \                                'Z',\n                                    \
+      \            chr(39))))\n            WHEN subtype::string IN ('deny') THEN to_timestamp(`time_generated_high_resolution`::STRING,\n\
+      \                                            concat('yyyy-MM-dd',\n        \
+      \                                      chr(39),\n                          \
+      \                    'T',\n                                              chr(39),\n\
+      \                                              'HH:mm:ss.SSSSSSS',\n       \
+      \                                       chr(39),\n                         \
+      \                     'Z',\n                                              chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: proxy_connection_info.session.expiration_time_dt
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start') THEN timestampadd(SECOND,\n                             \
+      \                `session_duration`::BIGINT,\n                             \
+      \                to_timestamp(`session_start_time`::STRING,\n              \
+      \                                 concat('yyyy-MM-dd',\n                   \
+      \                              chr(39),\n                                  \
+      \               'T',\n                                                 chr(39),\n\
+      \                                                 'HH:mm:ss.SSSSSSS',\n    \
+      \                                             chr(39),\n                   \
+      \                              'Z',\n                                      \
+      \           chr(39))))\n            WHEN subtype::string IN ('deny')       \
+      \                                      THEN to_timestamp(`time_generated_high_resolution`::STRING,\n\
+      \                                            concat('yyyy-MM-dd',\n        \
+      \                                      chr(39),\n                          \
+      \                    'T',\n                                              chr(39),\n\
+      \                                              'HH:mm:ss.SSSSSSS',\n       \
+      \                                       chr(39),\n                         \
+      \                     'Z',\n                                              chr(39)))\n\
+      \            ELSE NULL\n             END"
+    name: proxy_connection_info.session.expiration_time
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','deny') THEN TRUE\n         \
+      \   ELSE NULL\n             END"
+    name: proxy_connection_info.session.is_remote
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN CAST(`session_id`::BIGINT AS STRING)\n      \
+      \      ELSE NULL\n             END"
+    name: proxy_connection_info.session.uid
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','start') THEN CAST(`session_id`::BIGINT\
+      \ AS STRING)\n            ELSE NULL\n             END"
+    name: proxy_connection_info.session.uuid
+  - expr: "CASE\n    WHEN subtype::string IN ('end','deny') THEN `session_id`::BIGINT::string\n\
+      \            ELSE NULL\n             END"
+    name: proxy_connection_info.uid
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `bytes`::LONG\n            ELSE NULL\n      \
+      \       END"
+    name: proxy_traffic.bytes
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `bytes_received`::BIGINT\n            ELSE NULL\n\
+      \             END"
+    name: proxy_traffic.bytes_in
+  - expr: "CASE\n    WHEN subtype::string IN ('start') THEN `bytes`::LONG - `bytes_received`::BIGINT\
+      \ - `bytes_sent`::BIGINT\n            ELSE NULL\n             END"
+    name: proxy_traffic.bytes_missed
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `bytes_sent`::BIGINT\n            ELSE NULL\n\
+      \             END"
+    name: proxy_traffic.bytes_out
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `packets_total`::BIGINT\n            ELSE NULL\n\
+      \             END"
+    name: proxy_traffic.packets
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'deny') THEN CAST(`packets_received`::BIGINT AS BIGINT)\n        \
+      \    WHEN subtype::string IN ('start')                                     \
+      \      THEN `packets_received`::BIGINT\n            ELSE NULL\n            \
+      \ END"
+    name: proxy_traffic.packets_in
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN `packets_sent`::BIGINT\n            ELSE NULL\n\
+      \             END"
+    name: proxy_traffic.packets_out
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN array(`url_category`::STRING)\n            ELSE\
+      \ NULL\n             END"
+    name: url.categories
+  - expr: "CASE\n    WHEN subtype::string IN ('drop','end',\n                    \
+      \         'start','deny') THEN CASE\n                                      \
+      \                WHEN subtype::string IN ('drop',\n                        \
+      \                                                       'start',\n         \
+      \                                                                      'deny')\
+      \ THEN ARRAY(99)\n                                                      WHEN\
+      \ subtype::string IN ('end') THEN ARRAY(0)\n                               \
+      \                       ELSE NULL\n                                        \
+      \          END\n            ELSE NULL\n             END"
+    name: url.category_ids
+  - expr: "CASE\n    WHEN subtype::string IN ('start','deny') THEN `destination_port`::INT\n\
+      \            ELSE NULL\n             END"
+    name: url.port
+  input: pan_network_activity
+  name: network_activity
+iconURL: fillme
+name: fillme
+silver:
+  transform:
+  - fields:
+    - expr: '`action`::STRING'
+      name: action
+    - expr: '`log_setting`::STRING'
+      name: log_setting
+    - expr: '`virtual_system_name`::STRING'
+      name: virtual_system_name
+    - expr: '`facility`::INT'
+      name: facility
+    - expr: '`is_url_denied`::BOOLEAN'
+      name: is_url_denied
+    - expr: '`nat_destination_port`::INT'
+      name: nat_destination_port
+    - expr: '`virtual_location`::STRING'
+      name: virtual_location
+    - expr: '`device_name`::STRING'
+      name: device_name
+    - expr: '`action_source`::STRING'
+      name: action_source
+    - expr: '`sanctioned_state_of_app`::BOOLEAN'
+      name: sanctioned_state_of_app
+    - expr: '`destination_edl`::STRING'
+      name: destination_edl
+    - expr: '`from_zone`::STRING'
+      name: from_zone
+    - expr: '`packets_total`::BIGINT'
+      name: packets_total
+    - expr: '`dg_hierarchy_level_2`::INT'
+      name: dg_hierarchy_level_2
+    - expr: '`dg_hierarchy_level_4`::INT'
+      name: dg_hierarchy_level_4
+    - expr: '`nat_source_port`::INT'
+      name: nat_source_port
+    - expr: '`packets_received`::BIGINT'
+      name: packets_received
+    - expr: '`nat_source`::STRING'
+      name: nat_source
+    - expr: '`dg_hierarchy_level_3`::INT'
+      name: dg_hierarchy_level_3
+    - expr: '`outbound_interface_details_slot`::INT'
+      name: outbound_interface_details_slot
+    - expr: '`source_location`::STRING'
+      name: source_location
+    - expr: '`application_risk`::INT'
+      name: application_risk
+    - expr: '`virtual_system_id`::INT'
+      name: virtual_system_id
+    - expr: '`session_start_time`::STRING'
+      name: session_start_time
+    - expr: '`inbound_interface_details_port`::INT'
+      name: inbound_interface_details_port
+    - expr: '`source_port`::INT'
+      name: source_port
+    - expr: '`is_prisma_users`::BOOLEAN'
+      name: is_prisma_users
+    - expr: '`to_zone`::STRING'
+      name: to_zone
+    - expr: '`inbound_interface_details_slot`::INT'
+      name: inbound_interface_details_slot
+    - expr: '`url_category`::STRING'
+      name: url_category
+    - expr: '`session_id`::BIGINT'
+      name: session_id
+    - expr: '`time_received`::STRING'
+      name: time_received
+    - expr: '`nat`::BOOLEAN'
+      name: nat
+    - expr: '`nat_destination`::STRING'
+      name: nat_destination
+    - expr: '`subtype`::STRING'
+      name: subtype
+    - expr: '`sequence_no`::BIGINT'
+      name: sequence_no
+    - expr: '`time_generated_high_resolution`::STRING'
+      name: time_generated_high_resolution
+    - expr: '`appname`::STRING'
+      name: appname
+    - expr: '`bytes`::LONG'
+      name: bytes
+    - expr: '`inbound_interface_details_type`::STRING'
+      name: inbound_interface_details_type
+    - expr: '`protocol`::STRING'
+      name: protocol
+    - expr: '`source_address`::STRING'
+      name: source_address
+    - expr: '`outbound_interface_details_port`::INT'
+      name: outbound_interface_details_port
+    - expr: '`log_type`::STRING'
+      name: log_type
+    - expr: '`application_subcategory`::STRING'
+      name: application_subcategory
+    - expr: '`device_sn`::STRING'
+      name: device_sn
+    - expr: '`captive_portal`::BOOLEAN'
+      name: captive_portal
+    - expr: '`panorama_sn`::STRING'
+      name: panorama_sn
+    - expr: '`time_generated`::STRING'
+      name: time_generated
+    - expr: '`facilityName`::STRING'
+      name: facilityName
+    - expr: '`is_client_to_server`::BOOLEAN'
+      name: is_client_to_server
+    - expr: '`non_standard_destination_port`::INT'
+      name: non_standard_destination_port
+    - expr: '`packets_sent`::BIGINT'
+      name: packets_sent
+    - expr: '`is_prisma_network`::BOOLEAN'
+      name: is_prisma_network
+    - expr: '`repeat_count`::INT'
+      name: repeat_count
+    - expr: '`is_container`::BOOLEAN'
+      name: is_container
+    - expr: '`severityName`::STRING'
+      name: severityName
+    - expr: '`destination_address`::STRING'
+      name: destination_address
+    - expr: '`procid`::STRING'
+      name: procid
+    - expr: '`application_technology`::STRING'
+      name: application_technology
+    - expr: '`session_duration`::BIGINT'
+      name: session_duration
+    - expr: '`_time`::DOUBLE'
+      name: _time
+    - expr: '`application`::STRING'
+      name: application
+    - expr: '`is_saas_application`::BOOLEAN'
+      name: is_saas_application
+    - expr: '`destination_port`::INT'
+      name: destination_port
+    - expr: '`application_container`::STRING'
+      name: application_container
+    - expr: '`dg_hierarchy_level_1`::INT'
+      name: dg_hierarchy_level_1
+    - expr: '`msgid`::STRING'
+      name: msgid
+    - expr: '`rule_uuid`::STRING'
+      name: rule_uuid
+    - expr: '`is_server_to_client`::BOOLEAN'
+      name: is_server_to_client
+    - expr: '`bytes_sent`::BIGINT'
+      name: bytes_sent
+    - expr: '`cribl_pipe`::STRING'
+      name: cribl_pipe
+    - expr: '`host`::STRING'
+      name: host
+    - expr: '`outbound_interface_details_type`::STRING'
+      name: outbound_interface_details_type
+    - expr: '`config_version`::STRING'
+      name: config_version
+    - expr: '`session_end_reason`::STRING'
+      name: session_end_reason
+    - expr: '`message`::STRING'
+      name: message
+    - expr: '`http2_connection`::BIGINT'
+      name: http2_connection
+    - expr: '`destination_location`::STRING'
+      name: destination_location
+    - expr: '`rule`::STRING'
+      name: rule
+    - expr: '`is_decrypted`::BOOLEAN'
+      name: is_decrypted
+    - expr: '`application_category`::STRING'
+      name: application_category
+    - expr: '`is_phishing`::BOOLEAN'
+      name: is_phishing
+    - expr: '`inbound_interface`::STRING'
+      name: inbound_interface
+    - expr: '`outbound_interface`::STRING'
+      name: outbound_interface
+    - expr: '`bytes_received`::BIGINT'
+      name: bytes_received
+    - expr: '`severity`::INT'
+      name: severity
+    - expr: '`is_proxy`::BOOLEAN'
+      name: is_proxy
+    filter: subtype::string IN ('drop','end','start','deny')
+    name: pan_network_activity
+title: fillme
