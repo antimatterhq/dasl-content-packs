@@ -25,3 +25,5 @@ presets:
     sourceType: "syslog"
   - source: "aws"
     sourceType: "cloudtrail_iam"
+  - source: "pan"
+    sourceType: "traffic"
