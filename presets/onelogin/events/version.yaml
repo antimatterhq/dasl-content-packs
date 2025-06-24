@@ -1,0 +1,4 @@
+versions:
+  - versionNumber: 1
+    changes: Initial commit of the OneLogin preset (silver only)
+    commit: 9bc30afe24ad3337d6adf498a77bd7f77fffbacc
