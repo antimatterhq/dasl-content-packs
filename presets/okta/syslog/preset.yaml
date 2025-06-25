@@ -1,7 +1,7 @@
 name: okta_syslog
 author: Antimatter
-description: "Preset for OKTA syslog wrapped by Cribl"
-title: "OKTA - Syslog (Preview)"
+description: "OKTA Syslog data wrapped by Cribl"
+title: "OKTA - Syslog"
 iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/okta/syslog/icon.png"
 autoloader:
   format: json
@@ -78,13 +78,27 @@ silver:
           from: eventType
         - name: eventType
           from: eventType
-        - name: ocsf_category_uid
-          expr: CAST('3' AS INT)
-        - name: ocsf_category_name
-          literal: Identity & Access Management
+
+
         - name: ocsf_class_uid
           expr: |
-            CASE 
+            CASE
+                WHEN LOWER(eventType) IN (
+                    'system.import.user_matching.start', 'system.import.object_creation.start', 'system.import.download.start',
+                    'system.import.implicit_deletion.start', 'system.import.object_creation.complete',
+                    'system.import.download.complete', 'system.import.implicit_deletion.complete',
+                    'system.import.group.complete',
+                    'system.import.custom_object.complete', 'system.import.user.complete', 'system.import.membership_processing.complete', 'system.import.membership_processing.start',
+                    'system.import.user_matching.complete', 'system.import.group_membership.complete',
+                    'system.import.start', 'system.import.complete', 'system.import.complete_batch'
+                  ) THEN CAST('1006' AS INT)
+
+                WHEN LOWER(eventType) = 'security.request.blocked' THEN CAST('2004' AS INT)
+
+                WHEN LOWER(eventType) IN (
+                  'system.email.delivery', 'system.email.mfa_enroll_notification.sent_message', 'system.email.new_device_notification.sent_message'
+                ) THEN CAST('4009' AS INT)
+
                 WHEN LOWER(eventType) = 'app.user_management.grouppush.mapping.okta.users.ignored' THEN CAST('3006' AS INT)
                 WHEN LOWER(eventType) = 'app.generic.unauth_app_access_attempt' THEN CAST('3002' AS INT)
                 WHEN LOWER(eventType) = 'app.oauth2.authorize' THEN CAST('3002' AS INT)
@@ -95,52 +109,22 @@ silver:
                 WHEN LOWER(eventType) = 'app.oauth2.token.grant.id_token' THEN CAST('3002' AS INT)
                 WHEN LOWER(eventType) = 'app.oauth2.token.grant.refresh_token' THEN CAST('3002' AS INT)
                 WHEN LOWER(eventType) = 'app.realtimesync.import.details.update_user' THEN CAST('3001' AS INT)
-                WHEN LOWER(eventType) = 'application.configuration.detect_error' THEN CAST('3004' AS INT)
-                WHEN LOWER(eventType) = 'application.lifecycle.update' THEN CAST('3004' AS INT)
                 WHEN LOWER(eventType) = 'application.policy.sign_on.deny_access' THEN CAST('3002' AS INT)
                 WHEN LOWER(eventType) = 'application.provision.group_push.push_memberships' THEN CAST('3006' AS INT)
                 WHEN LOWER(eventType) = 'application.provision.user.deactivate' THEN CAST('3001' AS INT)
                 WHEN LOWER(eventType) = 'application.provision.user.deprovision' THEN CAST('3001' AS INT)
-                WHEN LOWER(eventType) = 'application.provision.user.push_profile' THEN CAST('3001' AS INT)
                 WHEN LOWER(eventType) = 'application.user_membership.remove' THEN CAST('3005' AS INT)
                 WHEN LOWER(eventType) = 'application.user_membership.update' THEN CAST('3005' AS INT)
-                WHEN LOWER(eventType) = 'core.concurrency.org.limit.violation' THEN CAST('3004' AS INT)
                 WHEN LOWER(eventType) = 'device.enrollment.create' THEN CAST('3004' AS INT)
                 WHEN LOWER(eventType) = 'device.lifecycle.activate' THEN CAST('3004' AS INT)
                 WHEN LOWER(eventType) = 'device.user.add' THEN CAST('3004' AS INT)
-                WHEN LOWER(eventType) = 'event_hook.delivery' THEN CAST('3004' AS INT)
                 WHEN LOWER(eventType) = 'group.user_membership.add' THEN CAST('3006' AS INT)
                 WHEN LOWER(eventType) = 'group.user_membership.remove' THEN CAST('3006' AS INT)
                 WHEN LOWER(eventType) = 'pki.cert.issue' THEN CAST('3004' AS INT)
                 WHEN LOWER(eventType) = 'policy.evaluate_sign_on' THEN CAST('3002' AS INT)
-                WHEN LOWER(eventType) = 'security.request.blocked' THEN CAST('3003' AS INT)
                 WHEN LOWER(eventType) = 'system.agent.ad.read_ldap' THEN CAST('3004' AS INT)
-                WHEN LOWER(eventType) = 'system.agent.ad.read_topology' THEN CAST('3004' AS INT)
-                WHEN LOWER(eventType) = 'system.client.concurrency_rate_limit.notification' THEN CAST('3004' AS INT)
-                WHEN LOWER(eventType) = 'system.client.rate_limit.notification' THEN CAST('3004' AS INT)
-                WHEN LOWER(eventType) = 'system.email.delivery' THEN CAST('3004' AS INT)
-                WHEN LOWER(eventType) = 'system.email.mfa_enroll_notification.sent_message' THEN CAST('3005' AS INT)
-                WHEN LOWER(eventType) = 'system.email.new_device_notification.sent_message' THEN CAST('3005' AS INT)
-                WHEN LOWER(eventType) = 'system.import.complete' THEN CAST('3004' AS INT)
-                WHEN LOWER(eventType) = 'system.import.complete_batch' THEN CAST('3004' AS INT)
-                WHEN LOWER(eventType) = 'system.import.custom_object.complete' THEN CAST('3004' AS INT)
-                WHEN LOWER(eventType) = 'system.import.download.complete' THEN CAST('3004' AS INT)
-                WHEN LOWER(eventType) = 'system.import.download.start' THEN CAST('3004' AS INT)
-                WHEN LOWER(eventType) = 'system.import.group.complete' THEN CAST('3006' AS INT)
-                WHEN LOWER(eventType) = 'system.import.group_membership.complete' THEN CAST('3006' AS INT)
-                WHEN LOWER(eventType) = 'system.import.implicit_deletion.complete' THEN CAST('3004' AS INT)
-                WHEN LOWER(eventType) = 'system.import.implicit_deletion.start' THEN CAST('3004' AS INT)
-                WHEN LOWER(eventType) = 'system.import.membership_processing.complete' THEN CAST('3006' AS INT)
-                WHEN LOWER(eventType) = 'system.import.membership_processing.start' THEN CAST('3006' AS INT)
-                WHEN LOWER(eventType) = 'system.import.object_creation.complete' THEN CAST('3004' AS INT)
-                WHEN LOWER(eventType) = 'system.import.object_creation.start' THEN CAST('3004' AS INT)
-                WHEN LOWER(eventType) = 'system.import.start' THEN CAST('3001' AS INT)
-                WHEN LOWER(eventType) = 'system.import.user.complete' THEN CAST('3001' AS INT)
+                
                 WHEN LOWER(eventType) = 'system.import.user.update' THEN CAST('3001' AS INT)
-                WHEN LOWER(eventType) = 'system.import.user_matching.complete' THEN CAST('3001' AS INT)
-                WHEN LOWER(eventType) = 'system.import.user_matching.start' THEN CAST('3001' AS INT)
-                WHEN LOWER(eventType) = 'system.operation.concurrency_limit.violation' THEN CAST('3004' AS INT)
-                WHEN LOWER(eventType) = 'system.operation.rate_limit.violation' THEN CAST('3004' AS INT)
                 WHEN LOWER(eventType) = 'system.push.send_factor_verify_push' THEN CAST('3002' AS INT)
                 WHEN LOWER(eventType) = 'user.account.update_profile' THEN CAST('3001' AS INT)
                 WHEN LOWER(eventType) = 'user.authentication.auth_via_mfa' THEN CAST('3002' AS INT)
@@ -148,16 +132,47 @@ silver:
                 WHEN LOWER(eventType) = 'user.authentication.verify' THEN CAST('3002' AS INT)
                 WHEN LOWER(eventType) = 'user.lifecycle.deactivate' THEN CAST('3001' AS INT)
                 WHEN LOWER(eventType) = 'user.lifecycle.suspend' THEN CAST('3001' AS INT)
-                WHEN LOWER(eventType) = 'user.mfa.factor.activate' THEN CAST('3002' AS INT)
-                WHEN LOWER(eventType) = 'user.mfa.factor.update' THEN CAST('3002' AS INT)
-                WHEN LOWER(eventType) = 'user.session.access_admin_app' THEN CAST('3002' AS INT)
+                WHEN LOWER(eventType) = 'user.mfa.factor.activate' THEN CAST('3001' AS INT)
+                WHEN LOWER(eventType) = 'user.mfa.factor.update' THEN CAST('3001' AS INT)
                 WHEN LOWER(eventType) = 'user.session.clear' THEN CAST('3003' AS INT)
                 WHEN LOWER(eventType) = 'user.session.start' THEN CAST('3003' AS INT)
+
+
+                WHEN LOWER(eventType) IN (
+                  'system.client.concurrency_rate_limit.notification', 'system.agent.ad.read_topology',
+                    'event_hook.delivery', 'application.provision.user.push_profile', 
+                    'system.client.rate_limit.notification'
+                ) THEN CAST('6003' AS INT)
+                WHEN LOWER(eventType) IN (
+                  'application.lifecycle.update'
+                ) THEN CAST('6002' AS INT)
+                WHEN LOWER(eventType) IN (
+                    'core.concurrency.org.limit.violation', 'system.operation.concurrency_limit.violation', 'system.operation.rate_limit.violation', 
+                    'application.configuration.detect_error'
+                  ) THEN CAST('6008' AS INT)
+                WHEN LOWER(eventType) = 'user.session.access_admin_app' THEN CAST('6001' AS INT)
+
                 ELSE NULL
             END
         - name: ocsf_class_name
           expr: |
             CASE
+                WHEN LOWER(eventType) IN (
+                    'system.import.user_matching.start', 'system.import.object_creation.start', 'system.import.download.start',
+                    'system.import.implicit_deletion.start', 'system.import.object_creation.complete',
+                    'system.import.download.complete', 'system.import.implicit_deletion.complete',
+                    'system.import.group.complete',
+                    'system.import.custom_object.complete', 'system.import.user.complete', 'system.import.membership_processing.complete', 'system.import.membership_processing.start',
+                    'system.import.user_matching.complete', 'system.import.group_membership.complete',
+                    'system.import.start', 'system.import.complete', 'system.import.complete_batch'
+                  ) THEN 'Scheduled Job Activity'
+
+                WHEN LOWER(eventType) = 'security.request.blocked' THEN 'Detection Finding'
+
+                WHEN LOWER(eventType) IN (
+                  'system.email.delivery', 'system.email.mfa_enroll_notification.sent_message', 'system.email.new_device_notification.sent_message'
+                ) THEN 'Email Activity'
+
                 WHEN LOWER(eventType) = 'app.user_management.grouppush.mapping.okta.users.ignored' THEN 'Group Management'
                 WHEN LOWER(eventType) = 'app.generic.unauth_app_access_attempt' THEN 'Authentication'
                 WHEN LOWER(eventType) = 'app.oauth2.authorize' THEN 'Authentication'
@@ -168,52 +183,21 @@ silver:
                 WHEN LOWER(eventType) = 'app.oauth2.token.grant.id_token' THEN 'Authentication'
                 WHEN LOWER(eventType) = 'app.oauth2.token.grant.refresh_token' THEN 'Authentication'
                 WHEN LOWER(eventType) = 'app.realtimesync.import.details.update_user' THEN 'Account Change'
-                WHEN LOWER(eventType) = 'application.configuration.detect_error' THEN 'Entity Management'
-                WHEN LOWER(eventType) = 'application.lifecycle.update' THEN 'Entity Management'
                 WHEN LOWER(eventType) = 'application.policy.sign_on.deny_access' THEN 'Authentication'
                 WHEN LOWER(eventType) = 'application.provision.group_push.push_memberships' THEN 'Group Management'
                 WHEN LOWER(eventType) = 'application.provision.user.deactivate' THEN 'Account Change'
                 WHEN LOWER(eventType) = 'application.provision.user.deprovision' THEN 'Account Change'
-                WHEN LOWER(eventType) = 'application.provision.user.push_profile' THEN 'Account Change'
                 WHEN LOWER(eventType) = 'application.user_membership.remove' THEN 'User Access Management'
                 WHEN LOWER(eventType) = 'application.user_membership.update' THEN 'User Access Management'
-                WHEN LOWER(eventType) = 'core.concurrency.org.limit.violation' THEN 'Entity Management'
                 WHEN LOWER(eventType) = 'device.enrollment.create' THEN 'Entity Management'
                 WHEN LOWER(eventType) = 'device.lifecycle.activate' THEN 'Entity Management'
                 WHEN LOWER(eventType) = 'device.user.add' THEN 'Entity Management'
-                WHEN LOWER(eventType) = 'event_hook.delivery' THEN 'Entity Management'
                 WHEN LOWER(eventType) = 'group.user_membership.add' THEN 'Group Management'
                 WHEN LOWER(eventType) = 'group.user_membership.remove' THEN 'Group Management'
                 WHEN LOWER(eventType) = 'pki.cert.issue' THEN 'Entity Management'
                 WHEN LOWER(eventType) = 'policy.evaluate_sign_on' THEN 'Authentication'
-                WHEN LOWER(eventType) = 'security.request.blocked' THEN 'Authorize Session'
                 WHEN LOWER(eventType) = 'system.agent.ad.read_ldap' THEN 'Entity Management'
-                WHEN LOWER(eventType) = 'system.agent.ad.read_topology' THEN 'Entity Management'
-                WHEN LOWER(eventType) = 'system.client.concurrency_rate_limit.notification' THEN 'Entity Management'
-                WHEN LOWER(eventType) = 'system.client.rate_limit.notification' THEN 'Entity Management'
-                WHEN LOWER(eventType) = 'system.email.delivery' THEN 'Entity Management'
-                WHEN LOWER(eventType) = 'system.email.mfa_enroll_notification.sent_message' THEN 'User Access Management'
-                WHEN LOWER(eventType) = 'system.email.new_device_notification.sent_message' THEN 'User Access Management'
-                WHEN LOWER(eventType) = 'system.import.complete' THEN 'Entity Management'
-                WHEN LOWER(eventType) = 'system.import.complete_batch' THEN 'Entity Management'
-                WHEN LOWER(eventType) = 'system.import.custom_object.complete' THEN 'Entity Management'
-                WHEN LOWER(eventType) = 'system.import.download.complete' THEN 'Entity Management'
-                WHEN LOWER(eventType) = 'system.import.download.start' THEN 'Entity Management'
-                WHEN LOWER(eventType) = 'system.import.group.complete' THEN 'Group Management'
-                WHEN LOWER(eventType) = 'system.import.group_membership.complete' THEN 'Group Management'
-                WHEN LOWER(eventType) = 'system.import.implicit_deletion.complete' THEN 'Entity Management'
-                WHEN LOWER(eventType) = 'system.import.implicit_deletion.start' THEN 'Entity Management'
-                WHEN LOWER(eventType) = 'system.import.membership_processing.complete' THEN 'Group Management'
-                WHEN LOWER(eventType) = 'system.import.membership_processing.start' THEN 'Group Management'
-                WHEN LOWER(eventType) = 'system.import.object_creation.complete' THEN 'Entity Management'
-                WHEN LOWER(eventType) = 'system.import.object_creation.start' THEN 'Entity Management'
-                WHEN LOWER(eventType) = 'system.import.start' THEN 'Account Change'
-                WHEN LOWER(eventType) = 'system.import.user.complete' THEN 'Account Change'
                 WHEN LOWER(eventType) = 'system.import.user.update' THEN 'Account Change'
-                WHEN LOWER(eventType) = 'system.import.user_matching.complete' THEN 'Account Change'
-                WHEN LOWER(eventType) = 'system.import.user_matching.start' THEN 'Account Change'
-                WHEN LOWER(eventType) = 'system.operation.concurrency_limit.violation' THEN 'Entity Management'
-                WHEN LOWER(eventType) = 'system.operation.rate_limit.violation' THEN 'Entity Management'
                 WHEN LOWER(eventType) = 'system.push.send_factor_verify_push' THEN 'Authentication'
                 WHEN LOWER(eventType) = 'user.account.update_profile' THEN 'Account Change'
                 WHEN LOWER(eventType) = 'user.authentication.auth_via_mfa' THEN 'Authentication'
@@ -221,11 +205,27 @@ silver:
                 WHEN LOWER(eventType) = 'user.authentication.verify' THEN 'Authentication'
                 WHEN LOWER(eventType) = 'user.lifecycle.deactivate' THEN 'Account Change'
                 WHEN LOWER(eventType) = 'user.lifecycle.suspend' THEN 'Account Change'
-                WHEN LOWER(eventType) = 'user.mfa.factor.activate' THEN 'Authentication'
-                WHEN LOWER(eventType) = 'user.mfa.factor.update' THEN 'Authentication'
-                WHEN LOWER(eventType) = 'user.session.access_admin_app' THEN 'Authentication'
+                WHEN LOWER(eventType) = 'user.mfa.factor.activate' THEN 'Account Change'
+                WHEN LOWER(eventType) = 'user.mfa.factor.update' THEN 'Account Change'
                 WHEN LOWER(eventType) = 'user.session.clear' THEN 'Authorize Session'
                 WHEN LOWER(eventType) = 'user.session.start' THEN 'Authorize Session'
+
+                
+
+                WHEN LOWER(eventType) IN (
+                    'system.client.concurrency_rate_limit.notification', 'system.agent.ad.read_topology',
+                    'event_hook.delivery', 'application.provision.user.push_profile', 
+                    'system.client.rate_limit.notification'
+                  ) THEN 'Api Activity'
+                WHEN LOWER(eventType) IN (
+                    'application.lifecycle.update'
+                  ) THEN 'Application Lifecycle'
+                WHEN LOWER(eventType) IN (
+                    'core.concurrency.org.limit.violation', 'system.operation.concurrency_limit.violation', 'system.operation.rate_limit.violation', 
+                    'application.configuration.detect_error'
+                  ) THEN 'Application Error'
+                WHEN LOWER(eventType) = 'user.session.access_admin_app' THEN 'Web Resources Activity'
+
                 ELSE NULL
             END
         - name: ocsf_activity_id
@@ -289,11 +289,11 @@ silver:
         - name: ocsf_status_code
           expr: LOWER(outcome.result)
         - name: ocsf_status_detail
-          from: outcome.reason
+          expr: NULLIF(outcome.reason, '')
+        - name: ocsf_message
+          expr: COALESCE(NULLIF(displayMessage, ''), NULLIF(debugContext.debugData.detailedmessage, ''), NULLIF(outcome.reason, ''))
         - name: ocsf_time
           expr: timestamp_millis(cast(_time AS BIGINT) * 1000)
-        - name: ocsf_message
-          from: displayMessage
         - name: ocsf_severity
           expr: |
             CASE 
@@ -323,7 +323,7 @@ silver:
         - name: ocsf_device.os
           from: ocsf_os
         - name: ocsf_device.type
-          expr: | 
+          expr: |
             CASE
               WHEN (LOWER(client.device) == 'computer') THEN 'desktop'
               WHEN (LOWER(client.device) == 'tablet') THEN 'tablet'
@@ -331,7 +331,7 @@ silver:
               ELSE 'other'
             END
         - name: ocsf_device.type_id
-          expr: | 
+          expr: |
             CASE
               WHEN (LOWER(client.device) == 'computer') THEN CAST('2' AS INT)
               WHEN (LOWER(client.device) == 'tablet') THEN CAST('4' AS INT)
@@ -355,8 +355,14 @@ silver:
             END
         - name: ocsf_http_request.url.url_string
           from: debugContext.debugData.url
+        - name: ocsf_http_request.http_headers
+          expr: ARRAY(NAMED_STRUCT('name', 'User-Agent', 'value', client.userAgent.rawUserAgent), NAMED_STRUCT('name', 'X-Forwarded-For', 'value', get(request.ipChain, 0).ip))
+              
+
         - name: ocsf_src_endpoint.hostname
           from: host
+        - name: ocsf_src_endpoint.intermediate_ips
+          expr: TRANSFORM(request.ipChain, x -> x.ip)
         - name: ocsf_src_endpoint.ip
           from: client.ipAddress
         - name: ocsf_src_endpoint.name
@@ -371,6 +377,8 @@ silver:
         - name: ocsf_src_endpoint.autonomous_system.number
           from: securityContext.asNumber
 
+        - name: ocsf_src_endpoint.proxy_endpoint.intermediate_ips
+          expr: TRANSFORM(request.ipChain, x -> x.ip)
 
         - name: ocsf_src_endpoint.os
           from: ocsf_os
@@ -447,6 +455,33 @@ silver:
                 WHEN (LOWER(device.os_platform) LIKE 'ios%' OR LOWER(client.userAgent.os) LIKE 'ios%') THEN 'ios'
                 ELSE 'unknown'
               END
+          - name: ocsf_metadata.log_provider
+            literal: Okta
+          - name: ocsf_metadata.correlation_uid
+            from: transaction.id
+          - name: ocsf_metadata.log_level
+            from: severity
+          - name: ocsf_metadata.log_version
+            from: version
+          - name: ocsf_metadata.logged_time
+            expr: TRY_TO_TIMESTAMP(published)
+          - name: ocsf_metadata.modified_time
+            expr: TRY_TO_TIMESTAMP(published)
+          - name: ocsf_metadata.original_time
+            expr: TRY_TO_TIMESTAMP(published)
+          - name: ocsf_metadata.processed_time
+            expr: CURRENT_TIMESTAMP()
+          - name: ocsf_metadata.product.name
+            literal: Syslog
+          - name: ocsf_metadata.product.vendor_name
+            literal: Okta
+          - name: ocsf_metadata.product.version
+            literal: 1.0.0
+          - name: ocsf_metadata.uid
+            from: uuid
+          - name: ocsf_metadata.version
+            literal: 1.0.0
+          
 
         unreferencedColumns:
           preserve: true
@@ -454,24 +489,386 @@ silver:
             - _time
 
 gold:
-  - name: account_change
+  - name: scheduled_job_activity
     input: okta_syslog
-    filter: ocsf_class_uid = 3001
+    filter: ocsf_class_uid = 1006
+    utils:
+        temporaryFields:
+          - name: action
+            expr: |
+              CASE 
+                WHEN LOWER(eventType) IN (
+                          'system.import.user_matching.start', 'system.import.object_creation.start', 'system.import.download.start',
+                          'system.import.membership_processing.start',
+                          'system.import.start',
+                          'system.import.implicit_deletion.start',
+                          'system.import.object_creation.complete',
+                          'system.import.download.complete', 'system.import.implicit_deletion.complete',
+                          'system.import.group.complete',
+                          'system.import.custom_object.complete', 'system.import.user.complete', 'system.import.membership_processing.complete',
+                          'system.import.user_matching.complete', 'system.import.group_membership.complete',
+                          'system.import.complete', 'system.import.complete_batch'
+                ) THEN named_struct('id', 3, 'name', 'Observed')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+
+          - name: activity
+            expr: |
+              CASE 
+                WHEN LOWER(eventType) IN (
+                          'system.import.user_matching.start', 'system.import.object_creation.start', 'system.import.download.start',
+                          'system.import.membership_processing.start',
+                          'system.import.start'
+                ) THEN named_struct('id', 6, 'name', 'Start')
+                WHEN LOWER(eventType) IN (
+                          'system.import.implicit_deletion.start'
+                ) THEN named_struct('id', 3, 'name', 'Delete')
+                WHEN LOWER(eventType) IN (
+                          'system.import.object_creation.complete',
+                          'system.import.download.complete', 'system.import.implicit_deletion.complete',
+                          'system.import.group.complete',
+                          'system.import.custom_object.complete', 'system.import.user.complete', 'system.import.membership_processing.complete',
+                          'system.import.user_matching.complete', 'system.import.group_membership.complete',
+                          'system.import.complete', 'system.import.complete_batch'
+                ) THEN named_struct('id', 99, 'name', 'Complete')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+
     fields:
-      - name: type_uid
-        expr: (ocsf_class_uid * 100) + ocsf_activity_id
       - name: category_uid
-        from: ocsf_category_uid
+        literal: 1
       - name: category_name
-        from: ocsf_category_name
+        literal: System
+
+      - name: type_uid
+        expr: (ocsf_class_uid * 100) + activity.id
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
         from: ocsf_class_name
       - name: activity_id
-        from: ocsf_activity_id
+        from: activity.id
       - name: activity_name
-        from: ocsf_activity_name
+        from: activity.name
+      - name: action_id
+        from: action.id
+      - name: action
+        from: action.name
+      - name: metadata
+        from: ocsf_metadata
+      - name: start_time
+        expr: TRY_TO_TIMESTAMP(published)
+      - name: status
+        from: ocsf_status
+      - name: status_id
+        from: ocsf_status_id
+      - name: status_code
+        from: ocsf_status_code
+      - name: status_detail
+        from: ocsf_status_detail
+      - name: time
+        from: ocsf_time
+      - name: message
+        from: ocsf_message
+      - name: severity
+        from: ocsf_severity
+      - name: severity_id
+        from: ocsf_severity_id
+      - name: actor
+        from: ocsf_actor
+      - name: device
+        from: ocsf_device
+      - name: risk_details
+        expr: NULLIF(debugContext.debugData.risk, '')
+      - name: risk_level
+        expr: |
+          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
+            WHEN 'INFO' THEN 'Info' 
+            WHEN 'LOW' THEN 'Low' 
+            WHEN 'MEDIUM' THEN 'Medium' 
+            WHEN 'HIGH' THEN 'High' 
+            WHEN 'CRITICAL' THEN 'Critical' 
+            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
+          END
+      - name: risk_level_id
+        expr: |
+          CASE UPPER(regexp_extract(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
+            WHEN 'INFO' THEN 0 
+            WHEN 'LOW' THEN 1 
+            WHEN 'MEDIUM' THEN 2 
+            WHEN 'HIGH' THEN 3 
+            WHEN 'CRITICAL' THEN 4 
+            ELSE 99
+          END
+
+
+  - name: detection_finding
+    input: okta_syslog
+    filter: ocsf_class_uid = 2004
+    utils:
+        temporaryFields:
+          - name: action
+            expr: |
+              CASE 
+                WHEN LOWER(eventType) IN (
+                          'security.request.blocked'
+                ) THEN named_struct('id', 2, 'name', 'Denied')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+          - name: activity
+            expr: |
+              CASE 
+                WHEN LOWER(eventType) IN (
+                          'security.request.blocked'
+                ) THEN named_struct('id', 1, 'name', 'Create')
+
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+
+    fields:
+      - name: category_uid
+        literal: 2
+      - name: category_name
+        literal: Findings
+
+      - name: type_uid
+        expr: (ocsf_class_uid * 100) + activity.id
+      - name: class_uid
+        from: ocsf_class_uid
+      - name: class_name
+        from: ocsf_class_name
+      - name: activity_id
+        from: activity.id
+      - name: activity_name
+        from: activity.name
+      - name: action_id
+        from: action.id
+      - name: action
+        from: action.name
+      - name: metadata
+        from: ocsf_metadata
+      - name: start_time
+        expr: TRY_TO_TIMESTAMP(published)
+      - name: status
+        from: ocsf_status
+      - name: status_id
+        from: ocsf_status_id
+      - name: status_code
+        from: ocsf_status_code
+      - name: status_detail
+        from: ocsf_status_detail
+      - name: time
+        from: ocsf_time
+      - name: message
+        from: ocsf_message
+      - name: severity
+        from: ocsf_severity
+      - name: severity_id
+        from: ocsf_severity_id
+      - name: actor
+        from: ocsf_actor
+      - name: device
+        from: ocsf_device
+      - name: risk_details
+        expr: NULLIF(debugContext.debugData.risk, '')
+      - name: risk_level
+        expr: |
+          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
+            WHEN 'INFO' THEN 'Info' 
+            WHEN 'LOW' THEN 'Low' 
+            WHEN 'MEDIUM' THEN 'Medium' 
+            WHEN 'HIGH' THEN 'High' 
+            WHEN 'CRITICAL' THEN 'Critical' 
+            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
+          END
+      - name: risk_level_id
+        expr: |
+          CASE UPPER(regexp_extract(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
+            WHEN 'INFO' THEN 0 
+            WHEN 'LOW' THEN 1 
+            WHEN 'MEDIUM' THEN 2 
+            WHEN 'HIGH' THEN 3 
+            WHEN 'CRITICAL' THEN 4 
+            ELSE 99
+          END
+
+
+
+  - name: email_activity
+    input: okta_syslog
+    filter: ocsf_class_uid = 4009
+    utils:
+        temporaryFields:
+          - name: action
+            expr: |
+              CASE 
+                WHEN LOWER(eventType) IN (
+                          'system.email.mfa_enroll_notification.sent_message', 'system.email.new_device_notification.sent_message',
+                          'system.email.delivery'
+                ) THEN named_struct('id', 3, 'name', 'Observed')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+          - name: activity
+            expr: |
+              CASE 
+                WHEN LOWER(eventType) IN (
+                          'system.email.mfa_enroll_notification.sent_message', 'system.email.new_device_notification.sent_message'
+                ) THEN named_struct('id', 1, 'name', 'Sent')
+                WHEN LOWER(eventType) IN (
+                          'system.email.delivery'
+                ) THEN named_struct('id', 99, 'name', 'Delivery')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+    fields:
+      - name: category_uid
+        literal: 4
+      - name: category_name
+        literal: Network
+
+      - name: type_uid
+        expr: (ocsf_class_uid * 100) + activity.id
+      - name: class_uid
+        from: ocsf_class_uid
+      - name: class_name
+        from: ocsf_class_name
+      - name: activity_id
+        from: activity.id
+      - name: activity_name
+        from: activity.name
+      - name: action_id
+        from: action.id
+      - name: action
+        from: action.name
+      - name: metadata
+        from: ocsf_metadata
+      - name: start_time
+        expr: TRY_TO_TIMESTAMP(published)
+      - name: status
+        from: ocsf_status
+      - name: status_id
+        from: ocsf_status_id
+      - name: status_code
+        from: ocsf_status_code
+      - name: status_detail
+        from: ocsf_status_detail
+      - name: time
+        from: ocsf_time
+      - name: message
+        from: ocsf_message
+      - name: severity
+        from: ocsf_severity
+      - name: severity_id
+        from: ocsf_severity_id
+      - name: actor
+        from: ocsf_actor
+      - name: device
+        from: ocsf_device
+      - name: risk_details
+        expr: NULLIF(debugContext.debugData.risk, '')
+      - name: risk_level
+        expr: |
+          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
+            WHEN 'INFO' THEN 'Info' 
+            WHEN 'LOW' THEN 'Low' 
+            WHEN 'MEDIUM' THEN 'Medium' 
+            WHEN 'HIGH' THEN 'High' 
+            WHEN 'CRITICAL' THEN 'Critical' 
+            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
+          END
+      - name: risk_level_id
+        expr: |
+          CASE UPPER(regexp_extract(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
+            WHEN 'INFO' THEN 0 
+            WHEN 'LOW' THEN 1 
+            WHEN 'MEDIUM' THEN 2 
+            WHEN 'HIGH' THEN 3 
+            WHEN 'CRITICAL' THEN 4 
+            ELSE 99
+          END
+
+      # event specific fields
+      - name: direction
+        literal: Outbound
+      - name: direction_id
+        literal: 2
+      - name: disposition
+        expr: |
+          CASE 
+            WHEN UPPER(outcome.result) = 'SUCCESS' THEN 'Allowed' 
+            WHEN UPPER(outcome.result) IN ('FAILED', 'FAILURE') THEN 'Blocked'
+            ELSE COALESCE(NULLIF(outcome.result, ''), 'Unknown')  
+          END
+      - name: disposition_id
+        expr: |
+          CASE 
+            WHEN UPPER(outcome.result) = 'SUCCESS' THEN 1 
+            WHEN UPPER(outcome.result) IN ('FAILED', 'FAILURE') THEN 2 
+            WHEN NULLIF(outcome.result, '') IS NOT NULL THEN 99
+            ELSE 0
+          END
+
+
+  - name: account_change
+    input: okta_syslog
+    filter: ocsf_class_uid = 3001
+    utils:
+        temporaryFields:
+          - name: action
+            expr: |
+              CASE 
+                WHEN LOWER(eventType) IN (
+                          'user.mfa.factor.activate'
+                ) THEN named_struct('id', 1, 'name', 'Allowed')
+                WHEN LOWER(eventType) IN (
+                          'application.provision.user.deactivate', 'application.provision.user.deprovision',
+                          'user.lifecycle.deactivate', 'user.lifecycle.suspend',
+                          'app.realtimesync.import.details.update_user', 'user.account.update_profile',
+                          'system.import.user.update',
+                          'user.mfa.factor.update'
+                ) THEN named_struct('id', 3, 'name', 'Observed')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+          - name: activity
+            expr: |
+              CASE 
+                WHEN LOWER(eventType) IN (
+                          'application.provision.user.deactivate', 'application.provision.user.deprovision',
+                          'user.lifecycle.deactivate', 'user.lifecycle.suspend'
+                ) THEN named_struct('id', 5, 'name', 'Disable')
+                WHEN LOWER(eventType) IN (
+                          'user.mfa.factor.activate'
+                ) THEN named_struct('id', 10, 'name', 'MFA Factor Enable')
+                WHEN LOWER(eventType) IN (
+                          'app.realtimesync.import.details.update_user', 'user.account.update_profile',
+                          'system.import.user.update',
+                          'user.mfa.factor.update'
+                ) THEN named_struct('id', 99, 'name', 'Update')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+    fields:
+      - name: category_uid
+        literal: 3
+      - name: category_name
+        literal: Identity & Access Management
+
+      - name: type_uid
+        expr: (ocsf_class_uid * 100) + activity.id
+      - name: class_uid
+        from: ocsf_class_uid
+      - name: class_name
+        from: ocsf_class_name
+      - name: activity_id
+        from: activity.id
+      - name: activity_name
+        from: activity.name
+      - name: action_id
+        from: action.id
+      - name: action
+        from: action.name
+      - name: metadata
+        from: ocsf_metadata
+      - name: start_time
+        expr: TRY_TO_TIMESTAMP(published)
       - name: status
         from: ocsf_status
       - name: status_id
@@ -496,25 +893,100 @@ gold:
         from: ocsf_http_request
       - name: src_endpoint
         from: ocsf_src_endpoint
+      - name: risk_details
+        expr: NULLIF(debugContext.debugData.risk, '')
+      - name: risk_level
+        expr: |
+          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
+            WHEN 'INFO' THEN 'Info' 
+            WHEN 'LOW' THEN 'Low' 
+            WHEN 'MEDIUM' THEN 'Medium' 
+            WHEN 'HIGH' THEN 'High' 
+            WHEN 'CRITICAL' THEN 'Critical' 
+            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
+          END
+      - name: risk_level_id
+        expr: |
+          CASE UPPER(regexp_extract(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
+            WHEN 'INFO' THEN 0 
+            WHEN 'LOW' THEN 1 
+            WHEN 'MEDIUM' THEN 2 
+            WHEN 'HIGH' THEN 3 
+            WHEN 'CRITICAL' THEN 4 
+            ELSE 99
+          END
+
 
   - name: authentication
     input: okta_syslog
     filter: ocsf_class_uid = 3002
+    utils:
+        temporaryFields:
+          - name: action
+            expr: |
+              CASE 
+                WHEN LOWER(eventType) IN (
+                          'application.policy.sign_on.deny_access'
+                ) THEN named_struct('id', 2, 'name', 'Denied')
+                WHEN LOWER(eventType) IN (
+                          'app.oauth2.authorize', 'app.oauth2.authorize.code', 'app.oauth2.client.read_client_secret',
+                          'app.oauth2.token.grant', 'app.oauth2.token.grant.access_token', 'app.oauth2.token.grant.id_token',
+                          'app.oauth2.token.grant.refresh_token',
+                          'policy.evaluate_sign_on',
+                          'system.push.send_factor_verify_push',
+                          'user.authentication.auth_via_mfa',
+                          'user.authentication.sso',
+                          'user.authentication.verify',
+                          'app.generic.unauth_app_access_attempt'
+                ) THEN named_struct('id', 3, 'name', 'Observed')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+          - name: activity
+            expr: |
+              CASE 
+                WHEN LOWER(eventType) IN (
+                          'app.oauth2.authorize',  'app.oauth2.client.read_client_secret',
+                          'app.oauth2.token.grant', 'app.oauth2.token.grant.access_token', 'app.oauth2.token.grant.id_token',
+                          'app.oauth2.token.grant.refresh_token',
+                          'policy.evaluate_sign_on',
+                          'user.authentication.auth_via_mfa',
+                          'user.authentication.sso',
+                          'user.authentication.verify'
+                ) THEN named_struct('id', 1, 'name', 'Logon')
+                WHEN LOWER(eventType) IN (
+                          'app.generic.unauth_app_access_attempt'          
+                ) THEN named_struct('id', 2, 'name', 'Logoff')
+                WHEN LOWER(eventType) IN (
+                          'app.oauth2.authorize.code', 'system.push.send_factor_verify_push'
+                ) THEN named_struct('id', 6, 'name', 'Preauth')
+                WHEN LOWER(eventType) IN (
+                          'application.policy.sign_on.deny_access'
+                ) THEN named_struct('id', 99, 'name', 'Denied')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
     fields:
-      - name: type_uid
-        expr: (ocsf_class_uid * 100) + ocsf_activity_id
       - name: category_uid
-        from: ocsf_category_uid
+        literal: 3
       - name: category_name
-        from: ocsf_category_name
+        literal: Identity & Access Management
+      - name: type_uid
+        expr: (ocsf_class_uid * 100) + activity.id
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
         from: ocsf_class_name
       - name: activity_id
-        from: ocsf_activity_id
+        from: activity.id
       - name: activity_name
-        from: ocsf_activity_name
+        from: activity.name
+      - name: action_id
+        from: action.id
+      - name: action
+        from: action.name
+      - name: metadata
+        from: ocsf_metadata
+      - name: start_time
+        expr: TRY_TO_TIMESTAMP(published)
       - name: status
         from: ocsf_status
       - name: status_id
@@ -539,25 +1011,76 @@ gold:
         from: ocsf_http_request
       - name: src_endpoint
         from: ocsf_src_endpoint
+      - name: risk_details
+        expr: NULLIF(debugContext.debugData.risk, '')
+      - name: risk_level
+        expr: |
+          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
+            WHEN 'INFO' THEN 'Info' 
+            WHEN 'LOW' THEN 'Low' 
+            WHEN 'MEDIUM' THEN 'Medium' 
+            WHEN 'HIGH' THEN 'High' 
+            WHEN 'CRITICAL' THEN 'Critical' 
+            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
+          END
+      - name: risk_level_id
+        expr: |
+          CASE UPPER(regexp_extract(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
+            WHEN 'INFO' THEN 0 
+            WHEN 'LOW' THEN 1 
+            WHEN 'MEDIUM' THEN 2 
+            WHEN 'HIGH' THEN 3 
+            WHEN 'CRITICAL' THEN 4 
+            ELSE 99
+          END
 
   - name: authorize_session
     input: okta_syslog
     filter: ocsf_class_uid = 3003
+    utils:
+      temporaryFields:
+          - name: action
+            expr: |
+              CASE 
+                WHEN LOWER(eventType) IN (
+                          'user.session.clear', 'user.session.start'
+                ) THEN named_struct('id', 3, 'name', 'Observed')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+          - name: activity
+            expr: |
+              CASE 
+                WHEN LOWER(eventType) IN (
+                          'user.session.clear'
+                ) THEN named_struct('id', 99, 'name', 'Clear')
+                WHEN LOWER(eventType) IN (
+                          'user.session.clear'
+                ) THEN named_struct('id', 99, 'name', 'Start')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
     fields:
-      - name: type_uid
-        expr: (ocsf_class_uid * 100) + ocsf_activity_id
       - name: category_uid
-        from: ocsf_category_uid
+        literal: 3
       - name: category_name
-        from: ocsf_category_name
+        literal: Identity & Access Management
+      - name: type_uid
+        expr: (ocsf_class_uid * 100) + activity.id
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
         from: ocsf_class_name
       - name: activity_id
-        from: ocsf_activity_id
+        from: activity.id
       - name: activity_name
-        from: ocsf_activity_name
+        from: activity.name
+      - name: action_id
+        from: action.id
+      - name: action
+        from: action.name
+      - name: metadata
+        from: ocsf_metadata
+      - name: start_time
+        expr: TRY_TO_TIMESTAMP(published)
       - name: status
         from: ocsf_status
       - name: status_id
@@ -582,27 +1105,88 @@ gold:
         from: ocsf_http_request
       - name: src_endpoint
         from: ocsf_src_endpoint
+      - name: risk_details
+        expr: NULLIF(debugContext.debugData.risk, '')
+      - name: risk_level
+        expr: |
+          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
+            WHEN 'INFO' THEN 'Info' 
+            WHEN 'LOW' THEN 'Low' 
+            WHEN 'MEDIUM' THEN 'Medium' 
+            WHEN 'HIGH' THEN 'High' 
+            WHEN 'CRITICAL' THEN 'Critical' 
+            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
+          END
+      - name: risk_level_id
+        expr: |
+          CASE UPPER(regexp_extract(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
+            WHEN 'INFO' THEN 0 
+            WHEN 'LOW' THEN 1 
+            WHEN 'MEDIUM' THEN 2 
+            WHEN 'HIGH' THEN 3 
+            WHEN 'CRITICAL' THEN 4 
+            ELSE 99
+          END
+
+      # event specific fields
       - name: dst_endpoint.svc_name
         expr: debugContext.debugData.url
+
 
   - name: entity_management
     input: okta_syslog
     filter: ocsf_class_uid = 3004
+    utils:
+      temporaryFields:
+          - name: action
+            expr: |
+              CASE 
+                WHEN LOWER(eventType) IN (
+                          'device.enrollment.create', 'system.agent.ad.read_ldap', 
+                          'device.user.add', 'pki.cert.issue', 'device.lifecycle.activate'
+                ) THEN named_struct('id', 3, 'name', 'Observed')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+          - name: activity
+            expr: |
+              CASE 
+                WHEN LOWER(eventType) IN (
+                          'device.enrollment.create'
+                ) THEN named_struct('id', 1, 'name', 'Create')
+                WHEN LOWER(eventType) IN (
+                          'system.agent.ad.read_ldap'
+                ) THEN named_struct('id', 2, 'name', 'Read')
+                WHEN LOWER(eventType) IN (
+                          'device.user.add', 'pki.cert.issue'
+                ) THEN named_struct('id', 3, 'name', 'Update')
+                WHEN LOWER(eventType) IN (
+                          'device.lifecycle.activate'
+                ) THEN named_struct('id', 10, 'name', 'Activate')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
     fields:
-      - name: type_uid
-        expr: (ocsf_class_uid * 100) + ocsf_activity_id
       - name: category_uid
-        from: ocsf_category_uid
+        literal: 3
       - name: category_name
-        from: ocsf_category_name
+        literal: Identity & Access Management
+      - name: type_uid
+        expr: (ocsf_class_uid * 100) + activity.id
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
         from: ocsf_class_name
       - name: activity_id
-        from: ocsf_activity_id
+        from: activity.id
       - name: activity_name
-        from: ocsf_activity_name
+        from: activity.name
+      - name: action_id
+        from: action.id
+      - name: action
+        from: action.name
+      - name: metadata
+        from: ocsf_metadata
+      - name: start_time
+        expr: TRY_TO_TIMESTAMP(published)
       - name: status
         from: ocsf_status
       - name: status_id
@@ -627,25 +1211,76 @@ gold:
         from: ocsf_http_request
       - name: src_endpoint
         from: ocsf_src_endpoint
+      - name: risk_details
+        expr: NULLIF(debugContext.debugData.risk, '')
+      - name: risk_level
+        expr: |
+          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
+            WHEN 'INFO' THEN 'Info' 
+            WHEN 'LOW' THEN 'Low' 
+            WHEN 'MEDIUM' THEN 'Medium' 
+            WHEN 'HIGH' THEN 'High' 
+            WHEN 'CRITICAL' THEN 'Critical' 
+            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
+          END
+      - name: risk_level_id
+        expr: |
+          CASE UPPER(regexp_extract(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
+            WHEN 'INFO' THEN 0 
+            WHEN 'LOW' THEN 1 
+            WHEN 'MEDIUM' THEN 2 
+            WHEN 'HIGH' THEN 3 
+            WHEN 'CRITICAL' THEN 4 
+            ELSE 99
+          END
 
   - name: user_access
     input: okta_syslog
     filter: ocsf_class_uid = 3005
+    utils:
+      temporaryFields:
+          - name: action
+            expr: |
+              CASE 
+                WHEN LOWER(eventType) IN (
+                          'application.user_membership.update', 'application.user_membership.remove'
+                ) THEN named_struct('id', 3, 'name', 'Observed')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+          - name: activity
+            expr: |
+              CASE 
+                WHEN LOWER(eventType) IN (
+                          'application.user_membership.update'
+                ) THEN named_struct('id', 1, 'name', 'Assign Privileges')
+                WHEN LOWER(eventType) IN (
+                        'application.user_membership.remove'
+                ) THEN named_struct('id', 2, 'name', 'Revoke Privileges')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
     fields:
-      - name: type_uid
-        expr: (ocsf_class_uid * 100) + ocsf_activity_id
       - name: category_uid
-        from: ocsf_category_uid
+        literal: 3
       - name: category_name
-        from: ocsf_category_name
+        literal: Identity & Access Management
+      - name: type_uid
+        expr: (ocsf_class_uid * 100) + activity.id
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
         from: ocsf_class_name
       - name: activity_id
-        from: ocsf_activity_id
+        from: activity.id
       - name: activity_name
-        from: ocsf_activity_name
+        from: activity.name
+      - name: action_id
+        from: action.id
+      - name: action
+        from: action.name
+      - name: metadata
+        from: ocsf_metadata
+      - name: start_time
+        expr: TRY_TO_TIMESTAMP(published)
       - name: status
         from: ocsf_status
       - name: status_id
@@ -670,25 +1305,84 @@ gold:
         from: ocsf_http_request
       - name: src_endpoint
         from: ocsf_src_endpoint
+      - name: risk_details
+        expr: NULLIF(debugContext.debugData.risk, '')
+      - name: risk_level
+        expr: |
+          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
+            WHEN 'INFO' THEN 'Info' 
+            WHEN 'LOW' THEN 'Low' 
+            WHEN 'MEDIUM' THEN 'Medium' 
+            WHEN 'HIGH' THEN 'High' 
+            WHEN 'CRITICAL' THEN 'Critical' 
+            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
+          END
+      - name: risk_level_id
+        expr: |
+          CASE UPPER(regexp_extract(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
+            WHEN 'INFO' THEN 0 
+            WHEN 'LOW' THEN 1 
+            WHEN 'MEDIUM' THEN 2 
+            WHEN 'HIGH' THEN 3 
+            WHEN 'CRITICAL' THEN 4 
+            ELSE 99
+          END
+
 
   - name: group_management
     input: okta_syslog
     filter: ocsf_class_uid = 3006
+    utils:
+      temporaryFields:
+          - name: action
+            expr: |
+              CASE 
+                WHEN LOWER(eventType) IN (
+                          'group.user_membership.add', 'group.user_membership.remove', 'application.provision.group_push.push_memberships',
+                          'app.user_management.grouppush.mapping.okta.users.ignored'
+                ) THEN named_struct('id', 3, 'name', 'Observed')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+          - name: activity
+            expr: |
+              CASE 
+                WHEN LOWER(eventType) IN (
+                          'application.provision.group_push.push_memberships'
+                ) THEN named_struct('id', 1, 'name', 'Assign Privileges')
+                WHEN LOWER(eventType) IN (
+                        'group.user_membership.add'
+                ) THEN named_struct('id', 3, 'name', 'Add User')
+                WHEN LOWER(eventType) IN (
+                        'group.user_membership.remove'
+                ) THEN named_struct('id', 4, 'name', 'Remove User')
+                WHEN LOWER(eventType) IN (
+                        'app.user_management.grouppush.mapping.okta.users.ignored'
+                ) THEN named_struct('id', 99, 'name', 'Ignored')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
     fields:
-      - name: type_uid
-        expr: (ocsf_class_uid * 100) + ocsf_activity_id
       - name: category_uid
-        from: ocsf_category_uid
+        literal: 3
       - name: category_name
-        from: ocsf_category_name
+        literal: Identity & Access Management
+      - name: type_uid
+        expr: (ocsf_class_uid * 100) + activity.id
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
         from: ocsf_class_name
       - name: activity_id
-        from: ocsf_activity_id
+        from: activity.id
       - name: activity_name
-        from: ocsf_activity_name
+        from: activity.name
+      - name: action_id
+        from: action.id
+      - name: action
+        from: action.name
+      - name: metadata
+        from: ocsf_metadata
+      - name: start_time
+        expr: TRY_TO_TIMESTAMP(published)
       - name: status
         from: ocsf_status
       - name: status_id
@@ -713,3 +1407,438 @@ gold:
         from: ocsf_http_request
       - name: src_endpoint
         from: ocsf_src_endpoint
+      - name: risk_details
+        expr: NULLIF(debugContext.debugData.risk, '')
+      - name: risk_level
+        expr: |
+          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
+            WHEN 'INFO' THEN 'Info' 
+            WHEN 'LOW' THEN 'Low' 
+            WHEN 'MEDIUM' THEN 'Medium' 
+            WHEN 'HIGH' THEN 'High' 
+            WHEN 'CRITICAL' THEN 'Critical' 
+            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
+          END
+      - name: risk_level_id
+        expr: |
+          CASE UPPER(regexp_extract(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
+            WHEN 'INFO' THEN 0 
+            WHEN 'LOW' THEN 1 
+            WHEN 'MEDIUM' THEN 2 
+            WHEN 'HIGH' THEN 3 
+            WHEN 'CRITICAL' THEN 4 
+            ELSE 99
+          END
+
+
+  - name: web_resources_activity
+    input: okta_syslog
+    filter: ocsf_class_uid = 6001
+    utils:
+      temporaryFields:
+          - name: action
+            expr: |
+              CASE 
+                WHEN LOWER(eventType) IN (
+                          'user.session.access_admin_app'
+                ) THEN named_struct('id', 3, 'name', 'Observed')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+          - name: activity
+            expr: |
+              CASE 
+                WHEN LOWER(eventType) IN (
+                        'user.session.access_admin_app'
+                ) THEN named_struct('id', 3, 'name', 'Read')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+    fields:
+      - name: category_uid
+        literal: 6
+      - name: category_name
+        literal: Application
+      - name: type_uid
+        expr: (ocsf_class_uid * 100) + activity.id
+      - name: class_uid
+        from: ocsf_class_uid
+      - name: class_name
+        from: ocsf_class_name
+      - name: activity_id
+        from: activity.id
+      - name: activity_name
+        from: activity.name
+      - name: action_id
+        from: action.id
+      - name: action
+        from: action.name
+      - name: metadata
+        from: ocsf_metadata
+      - name: start_time
+        expr: TRY_TO_TIMESTAMP(published)
+      - name: status
+        from: ocsf_status
+      - name: status_id
+        from: ocsf_status_id
+      - name: status_code
+        from: ocsf_status_code
+      - name: status_detail
+        from: ocsf_status_detail
+      - name: time
+        from: ocsf_time
+      - name: message
+        from: ocsf_message
+      - name: severity
+        from: ocsf_severity
+      - name: severity_id
+        from: ocsf_severity_id
+      - name: actor
+        from: ocsf_actor
+      - name: device
+        from: ocsf_device
+      - name: http_request
+        from: ocsf_http_request
+      - name: src_endpoint
+        from: ocsf_src_endpoint
+      - name: risk_details
+        expr: NULLIF(debugContext.debugData.risk, '')
+      - name: risk_level
+        expr: |
+          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
+            WHEN 'INFO' THEN 'Info' 
+            WHEN 'LOW' THEN 'Low' 
+            WHEN 'MEDIUM' THEN 'Medium' 
+            WHEN 'HIGH' THEN 'High' 
+            WHEN 'CRITICAL' THEN 'Critical' 
+            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
+          END
+      - name: risk_level_id
+        expr: |
+          CASE UPPER(regexp_extract(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
+            WHEN 'INFO' THEN 0 
+            WHEN 'LOW' THEN 1 
+            WHEN 'MEDIUM' THEN 2 
+            WHEN 'HIGH' THEN 3 
+            WHEN 'CRITICAL' THEN 4 
+            ELSE 99
+          END
+
+
+
+  - name: application_lifecycle
+    input: okta_syslog
+    filter: ocsf_class_uid = 6002
+    utils:
+      temporaryFields:
+          - name: action
+            expr: |
+              CASE 
+                WHEN LOWER(eventType) IN (
+                          'application.lifecycle.update'
+                ) THEN named_struct('id', 3, 'name', 'Observed')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+          - name: activity
+            expr: |
+              CASE 
+                WHEN LOWER(eventType) IN (
+                        'application.lifecycle.update'
+                ) THEN named_struct('id', 8, 'name', 'Update')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+    fields:
+      - name: category_uid
+        literal: 6
+      - name: category_name
+        literal: Application
+      - name: type_uid
+        expr: (ocsf_class_uid * 100) + activity.id
+      - name: class_uid
+        from: ocsf_class_uid
+      - name: class_name
+        from: ocsf_class_name
+      - name: activity_id
+        from: activity.id
+      - name: activity_name
+        from: activity.name
+      - name: action_id
+        from: action.id
+      - name: action
+        from: action.name
+      - name: metadata
+        from: ocsf_metadata
+      - name: start_time
+        expr: TRY_TO_TIMESTAMP(published)
+      - name: status
+        from: ocsf_status
+      - name: status_id
+        from: ocsf_status_id
+      - name: status_code
+        from: ocsf_status_code
+      - name: status_detail
+        from: ocsf_status_detail
+      - name: time
+        from: ocsf_time
+      - name: message
+        from: ocsf_message
+      - name: severity
+        from: ocsf_severity
+      - name: severity_id
+        from: ocsf_severity_id
+      - name: actor
+        from: ocsf_actor
+      - name: device
+        from: ocsf_device
+      - name: risk_details
+        expr: NULLIF(debugContext.debugData.risk, '')
+      - name: risk_level
+        expr: |
+          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
+            WHEN 'INFO' THEN 'Info' 
+            WHEN 'LOW' THEN 'Low' 
+            WHEN 'MEDIUM' THEN 'Medium' 
+            WHEN 'HIGH' THEN 'High' 
+            WHEN 'CRITICAL' THEN 'Critical' 
+            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
+          END
+      - name: risk_level_id
+        expr: |
+          CASE UPPER(regexp_extract(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
+            WHEN 'INFO' THEN 0 
+            WHEN 'LOW' THEN 1 
+            WHEN 'MEDIUM' THEN 2 
+            WHEN 'HIGH' THEN 3 
+            WHEN 'CRITICAL' THEN 4 
+            ELSE 99
+          END
+
+      # event specific fields
+      - name: disposition
+        expr: |
+          CASE 
+            WHEN UPPER(outcome.result) = 'SUCCESS' THEN 'Allowed' 
+            WHEN UPPER(outcome.result) IN ('FAILED', 'FAILURE') THEN 'Blocked'
+            ELSE COALESCE(NULLIF(outcome.result, ''), 'Unknown')  
+          END
+      - name: disposition_id
+        expr: |
+          CASE 
+            WHEN UPPER(outcome.result) = 'SUCCESS' THEN 1 
+            WHEN UPPER(outcome.result) IN ('FAILED', 'FAILURE') THEN 2 
+            WHEN NULLIF(outcome.result, '') IS NOT NULL THEN 99
+            ELSE 0
+          END
+
+
+
+  - name: api_activity
+    input: okta_syslog
+    filter: ocsf_class_uid = 6003
+    utils:
+      temporaryFields:
+          - name: action
+            expr: |
+              CASE 
+                WHEN LOWER(eventType) IN (
+                          'system.client.concurrency_rate_limit.notification',
+                          'system.agent.ad.read_topology', 'event_hook.delivery',
+                          'system.client.rate_limit.notification', 'application.provision.user.push_profile'
+
+                ) THEN named_struct('id', 3, 'name', 'Observed')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+          - name: activity
+            expr: |
+              CASE 
+                WHEN LOWER(eventType) IN (
+                        'system.client.concurrency_rate_limit.notification'
+                ) THEN named_struct('id', 1, 'name', 'Create')
+                WHEN LOWER(eventType) IN (
+                        'system.agent.ad.read_topology', 'event_hook.delivery',
+                        'system.client.rate_limit.notification'
+                ) THEN named_struct('id', 2, 'name', 'Read')
+                WHEN LOWER(eventType) IN (
+                        'application.provision.user.push_profile'
+                ) THEN named_struct('id', 3, 'name', 'Update')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+    fields:
+      - name: category_uid
+        literal: 6
+      - name: category_name
+        literal: Application
+      - name: type_uid
+        expr: (ocsf_class_uid * 100) + activity.id
+      - name: class_uid
+        from: ocsf_class_uid
+      - name: class_name
+        from: ocsf_class_name
+      - name: activity_id
+        from: activity.id
+      - name: activity_name
+        from: activity.name
+      - name: action_id
+        from: action.id
+      - name: action
+        from: action.name
+      - name: metadata
+        from: ocsf_metadata
+      - name: start_time
+        expr: TRY_TO_TIMESTAMP(published)
+      - name: status
+        from: ocsf_status
+      - name: status_id
+        from: ocsf_status_id
+      - name: status_code
+        from: ocsf_status_code
+      - name: status_detail
+        from: ocsf_status_detail
+      - name: time
+        from: ocsf_time
+      - name: message
+        from: ocsf_message
+      - name: severity
+        from: ocsf_severity
+      - name: severity_id
+        from: ocsf_severity_id
+      - name: actor
+        from: ocsf_actor
+      - name: device
+        from: ocsf_device
+      - name: http_request
+        from: ocsf_http_request
+      - name: src_endpoint
+        from: ocsf_src_endpoint
+      - name: risk_details
+        expr: NULLIF(debugContext.debugData.risk, '')
+      - name: risk_level
+        expr: |
+          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
+            WHEN 'INFO' THEN 'Info' 
+            WHEN 'LOW' THEN 'Low' 
+            WHEN 'MEDIUM' THEN 'Medium' 
+            WHEN 'HIGH' THEN 'High' 
+            WHEN 'CRITICAL' THEN 'Critical' 
+            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
+          END
+      - name: risk_level_id
+        expr: |
+          CASE UPPER(regexp_extract(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
+            WHEN 'INFO' THEN 0 
+            WHEN 'LOW' THEN 1 
+            WHEN 'MEDIUM' THEN 2 
+            WHEN 'HIGH' THEN 3 
+            WHEN 'CRITICAL' THEN 4 
+            ELSE 99
+          END
+
+      # event specific fields
+      - name: disposition
+        expr: |
+          CASE 
+            WHEN UPPER(outcome.result) = 'SUCCESS' THEN 'Allowed' 
+            WHEN UPPER(outcome.result) IN ('FAILED', 'FAILURE') THEN 'Blocked'
+            ELSE COALESCE(NULLIF(outcome.result, ''), 'Unknown')  
+          END
+      - name: disposition_id
+        expr: |
+          CASE 
+            WHEN UPPER(outcome.result) = 'SUCCESS' THEN 1 
+            WHEN UPPER(outcome.result) IN ('FAILED', 'FAILURE') THEN 2 
+            WHEN NULLIF(outcome.result, '') IS NOT NULL THEN 99
+            ELSE 0
+          END
+
+  - name: application_error
+    input: okta_syslog
+    filter: ocsf_class_uid = 6008
+    utils:
+      temporaryFields:
+          - name: action
+            expr: |
+              CASE 
+                WHEN LOWER(eventType) IN (
+                          'core.concurrency.org.limit.violation', 'system.operation.concurrency_limit.violation', 'system.operation.rate_limit.violation', 
+                          'application.configuration.detect_error'
+                ) THEN named_struct('id', 3, 'name', 'Observed')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+          - name: activity
+            expr: |
+              CASE 
+                WHEN LOWER(eventType) IN (
+                          'core.concurrency.org.limit.violation', 'system.operation.concurrency_limit.violation', 'system.operation.rate_limit.violation', 
+                    'application.configuration.detect_error'
+                ) THEN named_struct('id', 1, 'name', 'General Error')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+    fields:
+      - name: category_uid
+        literal: 6
+      - name: category_name
+        literal: Application
+      - name: type_uid
+        expr: (ocsf_class_uid * 100) + activity.id
+      - name: class_uid
+        from: ocsf_class_uid
+      - name: class_name
+        from: ocsf_class_name
+      - name: activity_id
+        from: activity.id
+      - name: activity_name
+        from: activity.name
+      - name: action_id
+        from: action.id
+      - name: action
+        from: action.name
+      - name: metadata
+        from: ocsf_metadata
+      - name: start_time
+        expr: TRY_TO_TIMESTAMP(published)
+      - name: status
+        from: ocsf_status
+      - name: status_id
+        from: ocsf_status_id
+      - name: status_code
+        from: ocsf_status_code
+      - name: status_detail
+        from: ocsf_status_detail
+      - name: time
+        from: ocsf_time
+      - name: message
+        from: ocsf_message
+      - name: severity
+        from: ocsf_severity
+      - name: severity_id
+        from: ocsf_severity_id
+      - name: actor
+        from: ocsf_actor
+      - name: device
+        from: ocsf_device
+      - name: risk_details
+        expr: NULLIF(debugContext.debugData.risk, '')
+      - name: risk_level
+        expr: |
+          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
+            WHEN 'INFO' THEN 'Info' 
+            WHEN 'LOW' THEN 'Low' 
+            WHEN 'MEDIUM' THEN 'Medium' 
+            WHEN 'HIGH' THEN 'High' 
+            WHEN 'CRITICAL' THEN 'Critical' 
+            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
+          END
+      - name: risk_level_id
+        expr: |
+          CASE UPPER(regexp_extract(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
+            WHEN 'INFO' THEN 0 
+            WHEN 'LOW' THEN 1 
+            WHEN 'MEDIUM' THEN 2 
+            WHEN 'HIGH' THEN 3 
+            WHEN 'CRITICAL' THEN 4 
+            ELSE 99
+          END
+
+      # event specific fields
+      - name: disposition
+        literal: Error
+      - name: disposition_id
+        literal: 27
