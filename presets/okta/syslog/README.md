@@ -22,13 +22,19 @@ This preset contains data processing instructions for the Okta syslog data sourc
 - uses `tempField` util for the `os` sub-object that is being reused across different objects
 
 ## Syslog
-- `1004` different event types defined by the Okta API
 - Assumed data format: jsonL
 - gold tables written to
   - account_change
+  - api_activity
+  - application_error
+  - application_lifecycle
   - authentication
   - authorize_session
+  - detection_finding
+  - email_activity
   - entity_management
-  - user_access
   - group_management
+  - scheduled_job_activity
+  - user_access
+  - web_resources_activity
 
