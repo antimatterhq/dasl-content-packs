@@ -2,6 +2,3 @@ versions:
   - versionNumber: 1
     changes: Initial commit of Okta preset
     commit: 9bc30afe24ad3337d6adf498a77bd7f77fffbacc
-  - versionNumber: 2
-    changes: Adds additional processing instructions including more event types and additional gold tables.
-    commit: c19dd73e87236cb0872f558e617f500f91d7209d
