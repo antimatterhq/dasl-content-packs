@@ -1,0 +1,98 @@
+name: zeek_http
+author: "Alex Ott <alexey.ott@databricks.com>"
+description: "Processing of Zeek HTTP logs"
+title: "Zeek - HTTP"
+iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/zeek/http/icon.png"
+autoloader:
+  format: jsonl
+  cloudFiles:
+    schemaHints: "`id.orig_p` int, `id.resp_p` int, ts double, status_code int"
+silver:
+  transform:
+    - name: zeek_http
+      fields:
+        - name: id_origin_host
+          from: "`id.orig_h`"
+        - name: id_origin_port
+          from: "`id.orig_p`"
+        - name: id_response_host
+          from: "`id.resp_h`"
+        - name: id_response_port
+          from: "`id.resp_p`"
+        - name: timestamp
+          expr: cast(ts as timestamp)
+      utils:
+        unreferencedColumns:
+          preserve: true
+          omitColumns:
+            - "`id.resp_h`"
+            - "`id.orig_h`"
+            - ts
+            - "`id.resp_p`"
+            - "`id.orig_p`"
+gold:
+  - name: http_activity
+    input: zeek_http
+    fields:
+      - name: activity_id
+        expr: CASE WHEN LOWER(method) = 'connect' THEN 1 WHEN LOWER(method) = 'delete' THEN 2 WHEN LOWER(method) = 'get' THEN 3 WHEN LOWER(method) = 'head' THEN 4 WHEN LOWER(method) = 'options' THEN 5 WHEN LOWER(method) = 'post' THEN 6 WHEN LOWER(method) = 'put' THEN 7 WHEN LOWER(method) = 'trace' THEN 8 WHEN method IS NULL OR method = '' THEN 0 ELSE 99 END
+      - name: activity_name
+        expr: CASE WHEN method IS NULL OR method = '' THEN method ELSE CONCAT(UPPER(SUBSTRING(method, 1, 1)), LOWER(SUBSTRING(method, 2))) END
+      - name: category_uid
+        expr: CAST('4' AS INT)
+      - name: category_name
+        literal: Network Activity
+      - name: class_uid
+        expr: CAST('4002' AS INT)
+      - name: class_name
+        literal: HTTP Activity
+      - name: severity_id
+        expr: CAST('0' AS INT)
+      - name: severity
+        literal: Unknown
+      - name: type_uid
+        expr: CAST((400200 + CASE WHEN LOWER(method) = 'connect' THEN 1 WHEN LOWER(method) = 'delete' THEN 2 WHEN LOWER(method) = 'get' THEN 3 WHEN LOWER(method) = 'head' THEN 4 WHEN LOWER(method) = 'options' THEN 5 WHEN LOWER(method) = 'post' THEN 6 WHEN LOWER(method) = 'put' THEN 7 WHEN LOWER(method) = 'trace' THEN 8 WHEN method IS NULL OR method = '' THEN 0 ELSE 99 END) AS BIGINT)
+      - name: type_name
+        expr: "CASE WHEN method IS NOT NULL THEN CONCAT('HTTP Activity: ', method) ELSE null END"
+      - name: time
+        from: timestamp
+      - name: start_time
+        from: timestamp
+      - name: http_status
+        from: status_code
+      - name: http_request.http_method
+        from: method
+      - name: http_request.user_agent
+        from: user_agent
+      - name: http_request.uid
+        from: uid
+      - name: http_request.length
+        expr: cast(request_body_len as int)  # temporary workaround until table is fixed
+      - name: http_request.version
+        from: version
+      - name: http_request.url.url_string
+        from: uri
+      - name: http_request.url.path
+        from: uri
+      - name: http_request.url.port
+        from: id_response_port
+      - name: http_request.referrer
+        from: referrer
+      - name: http_response.code
+        from: status_code
+      - name: http_response.length
+        expr: cast(response_body_len as int)  # temporary workaround until table is fixed
+      - name: metadata.product.vendor_name
+        literal: Zeek
+      - name: metadata.uid
+        from: uid
+      - name: src_endpoint.ip
+        from: id_origin_host
+      - name: dst_endpoint.ip
+        from: id_response_host
+      - name: src_endpoint.port
+        from: id_origin_port
+      - name: dst_endpoint.port
+        from: id_response_port
+      - name: dst_endpoint.hostname
+        from: host
