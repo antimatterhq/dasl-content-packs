@@ -1,5 +1,6 @@
 name: aws_sec_lake_eks_audit
 author: Antimatter
+title: "AWS EKS Audit"
 description: "AWS EKS control plane data collected with AWS Security Lake"
 autoloader:
   format: parquet

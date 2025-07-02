@@ -1,5 +1,6 @@
 name: testing_syslog
 author: Antimatter
+title: "Syslog testing"
 description: "Syslog RFC 5242 basic reader."
 autoloader:
   format: text

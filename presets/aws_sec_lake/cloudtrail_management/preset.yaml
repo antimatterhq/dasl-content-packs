@@ -1,6 +1,7 @@
 name: aws_sec_lake_cloudtrail_management
 author: Antimatter
 description: "AWS CloudTrail Management Event collected with AWS Security Lake"
+title: "AWS CloudTrail Management Event"
 autoloader:
   format: parquet
   multiline: true

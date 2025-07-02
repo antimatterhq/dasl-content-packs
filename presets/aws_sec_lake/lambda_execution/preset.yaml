@@ -1,5 +1,6 @@
 name: aws_sec_lake_lambda_execution
 author: Antimatter
+title: "AWS Lambda Execution"
 description: "AWS Lambda Execution data collected with AWS Security Lake"
 autoloader:
   format: parquet
