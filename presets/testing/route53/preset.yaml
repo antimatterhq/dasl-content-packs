@@ -1,5 +1,6 @@
 name: testing_route53
 author: Antimatter
+title: "AWS Route53 Resolver"
 description: "AWS Route53 Resolver query log data collected with AWS Security Lake"
 autoloader:
   format: parquet

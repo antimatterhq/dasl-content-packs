@@ -1,5 +1,6 @@
 name: aws_sec_lake_waf
 author: Antimatter
+title: "AWS WAF activity logs"
 description: "AWS WAF activity logs collected with AWS Security Lake"
 autoloader:
   format: parquet

@@ -1,5 +1,6 @@
 name: aws_sec_lake_security_hub
 author: Antimatter
+title: "AWS Security Hub"
 description: "AWS Security Hub Findings collected with AWS Security Lake"
 autoloader:
   format: parquet

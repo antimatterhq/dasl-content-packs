@@ -1,5 +1,6 @@
 name: aws_sec_lake_s3_data
 author: Antimatter
+title: "AWS S3 DataEvents"
 description: "AWS S3 DataEvents data collected with AWS Security Lake"
 autoloader:
   format: parquet

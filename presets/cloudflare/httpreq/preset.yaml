@@ -1,5 +1,6 @@
 name: cloudflare_httpreq
 author: Antimatter
+title: "Cloudflare HTTP request"
 description: "Cloudflare HTTP request logs"
 autoloader:
   format: json

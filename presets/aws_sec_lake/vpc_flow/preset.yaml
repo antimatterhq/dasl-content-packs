@@ -1,5 +1,6 @@
 name: aws_sec_lake_vpc_flow
 author: Antimatter
+title: "AWS VPC network flow"
 description: "AWS VPC network flows logs collected with AWS Security Lake"
 autoloader:
   format: parquet
