@@ -2,3 +2,6 @@ versions:
   - versionNumber: 1
     changes: Test aws_sec_lake s3_data preset
     commit: cd77e25d3f6076a2de446e7a0b3b37e5af04a191
+  - versionNumber: 2
+    changes: Add a missing title
+    commit: 4464adeceff0c5fe9b288764bb12de39b6d8481c

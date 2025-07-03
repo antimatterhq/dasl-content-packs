@@ -2,3 +2,6 @@ versions:
   - versionNumber: 1
     changes: Initial commit of basic Syslog 5242 reader.
     commit: c1d9bb76b7c4083e7a6d15849d2a8fceb1e5d411
+  - versionNumber: 2
+    changes: Add a missing title
+    commit: 4464adeceff0c5fe9b288764bb12de39b6d8481c
