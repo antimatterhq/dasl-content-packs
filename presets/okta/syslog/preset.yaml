@@ -4,7 +4,7 @@ description: "OKTA Syslog data wrapped by Cribl"
 title: "OKTA - Syslog"
 iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/okta/syslog/icon.png"
 autoloader:
-  format: json
+  format: jsonl
   cloudFiles:
     schemaHints: |
       actor struct<`alternateId`:string,`detailEntry`:string,`displayName`:string,`id`:string,`type`:string>,
@@ -64,7 +64,15 @@ silver:
           from: _rescued_data
 
   transform:
+
     - name: okta_syslog
+      utils:
+        unreferencedColumns:
+          preserve: true
+          omitColumns:
+            - _time
+
+    - name: okta_syslog_ocsf_staged
       fields:
         - name: metadata.product.name
           literal: Okta System Log
@@ -228,18 +236,7 @@ silver:
 
                 ELSE NULL
             END
-        - name: ocsf_activity_id
-          expr: |
-            CASE
-                WHEN LOWER(eventType) = 'app.user_management.grouppush.mapping.okta.users.ignored' THEN CAST('3' AS INT)
-                ELSE CAST('99' AS INT)
-            END
-        - name: ocsf_activity_name
-          expr: |
-            CASE
-                WHEN LOWER(eventType) = 'app.user_management.grouppush.mapping.okta.users.ignored' THEN 'update'
-                ELSE 'other'
-            END
+
         - name: ocsf_actor.user.uid
           expr: actor.id
         - name: ocsf_actor.user.name
@@ -416,104 +413,28 @@ silver:
         - name: ocsf_src_endpoint.location.isp
           from: securityContext.isp
 
+      # per-class action & activity mapping
 
-      utils:
-        temporaryFields:
-          - name: ocsf_os.name
-            expr: |
-              CASE
-                WHEN (device.os_platform IS NULL) THEN client.userAgent.os
-                ELSE device.os_platform
-              END
-          - name: ocsf_os.version
-            from: device.os_version
-          - name: ocsf_os.build
-            from: device.os_version
-          - name: ocsf_os.type_id
-            expr: |
-              CASE
-                WHEN (LOWER(device.os_platform) LIKE 'android%' OR LOWER(client.userAgent.os) LIKE 'android%') THEN CAST('201' AS INT)
-                WHEN (LOWER(device.os_platform) LIKE 'linux%' OR LOWER(client.userAgent.os) LIKE 'linux%') THEN CAST('200' AS INT)
-                WHEN (LOWER(device.os_platform) LIKE 'ubuntu%' OR LOWER(client.userAgent.os) LIKE 'ubuntu%') THEN CAST('200' AS INT)
-                WHEN (LOWER(device.os_platform) LIKE 'chrome os%' OR LOWER(client.userAgent.os) LIKE 'chrome os%') THEN CAST('200' AS INT)
-                WHEN (LOWER(device.os_platform) LIKE 'web os%' OR LOWER(client.userAgent.os) LIKE 'web os%') THEN CAST('200' AS INT)
-                WHEN (LOWER(device.os_platform) LIKE 'mac os%' OR LOWER(client.userAgent.os) LIKE 'mac os%') THEN CAST('300' AS INT)
-                WHEN (LOWER(device.os_platform) LIKE 'windows%' OR LOWER(client.userAgent.os) LIKE 'windows%') THEN CAST('100' AS INT)
-                WHEN (LOWER(device.os_platform) LIKE 'ios%' OR LOWER(client.userAgent.os) LIKE 'ios%') THEN CAST('301' AS INT)
-                ELSE CAST('0' AS INT)
-              END
-          - name: ocsf_os.type
-            expr: |
-              CASE
-                WHEN (LOWER(device.os_platform) LIKE 'android%' OR LOWER(client.userAgent.os) LIKE 'android%') THEN 'android'
-                WHEN (LOWER(device.os_platform) LIKE 'linux%' OR LOWER(client.userAgent.os) LIKE 'linux%') THEN 'windows'
-                WHEN (LOWER(device.os_platform) LIKE 'ubuntu%' OR LOWER(client.userAgent.os) LIKE 'ubuntu%') THEN 'linux'
-                WHEN (LOWER(device.os_platform) LIKE 'chrome os%' OR LOWER(client.userAgent.os) LIKE 'chrome os%') THEN 'linux'
-                WHEN (LOWER(device.os_platform) LIKE 'web os%' OR LOWER(client.userAgent.os) LIKE 'web os%') THEN 'linux'
-                WHEN (LOWER(device.os_platform) LIKE 'mac os%' OR LOWER(client.userAgent.os) LIKE 'mac os%') THEN 'macos'
-                WHEN (LOWER(device.os_platform) LIKE 'windows%' OR LOWER(client.userAgent.os) LIKE 'windows%') THEN 'windows'
-                WHEN (LOWER(device.os_platform) LIKE 'ios%' OR LOWER(client.userAgent.os) LIKE 'ios%') THEN 'ios'
-                ELSE 'unknown'
-              END
-          - name: ocsf_metadata.log_provider
-            literal: Okta
-          - name: ocsf_metadata.correlation_uid
-            from: transaction.id
-          - name: ocsf_metadata.log_level
-            from: severity
-          - name: ocsf_metadata.log_version
-            from: version
-          - name: ocsf_metadata.logged_time
-            expr: TRY_TO_TIMESTAMP(published)
-          - name: ocsf_metadata.modified_time
-            expr: TRY_TO_TIMESTAMP(published)
-          - name: ocsf_metadata.original_time
-            expr: TRY_TO_TIMESTAMP(published)
-          - name: ocsf_metadata.processed_time
-            expr: CURRENT_TIMESTAMP()
-          - name: ocsf_metadata.product.name
-            literal: Syslog
-          - name: ocsf_metadata.product.vendor_name
-            literal: Okta
-          - name: ocsf_metadata.product.version
-            literal: 1.0.0
-          - name: ocsf_metadata.uid
-            from: uuid
-          - name: ocsf_metadata.version
-            literal: 1.0.0
+        - name: action.1006
+          expr: |
+                CASE 
+                  WHEN LOWER(eventType) IN (
+                            'system.import.user_matching.start', 'system.import.object_creation.start', 'system.import.download.start',
+                            'system.import.membership_processing.start',
+                            'system.import.start',
+                            'system.import.implicit_deletion.start',
+                            'system.import.object_creation.complete',
+                            'system.import.download.complete', 'system.import.implicit_deletion.complete',
+                            'system.import.group.complete',
+                            'system.import.custom_object.complete', 'system.import.user.complete', 'system.import.membership_processing.complete',
+                            'system.import.user_matching.complete', 'system.import.group_membership.complete',
+                            'system.import.complete', 'system.import.complete_batch'
+                  ) THEN named_struct('id', 3, 'name', 'Observed')
+                  ELSE named_struct('id', 0, 'name', 'Unknown')
+                END
           
-
-        unreferencedColumns:
-          preserve: true
-          omitColumns:
-            - _time
-
-gold:
-  - name: scheduled_job_activity
-    input: okta_syslog
-    filter: ocsf_class_uid = 1006
-    utils:
-        temporaryFields:
-          - name: action
-            expr: |
-              CASE 
-                WHEN LOWER(eventType) IN (
-                          'system.import.user_matching.start', 'system.import.object_creation.start', 'system.import.download.start',
-                          'system.import.membership_processing.start',
-                          'system.import.start',
-                          'system.import.implicit_deletion.start',
-                          'system.import.object_creation.complete',
-                          'system.import.download.complete', 'system.import.implicit_deletion.complete',
-                          'system.import.group.complete',
-                          'system.import.custom_object.complete', 'system.import.user.complete', 'system.import.membership_processing.complete',
-                          'system.import.user_matching.complete', 'system.import.group_membership.complete',
-                          'system.import.complete', 'system.import.complete_batch'
-                ) THEN named_struct('id', 3, 'name', 'Observed')
-                ELSE named_struct('id', 0, 'name', 'Unknown')
-              END
-
-          - name: activity
-            expr: |
+        - name: activity.1006
+          expr: |
               CASE 
                 WHEN LOWER(eventType) IN (
                           'system.import.user_matching.start', 'system.import.object_creation.start', 'system.import.download.start',
@@ -533,27 +454,379 @@ gold:
                 ) THEN named_struct('id', 99, 'name', 'Complete')
                 ELSE named_struct('id', 0, 'name', 'Unknown')
               END
+        - name: action.2004
+          expr: |
+              CASE
+                WHEN LOWER(eventType) IN (
+                          'security.request.blocked'
+                ) THEN named_struct('id', 2, 'name', 'Denied')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+        - name: activity.2004
+          expr: |
+              CASE
+                WHEN LOWER(eventType) IN (
+                          'security.request.blocked'
+                ) THEN named_struct('id', 1, 'name', 'Create')
 
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+        - name: action.4009
+          expr: |
+              CASE
+                WHEN LOWER(eventType) IN (
+                          'system.email.mfa_enroll_notification.sent_message', 'system.email.new_device_notification.sent_message',
+                          'system.email.delivery'
+                ) THEN named_struct('id', 3, 'name', 'Observed')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+        - name: activity.4009
+          expr: |
+              CASE
+                WHEN LOWER(eventType) IN (
+                          'system.email.mfa_enroll_notification.sent_message', 'system.email.new_device_notification.sent_message'
+                ) THEN named_struct('id', 1, 'name', 'Sent')
+                WHEN LOWER(eventType) IN (
+                          'system.email.delivery'
+                ) THEN named_struct('id', 99, 'name', 'Delivery')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+        - name: action.3001
+          expr: |
+              CASE
+                WHEN LOWER(eventType) IN (
+                          'user.mfa.factor.activate'
+                ) THEN named_struct('id', 1, 'name', 'Allowed')
+                WHEN LOWER(eventType) IN (
+                          'application.provision.user.deactivate', 'application.provision.user.deprovision',
+                          'user.lifecycle.deactivate', 'user.lifecycle.suspend',
+                          'app.realtimesync.import.details.update_user', 'user.account.update_profile',
+                          'system.import.user.update',
+                          'user.mfa.factor.update'
+                ) THEN named_struct('id', 3, 'name', 'Observed')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+        - name: activity.3001
+          expr: |
+              CASE
+                WHEN LOWER(eventType) IN (
+                          'application.provision.user.deactivate', 'application.provision.user.deprovision',
+                          'user.lifecycle.deactivate', 'user.lifecycle.suspend'
+                ) THEN named_struct('id', 5, 'name', 'Disable')
+                WHEN LOWER(eventType) IN (
+                          'user.mfa.factor.activate'
+                ) THEN named_struct('id', 10, 'name', 'MFA Factor Enable')
+                WHEN LOWER(eventType) IN (
+                          'app.realtimesync.import.details.update_user', 'user.account.update_profile',
+                          'system.import.user.update',
+                          'user.mfa.factor.update'
+                ) THEN named_struct('id', 99, 'name', 'Update')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+        - name: action.3002
+          expr: |
+              CASE
+                WHEN LOWER(eventType) IN (
+                          'application.policy.sign_on.deny_access'
+                ) THEN named_struct('id', 2, 'name', 'Denied')
+                WHEN LOWER(eventType) IN (
+                          'app.oauth2.authorize', 'app.oauth2.authorize.code', 'app.oauth2.client.read_client_secret',
+                          'app.oauth2.token.grant', 'app.oauth2.token.grant.access_token', 'app.oauth2.token.grant.id_token',
+                          'app.oauth2.token.grant.refresh_token',
+                          'policy.evaluate_sign_on',
+                          'system.push.send_factor_verify_push',
+                          'user.authentication.auth_via_mfa',
+                          'user.authentication.sso',
+                          'user.authentication.verify',
+                          'app.generic.unauth_app_access_attempt'
+                ) THEN named_struct('id', 3, 'name', 'Observed')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+        - name: activity.3002
+          expr: |
+              CASE
+                WHEN LOWER(eventType) IN (
+                          'app.oauth2.authorize',  'app.oauth2.client.read_client_secret',
+                          'app.oauth2.token.grant', 'app.oauth2.token.grant.access_token', 'app.oauth2.token.grant.id_token',
+                          'app.oauth2.token.grant.refresh_token',
+                          'policy.evaluate_sign_on',
+                          'user.authentication.auth_via_mfa',
+                          'user.authentication.sso',
+                          'user.authentication.verify'
+                ) THEN named_struct('id', 1, 'name', 'Logon')
+                WHEN LOWER(eventType) IN (
+                          'app.generic.unauth_app_access_attempt'
+                ) THEN named_struct('id', 2, 'name', 'Logoff')
+                WHEN LOWER(eventType) IN (
+                          'app.oauth2.authorize.code', 'system.push.send_factor_verify_push'
+                ) THEN named_struct('id', 6, 'name', 'Preauth')
+                WHEN LOWER(eventType) IN (
+                          'application.policy.sign_on.deny_access'
+                ) THEN named_struct('id', 99, 'name', 'Denied')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+        - name: action.3003
+          expr: |
+              CASE
+                WHEN LOWER(eventType) IN (
+                          'user.session.clear', 'user.session.start'
+                ) THEN named_struct('id', 3, 'name', 'Observed')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+        - name: activity.3003
+          expr: |
+              CASE
+                WHEN LOWER(eventType) IN (
+                          'user.session.clear'
+                ) THEN named_struct('id', 99, 'name', 'Clear')
+                WHEN LOWER(eventType) IN (
+                          'user.session.clear'
+                ) THEN named_struct('id', 99, 'name', 'Start')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+        - name: action.3004
+          expr: |
+              CASE
+                WHEN LOWER(eventType) IN (
+                          'device.enrollment.create', 'system.agent.ad.read_ldap',
+                          'device.user.add', 'pki.cert.issue', 'device.lifecycle.activate'
+                ) THEN named_struct('id', 3, 'name', 'Observed')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+        - name: activity.3004
+          expr: |
+              CASE
+                WHEN LOWER(eventType) IN (
+                          'device.enrollment.create'
+                ) THEN named_struct('id', 1, 'name', 'Create')
+                WHEN LOWER(eventType) IN (
+                          'system.agent.ad.read_ldap'
+                ) THEN named_struct('id', 2, 'name', 'Read')
+                WHEN LOWER(eventType) IN (
+                          'device.user.add', 'pki.cert.issue'
+                ) THEN named_struct('id', 3, 'name', 'Update')
+                WHEN LOWER(eventType) IN (
+                          'device.lifecycle.activate'
+                ) THEN named_struct('id', 10, 'name', 'Activate')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+        - name: action.3005
+          expr: |
+              CASE
+                WHEN LOWER(eventType) IN (
+                          'application.user_membership.update', 'application.user_membership.remove'
+                ) THEN named_struct('id', 3, 'name', 'Observed')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+        - name: activity.3005
+          expr: |
+              CASE
+                WHEN LOWER(eventType) IN (
+                          'application.user_membership.update'
+                ) THEN named_struct('id', 1, 'name', 'Assign Privileges')
+                WHEN LOWER(eventType) IN (
+                        'application.user_membership.remove'
+                ) THEN named_struct('id', 2, 'name', 'Revoke Privileges')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+        - name: action.3006
+          expr: |
+              CASE
+                WHEN LOWER(eventType) IN (
+                          'group.user_membership.add', 'group.user_membership.remove', 'application.provision.group_push.push_memberships',
+                          'app.user_management.grouppush.mapping.okta.users.ignored'
+                ) THEN named_struct('id', 3, 'name', 'Observed')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+        - name: activity.3006
+          expr: |
+              CASE
+                WHEN LOWER(eventType) IN (
+                          'application.provision.group_push.push_memberships'
+                ) THEN named_struct('id', 1, 'name', 'Assign Privileges')
+                WHEN LOWER(eventType) IN (
+                        'group.user_membership.add'
+                ) THEN named_struct('id', 3, 'name', 'Add User')
+                WHEN LOWER(eventType) IN (
+                        'group.user_membership.remove'
+                ) THEN named_struct('id', 4, 'name', 'Remove User')
+                WHEN LOWER(eventType) IN (
+                        'app.user_management.grouppush.mapping.okta.users.ignored'
+                ) THEN named_struct('id', 99, 'name', 'Ignored')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+        - name: action.6001
+          expr: |
+              CASE
+                WHEN LOWER(eventType) IN (
+                          'user.session.access_admin_app'
+                ) THEN named_struct('id', 3, 'name', 'Observed')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+        - name: activity.6001
+          expr: |
+              CASE
+                WHEN LOWER(eventType) IN (
+                        'user.session.access_admin_app'
+                ) THEN named_struct('id', 3, 'name', 'Read')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+        - name: action.6002
+          expr: |
+              CASE
+                WHEN LOWER(eventType) IN (
+                          'application.lifecycle.update'
+                ) THEN named_struct('id', 3, 'name', 'Observed')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+        - name: activity.6002
+          expr: |
+              CASE
+                WHEN LOWER(eventType) IN (
+                        'application.lifecycle.update'
+                ) THEN named_struct('id', 8, 'name', 'Update')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+        - name: action.6003
+          expr: |
+              CASE
+                WHEN LOWER(eventType) IN (
+                          'system.client.concurrency_rate_limit.notification',
+                          'system.agent.ad.read_topology', 'event_hook.delivery',
+                          'system.client.rate_limit.notification', 'application.provision.user.push_profile'
+
+                ) THEN named_struct('id', 3, 'name', 'Observed')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+        - name: activity.6003
+          expr: |
+              CASE
+                WHEN LOWER(eventType) IN (
+                        'system.client.concurrency_rate_limit.notification'
+                ) THEN named_struct('id', 1, 'name', 'Create')
+                WHEN LOWER(eventType) IN (
+                        'system.agent.ad.read_topology', 'event_hook.delivery',
+                        'system.client.rate_limit.notification'
+                ) THEN named_struct('id', 2, 'name', 'Read')
+                WHEN LOWER(eventType) IN (
+                        'application.provision.user.push_profile'
+                ) THEN named_struct('id', 3, 'name', 'Update')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+        - name: action.6008
+          expr: |
+              CASE
+                WHEN LOWER(eventType) IN (
+                          'core.concurrency.org.limit.violation', 'system.operation.concurrency_limit.violation', 'system.operation.rate_limit.violation',
+                          'application.configuration.detect_error'
+                ) THEN named_struct('id', 3, 'name', 'Observed')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+        - name: activity.6008
+          expr: |
+              CASE
+                WHEN LOWER(eventType) IN (
+                          'core.concurrency.org.limit.violation', 'system.operation.concurrency_limit.violation', 'system.operation.rate_limit.violation',
+                    'application.configuration.detect_error'
+                ) THEN named_struct('id', 1, 'name', 'General Error')
+                ELSE named_struct('id', 0, 'name', 'Unknown')
+              END
+
+        - name: ocsf_os.name
+          expr: |
+              CASE
+                WHEN (device.os_platform IS NULL) THEN client.userAgent.os
+                ELSE device.os_platform
+              END
+        - name: ocsf_os.version
+          from: device.os_version
+        - name: ocsf_os.build
+          from: device.os_version
+        - name: ocsf_os.type_id
+          expr: |
+              CASE
+                WHEN (LOWER(device.os_platform) LIKE 'android%' OR LOWER(client.userAgent.os) LIKE 'android%') THEN CAST('201' AS INT)
+                WHEN (LOWER(device.os_platform) LIKE 'linux%' OR LOWER(client.userAgent.os) LIKE 'linux%') THEN CAST('200' AS INT)
+                WHEN (LOWER(device.os_platform) LIKE 'ubuntu%' OR LOWER(client.userAgent.os) LIKE 'ubuntu%') THEN CAST('200' AS INT)
+                WHEN (LOWER(device.os_platform) LIKE 'chrome os%' OR LOWER(client.userAgent.os) LIKE 'chrome os%') THEN CAST('200' AS INT)
+                WHEN (LOWER(device.os_platform) LIKE 'web os%' OR LOWER(client.userAgent.os) LIKE 'web os%') THEN CAST('200' AS INT)
+                WHEN (LOWER(device.os_platform) LIKE 'mac os%' OR LOWER(client.userAgent.os) LIKE 'mac os%') THEN CAST('300' AS INT)
+                WHEN (LOWER(device.os_platform) LIKE 'windows%' OR LOWER(client.userAgent.os) LIKE 'windows%') THEN CAST('100' AS INT)
+                WHEN (LOWER(device.os_platform) LIKE 'ios%' OR LOWER(client.userAgent.os) LIKE 'ios%') THEN CAST('301' AS INT)
+                ELSE CAST('0' AS INT)
+              END
+        - name: ocsf_os.type
+          expr: |
+              CASE
+                WHEN (LOWER(device.os_platform) LIKE 'android%' OR LOWER(client.userAgent.os) LIKE 'android%') THEN 'android'
+                WHEN (LOWER(device.os_platform) LIKE 'linux%' OR LOWER(client.userAgent.os) LIKE 'linux%') THEN 'windows'
+                WHEN (LOWER(device.os_platform) LIKE 'ubuntu%' OR LOWER(client.userAgent.os) LIKE 'ubuntu%') THEN 'linux'
+                WHEN (LOWER(device.os_platform) LIKE 'chrome os%' OR LOWER(client.userAgent.os) LIKE 'chrome os%') THEN 'linux'
+                WHEN (LOWER(device.os_platform) LIKE 'web os%' OR LOWER(client.userAgent.os) LIKE 'web os%') THEN 'linux'
+                WHEN (LOWER(device.os_platform) LIKE 'mac os%' OR LOWER(client.userAgent.os) LIKE 'mac os%') THEN 'macos'
+                WHEN (LOWER(device.os_platform) LIKE 'windows%' OR LOWER(client.userAgent.os) LIKE 'windows%') THEN 'windows'
+                WHEN (LOWER(device.os_platform) LIKE 'ios%' OR LOWER(client.userAgent.os) LIKE 'ios%') THEN 'ios'
+                ELSE 'unknown'
+              END
+        - name: ocsf_metadata.log_provider
+          literal: Okta
+        - name: ocsf_metadata.correlation_uid
+          from: transaction.id
+        - name: ocsf_metadata.log_level
+          from: severity
+        - name: ocsf_metadata.log_version
+          from: version
+        - name: ocsf_metadata.logged_time
+          expr: TRY_TO_TIMESTAMP(published)
+        - name: ocsf_metadata.modified_time
+          expr: TRY_TO_TIMESTAMP(published)
+        - name: ocsf_metadata.original_time
+          expr: TRY_TO_TIMESTAMP(published)
+        - name: ocsf_metadata.processed_time
+          expr: CURRENT_TIMESTAMP()
+        - name: ocsf_metadata.product.name
+          literal: Syslog
+        - name: ocsf_metadata.product.vendor_name
+          literal: Okta
+        - name: ocsf_metadata.product.version
+          literal: 1.0.0
+        - name: ocsf_metadata.uid
+          from: uuid
+        - name: ocsf_metadata.version
+          literal: 1.0.0
+
+      utils:
+        unreferencedColumns:
+          preserve: true
+          omitColumns:
+            - _time
+
+
+gold:
+  - name: scheduled_job_activity
+    input: okta_syslog_ocsf_staged
+    filter: ocsf_class_uid = 1006
+    
     fields:
       - name: category_uid
-        literal: 1
+        expr: CAST('1' AS INT)
       - name: category_name
         literal: System
 
       - name: type_uid
-        expr: (ocsf_class_uid * 100) + activity.id
+        expr: (ocsf_class_uid * 100) + (`activity`.`1006`.`id`)
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
         from: ocsf_class_name
       - name: activity_id
-        from: activity.id
+        from: activity.1006.id
       - name: activity_name
-        from: activity.name
+        from: activity.1006.name
       - name: action_id
-        from: action.id
+        from: action.1006.id
       - name: action
-        from: action.name
+        from: action.1006.name
       - name: metadata
         from: ocsf_metadata
       - name: start_time
@@ -603,48 +876,29 @@ gold:
 
 
   - name: detection_finding
-    input: okta_syslog
+    input: okta_syslog_ocsf_staged
     filter: ocsf_class_uid = 2004
-    utils:
-        temporaryFields:
-          - name: action
-            expr: |
-              CASE 
-                WHEN LOWER(eventType) IN (
-                          'security.request.blocked'
-                ) THEN named_struct('id', 2, 'name', 'Denied')
-                ELSE named_struct('id', 0, 'name', 'Unknown')
-              END
-          - name: activity
-            expr: |
-              CASE 
-                WHEN LOWER(eventType) IN (
-                          'security.request.blocked'
-                ) THEN named_struct('id', 1, 'name', 'Create')
-
-                ELSE named_struct('id', 0, 'name', 'Unknown')
-              END
-
+    
     fields:
       - name: category_uid
-        literal: 2
+        expr: CAST('2' AS INT)
       - name: category_name
         literal: Findings
 
       - name: type_uid
-        expr: (ocsf_class_uid * 100) + activity.id
+        expr: (ocsf_class_uid * 100) + (`activity`.`2004`.`id`)
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
         from: ocsf_class_name
       - name: activity_id
-        from: activity.id
+        from: activity.2004.id
       - name: activity_name
-        from: activity.name
+        from: activity.2004.name
       - name: action_id
-        from: action.id
+        from: action.2004.id
       - name: action
-        from: action.name
+        from: action.2004.name
       - name: metadata
         from: ocsf_metadata
       - name: start_time
@@ -695,50 +949,29 @@ gold:
 
 
   - name: email_activity
-    input: okta_syslog
+    input: okta_syslog_ocsf_staged
     filter: ocsf_class_uid = 4009
-    utils:
-        temporaryFields:
-          - name: action
-            expr: |
-              CASE 
-                WHEN LOWER(eventType) IN (
-                          'system.email.mfa_enroll_notification.sent_message', 'system.email.new_device_notification.sent_message',
-                          'system.email.delivery'
-                ) THEN named_struct('id', 3, 'name', 'Observed')
-                ELSE named_struct('id', 0, 'name', 'Unknown')
-              END
-          - name: activity
-            expr: |
-              CASE 
-                WHEN LOWER(eventType) IN (
-                          'system.email.mfa_enroll_notification.sent_message', 'system.email.new_device_notification.sent_message'
-                ) THEN named_struct('id', 1, 'name', 'Sent')
-                WHEN LOWER(eventType) IN (
-                          'system.email.delivery'
-                ) THEN named_struct('id', 99, 'name', 'Delivery')
-                ELSE named_struct('id', 0, 'name', 'Unknown')
-              END
+
     fields:
       - name: category_uid
-        literal: 4
+        expr: CAST('4' AS INT)
       - name: category_name
         literal: Network
 
       - name: type_uid
-        expr: (ocsf_class_uid * 100) + activity.id
+        expr: (ocsf_class_uid * 100) + (`activity`.`4009`.`id`)
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
         from: ocsf_class_name
       - name: activity_id
-        from: activity.id
+        from: activity.4009.id
       - name: activity_name
-        from: activity.name
+        from: activity.4009.name
       - name: action_id
-        from: action.id
+        from: action.4009.id
       - name: action
-        from: action.name
+        from: action.4009.name
       - name: metadata
         from: ocsf_metadata
       - name: start_time
@@ -790,7 +1023,7 @@ gold:
       - name: direction
         literal: Outbound
       - name: direction_id
-        literal: 2
+        expr: CAST('2' AS INT)
       - name: disposition
         expr: |
           CASE 
@@ -809,62 +1042,29 @@ gold:
 
 
   - name: account_change
-    input: okta_syslog
+    input: okta_syslog_ocsf_staged
     filter: ocsf_class_uid = 3001
-    utils:
-        temporaryFields:
-          - name: action
-            expr: |
-              CASE 
-                WHEN LOWER(eventType) IN (
-                          'user.mfa.factor.activate'
-                ) THEN named_struct('id', 1, 'name', 'Allowed')
-                WHEN LOWER(eventType) IN (
-                          'application.provision.user.deactivate', 'application.provision.user.deprovision',
-                          'user.lifecycle.deactivate', 'user.lifecycle.suspend',
-                          'app.realtimesync.import.details.update_user', 'user.account.update_profile',
-                          'system.import.user.update',
-                          'user.mfa.factor.update'
-                ) THEN named_struct('id', 3, 'name', 'Observed')
-                ELSE named_struct('id', 0, 'name', 'Unknown')
-              END
-          - name: activity
-            expr: |
-              CASE 
-                WHEN LOWER(eventType) IN (
-                          'application.provision.user.deactivate', 'application.provision.user.deprovision',
-                          'user.lifecycle.deactivate', 'user.lifecycle.suspend'
-                ) THEN named_struct('id', 5, 'name', 'Disable')
-                WHEN LOWER(eventType) IN (
-                          'user.mfa.factor.activate'
-                ) THEN named_struct('id', 10, 'name', 'MFA Factor Enable')
-                WHEN LOWER(eventType) IN (
-                          'app.realtimesync.import.details.update_user', 'user.account.update_profile',
-                          'system.import.user.update',
-                          'user.mfa.factor.update'
-                ) THEN named_struct('id', 99, 'name', 'Update')
-                ELSE named_struct('id', 0, 'name', 'Unknown')
-              END
+    
     fields:
       - name: category_uid
-        literal: 3
+        expr: CAST('3' AS INT)
       - name: category_name
         literal: Identity & Access Management
 
       - name: type_uid
-        expr: (ocsf_class_uid * 100) + activity.id
+        expr: (ocsf_class_uid * 100) + (`activity`.`3001`.`id`)
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
         from: ocsf_class_name
       - name: activity_id
-        from: activity.id
+        from: activity.3001.id
       - name: activity_name
-        from: activity.name
+        from: activity.3001.name
       - name: action_id
-        from: action.id
+        from: action.3001.id
       - name: action
-        from: action.name
+        from: action.3001.name
       - name: metadata
         from: ocsf_metadata
       - name: start_time
@@ -918,71 +1118,28 @@ gold:
 
 
   - name: authentication
-    input: okta_syslog
+    input: okta_syslog_ocsf_staged
     filter: ocsf_class_uid = 3002
-    utils:
-        temporaryFields:
-          - name: action
-            expr: |
-              CASE 
-                WHEN LOWER(eventType) IN (
-                          'application.policy.sign_on.deny_access'
-                ) THEN named_struct('id', 2, 'name', 'Denied')
-                WHEN LOWER(eventType) IN (
-                          'app.oauth2.authorize', 'app.oauth2.authorize.code', 'app.oauth2.client.read_client_secret',
-                          'app.oauth2.token.grant', 'app.oauth2.token.grant.access_token', 'app.oauth2.token.grant.id_token',
-                          'app.oauth2.token.grant.refresh_token',
-                          'policy.evaluate_sign_on',
-                          'system.push.send_factor_verify_push',
-                          'user.authentication.auth_via_mfa',
-                          'user.authentication.sso',
-                          'user.authentication.verify',
-                          'app.generic.unauth_app_access_attempt'
-                ) THEN named_struct('id', 3, 'name', 'Observed')
-                ELSE named_struct('id', 0, 'name', 'Unknown')
-              END
-          - name: activity
-            expr: |
-              CASE 
-                WHEN LOWER(eventType) IN (
-                          'app.oauth2.authorize',  'app.oauth2.client.read_client_secret',
-                          'app.oauth2.token.grant', 'app.oauth2.token.grant.access_token', 'app.oauth2.token.grant.id_token',
-                          'app.oauth2.token.grant.refresh_token',
-                          'policy.evaluate_sign_on',
-                          'user.authentication.auth_via_mfa',
-                          'user.authentication.sso',
-                          'user.authentication.verify'
-                ) THEN named_struct('id', 1, 'name', 'Logon')
-                WHEN LOWER(eventType) IN (
-                          'app.generic.unauth_app_access_attempt'          
-                ) THEN named_struct('id', 2, 'name', 'Logoff')
-                WHEN LOWER(eventType) IN (
-                          'app.oauth2.authorize.code', 'system.push.send_factor_verify_push'
-                ) THEN named_struct('id', 6, 'name', 'Preauth')
-                WHEN LOWER(eventType) IN (
-                          'application.policy.sign_on.deny_access'
-                ) THEN named_struct('id', 99, 'name', 'Denied')
-                ELSE named_struct('id', 0, 'name', 'Unknown')
-              END
+    
     fields:
       - name: category_uid
-        literal: 3
+        expr: CAST('3' AS INT)
       - name: category_name
         literal: Identity & Access Management
       - name: type_uid
-        expr: (ocsf_class_uid * 100) + activity.id
+        expr: (ocsf_class_uid * 100) + (`activity`.`3002`.`id`)
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
         from: ocsf_class_name
       - name: activity_id
-        from: activity.id
+        from: activity.3002.id
       - name: activity_name
-        from: activity.name
+        from: activity.3002.name
       - name: action_id
-        from: action.id
+        from: action.3002.id
       - name: action
-        from: action.name
+        from: action.3002.name
       - name: metadata
         from: ocsf_metadata
       - name: start_time
@@ -1035,48 +1192,28 @@ gold:
           END
 
   - name: authorize_session
-    input: okta_syslog
+    input: okta_syslog_ocsf_staged
     filter: ocsf_class_uid = 3003
-    utils:
-      temporaryFields:
-          - name: action
-            expr: |
-              CASE 
-                WHEN LOWER(eventType) IN (
-                          'user.session.clear', 'user.session.start'
-                ) THEN named_struct('id', 3, 'name', 'Observed')
-                ELSE named_struct('id', 0, 'name', 'Unknown')
-              END
-          - name: activity
-            expr: |
-              CASE 
-                WHEN LOWER(eventType) IN (
-                          'user.session.clear'
-                ) THEN named_struct('id', 99, 'name', 'Clear')
-                WHEN LOWER(eventType) IN (
-                          'user.session.clear'
-                ) THEN named_struct('id', 99, 'name', 'Start')
-                ELSE named_struct('id', 0, 'name', 'Unknown')
-              END
+
     fields:
       - name: category_uid
-        literal: 3
+        expr: CAST('3' AS INT)
       - name: category_name
         literal: Identity & Access Management
       - name: type_uid
-        expr: (ocsf_class_uid * 100) + activity.id
+        expr: (ocsf_class_uid * 100) + (`activity`.`3003`.`id`)
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
         from: ocsf_class_name
       - name: activity_id
-        from: activity.id
+        from: activity.3003.id
       - name: activity_name
-        from: activity.name
+        from: activity.3003.name
       - name: action_id
-        from: action.id
+        from: action.3003.id
       - name: action
-        from: action.name
+        from: action.3003.name
       - name: metadata
         from: ocsf_metadata
       - name: start_time
@@ -1134,55 +1271,28 @@ gold:
 
 
   - name: entity_management
-    input: okta_syslog
+    input: okta_syslog_ocsf_staged
     filter: ocsf_class_uid = 3004
-    utils:
-      temporaryFields:
-          - name: action
-            expr: |
-              CASE 
-                WHEN LOWER(eventType) IN (
-                          'device.enrollment.create', 'system.agent.ad.read_ldap', 
-                          'device.user.add', 'pki.cert.issue', 'device.lifecycle.activate'
-                ) THEN named_struct('id', 3, 'name', 'Observed')
-                ELSE named_struct('id', 0, 'name', 'Unknown')
-              END
-          - name: activity
-            expr: |
-              CASE 
-                WHEN LOWER(eventType) IN (
-                          'device.enrollment.create'
-                ) THEN named_struct('id', 1, 'name', 'Create')
-                WHEN LOWER(eventType) IN (
-                          'system.agent.ad.read_ldap'
-                ) THEN named_struct('id', 2, 'name', 'Read')
-                WHEN LOWER(eventType) IN (
-                          'device.user.add', 'pki.cert.issue'
-                ) THEN named_struct('id', 3, 'name', 'Update')
-                WHEN LOWER(eventType) IN (
-                          'device.lifecycle.activate'
-                ) THEN named_struct('id', 10, 'name', 'Activate')
-                ELSE named_struct('id', 0, 'name', 'Unknown')
-              END
+    
     fields:
       - name: category_uid
-        literal: 3
+        expr: CAST('3' AS INT)
       - name: category_name
         literal: Identity & Access Management
       - name: type_uid
-        expr: (ocsf_class_uid * 100) + activity.id
+        expr: (ocsf_class_uid * 100) + (`activity`.`3004`.`id`)
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
         from: ocsf_class_name
       - name: activity_id
-        from: activity.id
+        from: activity.3004.id
       - name: activity_name
-        from: activity.name
+        from: activity.3004.name
       - name: action_id
-        from: action.id
+        from: action.3004.id
       - name: action
-        from: action.name
+        from: action.3004.name
       - name: metadata
         from: ocsf_metadata
       - name: start_time
@@ -1235,48 +1345,28 @@ gold:
           END
 
   - name: user_access
-    input: okta_syslog
+    input: okta_syslog_ocsf_staged
     filter: ocsf_class_uid = 3005
-    utils:
-      temporaryFields:
-          - name: action
-            expr: |
-              CASE 
-                WHEN LOWER(eventType) IN (
-                          'application.user_membership.update', 'application.user_membership.remove'
-                ) THEN named_struct('id', 3, 'name', 'Observed')
-                ELSE named_struct('id', 0, 'name', 'Unknown')
-              END
-          - name: activity
-            expr: |
-              CASE 
-                WHEN LOWER(eventType) IN (
-                          'application.user_membership.update'
-                ) THEN named_struct('id', 1, 'name', 'Assign Privileges')
-                WHEN LOWER(eventType) IN (
-                        'application.user_membership.remove'
-                ) THEN named_struct('id', 2, 'name', 'Revoke Privileges')
-                ELSE named_struct('id', 0, 'name', 'Unknown')
-              END
+    
     fields:
       - name: category_uid
-        literal: 3
+        expr: CAST('3' AS INT)
       - name: category_name
         literal: Identity & Access Management
       - name: type_uid
-        expr: (ocsf_class_uid * 100) + activity.id
+        expr: (ocsf_class_uid * 100) + (`activity`.`3005`.`id`)
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
         from: ocsf_class_name
       - name: activity_id
-        from: activity.id
+        from: activity.3005.id
       - name: activity_name
-        from: activity.name
+        from: activity.3005.name
       - name: action_id
-        from: action.id
+        from: action.3005.id
       - name: action
-        from: action.name
+        from: action.3005.name
       - name: metadata
         from: ocsf_metadata
       - name: start_time
@@ -1330,55 +1420,28 @@ gold:
 
 
   - name: group_management
-    input: okta_syslog
+    input: okta_syslog_ocsf_staged
     filter: ocsf_class_uid = 3006
-    utils:
-      temporaryFields:
-          - name: action
-            expr: |
-              CASE 
-                WHEN LOWER(eventType) IN (
-                          'group.user_membership.add', 'group.user_membership.remove', 'application.provision.group_push.push_memberships',
-                          'app.user_management.grouppush.mapping.okta.users.ignored'
-                ) THEN named_struct('id', 3, 'name', 'Observed')
-                ELSE named_struct('id', 0, 'name', 'Unknown')
-              END
-          - name: activity
-            expr: |
-              CASE 
-                WHEN LOWER(eventType) IN (
-                          'application.provision.group_push.push_memberships'
-                ) THEN named_struct('id', 1, 'name', 'Assign Privileges')
-                WHEN LOWER(eventType) IN (
-                        'group.user_membership.add'
-                ) THEN named_struct('id', 3, 'name', 'Add User')
-                WHEN LOWER(eventType) IN (
-                        'group.user_membership.remove'
-                ) THEN named_struct('id', 4, 'name', 'Remove User')
-                WHEN LOWER(eventType) IN (
-                        'app.user_management.grouppush.mapping.okta.users.ignored'
-                ) THEN named_struct('id', 99, 'name', 'Ignored')
-                ELSE named_struct('id', 0, 'name', 'Unknown')
-              END
+    
     fields:
       - name: category_uid
-        literal: 3
+        expr: CAST('3' AS INT)
       - name: category_name
         literal: Identity & Access Management
       - name: type_uid
-        expr: (ocsf_class_uid * 100) + activity.id
+        expr: (ocsf_class_uid * 100) + (`activity`.`3006`.`id`)
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
         from: ocsf_class_name
       - name: activity_id
-        from: activity.id
+        from: activity.3006.id
       - name: activity_name
-        from: activity.name
+        from: activity.3006.name
       - name: action_id
-        from: action.id
+        from: action.3006.id
       - name: action
-        from: action.name
+        from: action.3006.name
       - name: metadata
         from: ocsf_metadata
       - name: start_time
@@ -1432,45 +1495,28 @@ gold:
 
 
   - name: web_resources_activity
-    input: okta_syslog
+    input: okta_syslog_ocsf_staged
     filter: ocsf_class_uid = 6001
-    utils:
-      temporaryFields:
-          - name: action
-            expr: |
-              CASE 
-                WHEN LOWER(eventType) IN (
-                          'user.session.access_admin_app'
-                ) THEN named_struct('id', 3, 'name', 'Observed')
-                ELSE named_struct('id', 0, 'name', 'Unknown')
-              END
-          - name: activity
-            expr: |
-              CASE 
-                WHEN LOWER(eventType) IN (
-                        'user.session.access_admin_app'
-                ) THEN named_struct('id', 3, 'name', 'Read')
-                ELSE named_struct('id', 0, 'name', 'Unknown')
-              END
+    
     fields:
       - name: category_uid
-        literal: 6
+        expr: CAST('6' AS INT)
       - name: category_name
         literal: Application
       - name: type_uid
-        expr: (ocsf_class_uid * 100) + activity.id
+        expr: (ocsf_class_uid * 100) + (`activity`.`6001`.`id`)
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
         from: ocsf_class_name
       - name: activity_id
-        from: activity.id
+        from: activity.6001.id
       - name: activity_name
-        from: activity.name
+        from: activity.6001.name
       - name: action_id
-        from: action.id
+        from: action.6001.id
       - name: action
-        from: action.name
+        from: action.6001.name
       - name: metadata
         from: ocsf_metadata
       - name: start_time
@@ -1525,45 +1571,28 @@ gold:
 
 
   - name: application_lifecycle
-    input: okta_syslog
+    input: okta_syslog_ocsf_staged
     filter: ocsf_class_uid = 6002
-    utils:
-      temporaryFields:
-          - name: action
-            expr: |
-              CASE 
-                WHEN LOWER(eventType) IN (
-                          'application.lifecycle.update'
-                ) THEN named_struct('id', 3, 'name', 'Observed')
-                ELSE named_struct('id', 0, 'name', 'Unknown')
-              END
-          - name: activity
-            expr: |
-              CASE 
-                WHEN LOWER(eventType) IN (
-                        'application.lifecycle.update'
-                ) THEN named_struct('id', 8, 'name', 'Update')
-                ELSE named_struct('id', 0, 'name', 'Unknown')
-              END
+    
     fields:
       - name: category_uid
-        literal: 6
+        expr: CAST('6' AS INT)
       - name: category_name
         literal: Application
       - name: type_uid
-        expr: (ocsf_class_uid * 100) + activity.id
+        expr: (ocsf_class_uid * 100) + (`activity`.`6002`.`id`)
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
         from: ocsf_class_name
       - name: activity_id
-        from: activity.id
+        from: activity.6002.id
       - name: activity_name
-        from: activity.name
+        from: activity.6002.name
       - name: action_id
-        from: action.id
+        from: action.6002.id
       - name: action
-        from: action.name
+        from: action.6002.name
       - name: metadata
         from: ocsf_metadata
       - name: start_time
@@ -1631,55 +1660,28 @@ gold:
 
 
   - name: api_activity
-    input: okta_syslog
+    input: okta_syslog_ocsf_staged
     filter: ocsf_class_uid = 6003
-    utils:
-      temporaryFields:
-          - name: action
-            expr: |
-              CASE 
-                WHEN LOWER(eventType) IN (
-                          'system.client.concurrency_rate_limit.notification',
-                          'system.agent.ad.read_topology', 'event_hook.delivery',
-                          'system.client.rate_limit.notification', 'application.provision.user.push_profile'
-
-                ) THEN named_struct('id', 3, 'name', 'Observed')
-                ELSE named_struct('id', 0, 'name', 'Unknown')
-              END
-          - name: activity
-            expr: |
-              CASE 
-                WHEN LOWER(eventType) IN (
-                        'system.client.concurrency_rate_limit.notification'
-                ) THEN named_struct('id', 1, 'name', 'Create')
-                WHEN LOWER(eventType) IN (
-                        'system.agent.ad.read_topology', 'event_hook.delivery',
-                        'system.client.rate_limit.notification'
-                ) THEN named_struct('id', 2, 'name', 'Read')
-                WHEN LOWER(eventType) IN (
-                        'application.provision.user.push_profile'
-                ) THEN named_struct('id', 3, 'name', 'Update')
-                ELSE named_struct('id', 0, 'name', 'Unknown')
-              END
+    
     fields:
       - name: category_uid
-        literal: 6
+        expr: CAST('6' AS INT)
       - name: category_name
         literal: Application
       - name: type_uid
-        expr: (ocsf_class_uid * 100) + activity.id
+        expr: (ocsf_class_uid * 100) + (`activity`.`6003`.`id`)
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
         from: ocsf_class_name
       - name: activity_id
-        from: activity.id
+        from: activity.6003.id
       - name: activity_name
-        from: activity.name
+        from: activity.6003.name
       - name: action_id
-        from: action.id
+        from: action.6003.id
       - name: action
-        from: action.name
+        from: action.6003.name
       - name: metadata
         from: ocsf_metadata
       - name: start_time
@@ -1749,47 +1751,28 @@ gold:
           END
 
   - name: application_error
-    input: okta_syslog
+    input: okta_syslog_ocsf_staged
     filter: ocsf_class_uid = 6008
-    utils:
-      temporaryFields:
-          - name: action
-            expr: |
-              CASE 
-                WHEN LOWER(eventType) IN (
-                          'core.concurrency.org.limit.violation', 'system.operation.concurrency_limit.violation', 'system.operation.rate_limit.violation', 
-                          'application.configuration.detect_error'
-                ) THEN named_struct('id', 3, 'name', 'Observed')
-                ELSE named_struct('id', 0, 'name', 'Unknown')
-              END
-          - name: activity
-            expr: |
-              CASE 
-                WHEN LOWER(eventType) IN (
-                          'core.concurrency.org.limit.violation', 'system.operation.concurrency_limit.violation', 'system.operation.rate_limit.violation', 
-                    'application.configuration.detect_error'
-                ) THEN named_struct('id', 1, 'name', 'General Error')
-                ELSE named_struct('id', 0, 'name', 'Unknown')
-              END
+
     fields:
       - name: category_uid
-        literal: 6
+        expr: CAST('6' AS INT)
       - name: category_name
         literal: Application
       - name: type_uid
-        expr: (ocsf_class_uid * 100) + activity.id
+        expr: (ocsf_class_uid * 100) + (`activity`.`6008`.`id`)
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
         from: ocsf_class_name
       - name: activity_id
-        from: activity.id
+        from: activity.6008.id
       - name: activity_name
-        from: activity.name
+        from: activity.6008.name
       - name: action_id
-        from: action.id
+        from: action.6008.id
       - name: action
-        from: action.name
+        from: action.6008.name
       - name: metadata
         from: ocsf_metadata
       - name: start_time
@@ -1841,4 +1824,4 @@ gold:
       - name: disposition
         literal: Error
       - name: disposition_id
-        literal: 27
+        expr: CAST('27' AS INT)
