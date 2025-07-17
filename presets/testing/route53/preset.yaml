@@ -19,6 +19,8 @@ silver:
   transform:
     - name: aws_sec_lake_route53
       fields:
+        - name: yyyy
+          alias: eventDay
         - name: activity_id
           from: activity_id
         - name: activity_name
@@ -83,6 +85,8 @@ silver:
           from: asl_version
         - name: eventDay
           from: eventDay
+
+          
       utils:
         unreferencedColumns:
           preserve: true
