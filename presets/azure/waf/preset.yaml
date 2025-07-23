@@ -6,7 +6,15 @@ iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs
 autoloader:
   format: json
   cloudFiles:
-    schemaHints: "properties struct<Action:string,ActionReason:string,DestinationPort:int,Fqdn:string,IsExplicitProxyRequest:boolean,IsTlsInspected:boolean,Policy:string,Protocol:string,Rule:string,RuleCollection:string,RuleCollectionGroup:string,SourceIp:string,SourcePort:int,TargetUrl:string,WebCategory:string,DestinationIp:string,instanceId:string,clientIp:string,requestUri:string,ruleSetType:string,ruleSetVersion:string,ruleId:string,ruleGroup:string,message:string,clientPort:int,httpMethod:string,originalRequestUriWithArgs:string,requestQuery:string,Url:string,ThreatDescription:string,details:struct<message:string,data:string,file:string,line:string>,hostname:string,transactionId:string,policyId:string,policyScopt:string,policyScopeName:string,engine:string,policyScope:string,userAgent:string,contentType:string,error_info:string,httpStatus:int,httpVersion:string,receivedBytes:int,sentBytes:int,connectionSerialNumber:int,noOfConnectionRequests:int,clientResponseTime:float,timeTaken:float,WAFMode:string,WAFEvaluationTime:string,WAFPolicyID:string,sslEnabled:string,sslCipher:string,sslProtocol:string,sslClientVerify:string,sslClientCertificateFingerprint:string,sslClientCertificateIssuerName:string,serverRouted:string,serverStatus:string,serverResponseLatency:string,upstreamSourcePort:string,originalHost:string,host:string,msg:string,TranslatedIp:string,TranslatedPort:int,priority:int>,time timestamp,timeStamp timestamp,operationName string,listenerName string,ruleName string,backendPoolName string,backendSettingName string"
+    schemaHints: >
+      properties struct<Action:string,ActionReason:string,DestinationPort:int,Fqdn:string,IsExplicitProxyRequest:boolean,IsTlsInspected:boolean,Policy:string,Protocol:string,Rule:string,RuleCollection:string,RuleCollectionGroup:string,SourceIp:string,SourcePort:int,TargetUrl:string,WebCategory:string,DestinationIp:string,instanceId:string,clientIp:string,requestUri:string,ruleSetType:string,ruleSetVersion:string,ruleId:string,ruleGroup:string,message:string,clientPort:int,httpMethod:string,originalRequestUriWithArgs:string,requestQuery:string,Url:string,ThreatDescription:string,details:struct<message:string,data:string,file:string,line:string>,hostname:string,transactionId:string,policyId:string,policyScopt:string,policyScopeName:string,engine:string,policyScope:string,userAgent:string,contentType:string,error_info:string,httpStatus:int,httpVersion:string,receivedBytes:int,sentBytes:int,connectionSerialNumber:int,noOfConnectionRequests:int,clientResponseTime:float,timeTaken:float,WAFMode:string,WAFEvaluationTime:string,WAFPolicyID:string,sslEnabled:string,sslCipher:string,sslProtocol:string,sslClientVerify:string,sslClientCertificateFingerprint:string,sslClientCertificateIssuerName:string,serverRouted:string,serverStatus:string,serverResponseLatency:string,upstreamSourcePort:string,originalHost:string,host:string,msg:string,TranslatedIp:string,TranslatedPort:int,priority:int>,
+      time timestamp,
+      timeStamp timestamp,
+      operationName string,
+      listenerName string,
+      ruleName string,
+      backendPoolName string,
+      backendSettingName string
 silver:
   transform:
     - name: azure_waf_application_gateway_access_log

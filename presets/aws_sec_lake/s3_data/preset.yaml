@@ -7,7 +7,39 @@ autoloader:
   format: parquet
   multiline: true
   cloudFiles:
-    schemaHints: "metadata struct<product:struct<version:string,name:string,vendor_name:string,feature:struct<name:string>>,event_code:string,uid:string,profiles:array<string>,version:string>,time bigint,time_dt timestamp,cloud struct<region:string,provider:string>,api struct<response:struct<error:string,message:string,data:variant>,operation:string,version:string,service:struct<name:string>,request:struct<data:variant,uid:string>>,dst_endpoint struct<svc_name:string>,actor struct<user:struct<type:string,name:string,uid_alt:string,uid:string,account:struct<uid:string>,credential_uid:string>,session:struct<created_time_dt:timestamp,is_mfa:boolean,issuer:string>,invoked_by:string,idp:struct<name:string>>,http_request struct<user_agent:string>,src_endpoint struct<uid:string,ip:string,domain:string>,session struct<uid:string,uid_alt:string,credential_uid:string,issuer:string>,policy struct<uid:string>,resources array<struct<uid:string,owner:struct<account:struct<uid:string>>,type:string>>,class_name string,class_uid int,category_name string,category_uid int,severity_id int,severity string,user struct<uid_alt:string,uid:string,name:string>,activity_name string,activity_id int,type_uid bigint,type_name string,status string,is_mfa boolean,unmapped map<string,string>,accountId bigint,region string,asl_version string,observables array<struct<name:string,value:string,type:string,type_id:int>>,eventDay int,_rescued_data string"
+    schemaHints: >
+      metadata struct<product:struct<version:string,name:string,vendor_name:string,feature:struct<name:string>>,event_code:string,uid:string,profiles:array<string>,version:string>,
+      time bigint,
+      time_dt timestamp,
+      cloud struct<region:string,provider:string>,
+      api struct<response:struct<error:string,message:string,data:variant>,operation:string,version:string,service:struct<name:string>,request:struct<data:variant,uid:string>>,
+      dst_endpoint struct<svc_name:string>,
+      actor struct<user:struct<type:string,name:string,uid_alt:string,uid:string,account:struct<uid:string>,credential_uid:string>,session:struct<created_time_dt:timestamp,is_mfa:boolean,issuer:string>,invoked_by:string,idp:struct<name:string>>,
+      http_request struct<user_agent:string>,
+      src_endpoint struct<uid:string,ip:string,domain:string>,
+      session struct<uid:string,uid_alt:string,credential_uid:string,issuer:string>,
+      policy struct<uid:string>,
+      resources array<struct<uid:string,owner:struct<account:struct<uid:string>>,type:string>>,
+      class_name string,
+      class_uid int,
+      category_name string,
+      category_uid int,
+      severity_id int,
+      severity string,
+      user struct<uid_alt:string,uid:string,name:string>,
+      activity_name string,
+      activity_id int,
+      type_uid bigint,
+      type_name string,
+      status string,
+      is_mfa boolean,
+      unmapped map<string,string>,
+      accountId bigint,
+      region string,
+      asl_version string,
+      observables array<struct<name:string,value:string,type:string,type_id:int>>,
+      eventDay int,
+      _rescued_data string
 silver:
   transform:
     - name: aws_sec_lake_s3_data

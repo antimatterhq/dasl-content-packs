@@ -6,7 +6,14 @@ iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs
 autoloader:
   format: json
   cloudFiles:
-    schemaHints: "attackData struct<clientIP:string,clientReputation:string,configId:string,policyId:string,ruleActions:string,ruleData:string,ruleMessages:string,ruleSelectors:string,ruleTags:string,ruleVersions:string,rules:string>,format string,geo struct<asn:string,city:string,continent:string,country:string,regionCode:string>,httpMessage struct<bytes:string,host:string,method:string,path:string,port:string,protocol:string,query:string,requestHeaders:map<string,string>,requestId:string,responseHeaders:map<string,string>,start:string,status:string,tls:string>,serviceID string,type string,version string"
+    schemaHints: >
+      attackData struct<clientIP:string,clientReputation:string,configId:string,policyId:string,ruleActions:string,ruleData:string,ruleMessages:string,ruleSelectors:string,ruleTags:string,ruleVersions:string,rules:string>,
+      format string,
+      geo struct<asn:string,city:string,continent:string,country:string,regionCode:string>,
+      httpMessage struct<bytes:string,host:string,method:string,path:string,port:string,protocol:string,query:string,requestHeaders:map<string,string>,requestId:string,responseHeaders:map<string,string>,start:string,status:string,tls:string>,
+      serviceID string,
+      type string,
+      version string
 silver:
   transform:
     - name: akamai_waf_http_activity

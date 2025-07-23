@@ -6,237 +6,334 @@ iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs
 autoloader:
   format: json
   cloudFiles:
-    schemaHints: "CacheCacheStatus string,CacheReserveUsed boolean,CacheResponseBytes int,CacheResponseStatus int,CacheTieredFill boolean,ClientASN int,ClientCountry string,ClientDeviceType string,ClientIP string,ClientIPClass string,ClientMTLSAuthCertFingerprint string,ClientMTLSAuthStatus string,ClientRegionCode string,ClientRequestBytes int,ClientRequestHost string,ClientRequestMethod string,ClientRequestPath string,ClientRequestProtocol string,ClientRequestReferer string,ClientRequestScheme string,ClientRequestSource string,ClientRequestURI string,ClientRequestUserAgent string,ClientSSLCipher string,ClientSSLProtocol string,ClientSrcPort int,ClientTCPRTTMs int,ClientXRequestedWith string,ContentScanObjResults array<string>,ContentScanObjSizes array<int>,ContentScanObjTypes array<string>,EdgeCFConnectingO2O boolean,EdgeColoCode string,EdgeColoID int,EdgeEndTimestamp string,EdgePathingOp string,EdgePathingSrc string,EdgePathingStatus string,EdgeRequestHost string,EdgeResponseBodyBytes int,EdgeResponseBytes int,EdgeResponseCompressionRatio float,EdgeResponseContentType string,EdgeResponseStatus int,EdgeServerIP string,EdgeStartTimestamp string,EdgeTimeToFirstByteMs int,LeakedCredentialCheckResult string,OriginDNSResponseTimeMs bigint,OriginIP string,OriginRequestHeaderSendDurationMs int,OriginResponseBytes int,OriginResponseDurationMs int,OriginResponseHTTPExpires string,OriginResponseHTTPLastModified string,OriginResponseHeaderReceiveDurationMs int,OriginResponseStatus int,OriginResponseTime bigint,OriginSSLProtocol string,OriginTCPHandshakeDurationMs int,OriginTLSHandshakeDurationMs int,ParentRayID string,RayID string,SecurityAction string,SecurityActions array<string>,SecurityRuleDescription string,SecurityRuleID string,SecurityRuleIDs array<string>,SecuritySources array<string>,SmartRouteColoID int,UpperTierColoID int,WAFAttackScore int,WAFFlags string,WAFMatchedVar string,WAFRCEAttackScore int,WAFSQLiAttackScore int,WAFXSSAttackScore int,WorkerCPUTime bigint,WorkerStatus string,WorkerSubrequest boolean,WorkerSubrequestCount int,WorkerWallTimeUs bigint,ZoneName string"
+    schema: >
+      "CacheCacheStatus string,
+      CacheReserveUsed boolean,
+      CacheResponseBytes int,
+      CacheResponseStatus int,
+      CacheTieredFill boolean,
+      ClientASN int,
+      ClientCountry string,
+      ClientDeviceType string,
+      ClientIP string,
+      ClientIPClass string,
+      ClientMTLSAuthCertFingerprint string,
+      ClientMTLSAuthStatus string,
+      ClientRegionCode string,
+      ClientRequestBytes int,
+      ClientRequestHost string,
+      ClientRequestMethod string,
+      ClientRequestPath string,
+      ClientRequestProtocol string,
+      ClientRequestReferer string,
+      ClientRequestScheme string,
+      ClientRequestSource string,
+      ClientRequestURI string,
+      ClientRequestUserAgent string,
+      ClientSSLCipher string,
+      ClientSSLProtocol string,
+      ClientSrcPort int,
+      ClientTCPRTTMs int,
+      ClientXRequestedWith string,
+      ContentScanObjResults array<string>,
+      ContentScanObjSizes array<int>,
+      ContentScanObjTypes array<string>,
+      EdgeCFConnectingO2O boolean,
+      EdgeColoCode string,
+      EdgeColoID int,
+      EdgeEndTimestamp string,
+      EdgePathingOp string,
+      EdgePathingSrc string,
+      EdgePathingStatus string,
+      EdgeRequestHost string,
+      EdgeResponseBodyBytes int,
+      EdgeResponseBytes int,
+      EdgeResponseCompressionRatio float,
+      EdgeResponseContentType string,
+      EdgeResponseStatus int,
+      EdgeServerIP string,
+      EdgeStartTimestamp string,
+      EdgeTimeToFirstByteMs int,
+      LeakedCredentialCheckResult string,
+      OriginDNSResponseTimeMs bigint,
+      OriginIP string,
+      OriginRequestHeaderSendDurationMs int,
+      OriginResponseBytes int,
+      OriginResponseDurationMs int,
+      OriginResponseHTTPExpires string,
+      OriginResponseHTTPLastModified string,
+      OriginResponseHeaderReceiveDurationMs int,
+      OriginResponseStatus int,
+      OriginResponseTime bigint,
+      OriginSSLProtocol string,
+      OriginTCPHandshakeDurationMs int,
+      OriginTLSHandshakeDurationMs int,
+      ParentRayID string,
+      RayID string,
+      SecurityAction string,
+      SecurityActions array<string>,
+      SecurityRuleDescription string,
+      SecurityRuleID string,
+      SecurityRuleIDs array<string>,
+      SecuritySources array<string>,
+      SmartRouteColoID int,
+      UpperTierColoID int,
+      WAFAttackScore int,
+      WAFFlags string,
+      WAFMatchedVar string,
+      WAFRCEAttackScore int
+      ,WAFSQLiAttackScore int,
+      WAFXSSAttackScore int,
+      WorkerCPUTime bigint,
+      WorkerStatus string,
+      WorkerSubrequest boolean,
+      WorkerSubrequestCount int,
+      WorkerWallTimeUs bigint,
+      ZoneName string"
+
 silver:
   transform:
-    - name: cloudflare_waf_http_requests
-      fields:
-        - name: ocsf_activity_id
-          expr: CASE WHEN LOWER(ClientRequestMethod) = 'connect' THEN 1 WHEN LOWER(ClientRequestMethod) = 'delete' THEN 2 WHEN LOWER(ClientRequestMethod) = 'get' THEN 3 WHEN LOWER(ClientRequestMethod) = 'head' THEN 4 WHEN LOWER(ClientRequestMethod) = 'options' THEN 5 WHEN LOWER(ClientRequestMethod) = 'post' THEN 6 WHEN LOWER(ClientRequestMethod) = 'put' THEN 7 WHEN LOWER(ClientRequestMethod) = 'trace' THEN 8 WHEN ClientRequestMethod IS NULL OR ClientRequestMethod = '' THEN 0 ELSE 99 END
-        - name: ocsf_activity_name
-          expr: CASE WHEN ClientRequestMethod IS NULL OR ClientRequestMethod = '' THEN ClientRequestMethod ELSE CONCAT(UPPER(SUBSTRING(ClientRequestMethod, 1, 1)), LOWER(SUBSTRING(ClientRequestMethod, 2))) END
-        - name: ocsf_category_uid
-          expr: CAST('4' AS INT)
-        - name: ocsf_category_name
-          literal: "Network Activity"
-        - name: ocsf_class_uid
-          expr: CAST('4002' AS INT)
-        - name: ocsf_class_name
-          literal: "HTTP Activity"
-        - name: time
-          expr: CAST(EdgeStartTimestamp AS TIMESTAMP)
-        - name: ocsf_severity_id
-          expr: CAST('0' AS INT)
-        - name: ocsf_severity
-          literal: Unknown
-        - name: ocsf_type_uid
-          expr: CAST((400200 + CASE WHEN LOWER(ClientRequestMethod) = 'connect' THEN 1 WHEN LOWER(ClientRequestMethod) = 'delete' THEN 2 WHEN LOWER(ClientRequestMethod) = 'get' THEN 3 WHEN LOWER(ClientRequestMethod) = 'head' THEN 4 WHEN LOWER(ClientRequestMethod) = 'options' THEN 5 WHEN LOWER(ClientRequestMethod) = 'post' THEN 6 WHEN LOWER(ClientRequestMethod) = 'put' THEN 7 WHEN LOWER(ClientRequestMethod) = 'trace' THEN 8 WHEN ClientRequestMethod IS NULL OR ClientRequestMethod = '' THEN 0 ELSE 99 END) AS BIGINT)
-        - name: ocsf_type_name
-          expr: "CONCAT('HTTP Activity: ', ClientRequestMethod)"
-        - name: src_endpoint_type_id
-          expr: CASE WHEN LOWER(ClientDeviceType) = 'server' THEN 1 WHEN LOWER(ClientDeviceType) = 'desktop' THEN 2 WHEN LOWER(ClientDeviceType) = 'laptop' THEN 3 WHEN LOWER(ClientDeviceType) = 'tablet' THEN 4 WHEN LOWER(ClientDeviceType) = 'mobile' THEN 5 WHEN LOWER(ClientDeviceType) = 'virtual' THEN 6 WHEN LOWER(ClientDeviceType) = 'iot' THEN 7 WHEN LOWER(ClientDeviceType) = 'browser' THEN 8 WHEN LOWER(ClientDeviceType) = 'firewall' THEN 9 WHEN LOWER(ClientDeviceType) = 'switch' THEN 10 WHEN LOWER(ClientDeviceType) = 'hub' THEN 11 WHEN LOWER(ClientDeviceType) = 'router' THEN 12 WHEN LOWER(ClientDeviceType) = 'ids' THEN 13 WHEN LOWER(ClientDeviceType) = 'ips' THEN 14 WHEN LOWER(ClientDeviceType) = 'load balancer' THEN 15 WHEN ClientDeviceType IS NULL OR ClientDeviceType = '' THEN 0 ELSE 99 END
-        - name: ocsf_metadata.product.name
-          literal: "Logs"
-        - name: ocsf_metadata.product.vendor_name
-          literal: "Cloudflare"
-        - name: ocsf_metadata.product.feature.name
-          literal: "HTTP requests"
-        - name: duration
-          expr: DATEDIFF(MILLISECOND, CAST(EdgeStartTimestamp AS TIMESTAMP), CAST(EdgeEndTimestamp AS TIMESTAMP))
-        - name: ocsf_device.type
-          expr: CASE WHEN ClientDeviceType IS NULL OR ClientDeviceType = '' THEN ClientDeviceType ELSE CONCAT(UPPER(SUBSTRING(ClientDeviceType, 1, 1)), LOWER(SUBSTRING(ClientDeviceType, 2))) END
-        - name: ocsf_device.type_id
-          expr: CASE WHEN ClientDeviceType = 'desktop' THEN 2 WHEN ClientDeviceType = 'mobile' THEN 5 WHEN ClientDeviceType = 'virtual' THEN 6 ELSE 0 END
-        - name: ocsf_src_endpoint.autonomous_system.number
-          from: ClientASN
-        - name: ocsf_src_endpoint.location.country
-          from: ClientCountry
-        - name: ocsf_src_endpoint.location.region
-          from: ClientRegionCode
-        - name: ocsf_src_endpoint.ip
-          from: ClientIP
-        - name: ocsf_src_endpoint.port
-          from: ClientSrcPort
-        - name: ocsf_dst_endpoint.ip
-          from: OriginIP
-        - name: ocsf_dst_endpoint.hostname
-          expr: COALESCE(ClientRequestHost, EdgeRequestHost)
-        - name: ocsf_dst_endpoint.zone
-          from: ZoneName
-        - name: ocsf_proxy.ip
-          from: EdgeServerIP
-        - name: ocsf_http_request.http_method
-          from: ClientRequestMethod
-        - name: ocsf_http_request.referrer
-          from: ClientRequestReferer
-        - name: ocsf_http_request.version
-          from: ClientRequestProtocol
-        - name: ocsf_http_request.url.path
-          from: ClientRequestPath
-        - name: ocsf_http_request.url.scheme
-          from: ClientRequestScheme
-        - name: ocsf_http_request.url.url_string
-          from: ClientRequestURI
-        - name: ocsf_http_request.user_agent
-          from: ClientRequestUserAgent
-        - name: ocsf_http_response.code
-          expr: CASE WHEN (EdgeServerIP != '') THEN OriginResponseStatus ELSE EdgeResponseStatus END
-        - name: ocsf_http_response.content_type
-          from: EdgeResponseContentType
-        - name: ocsf_http_response.body_length
-          expr: EdgeResponseBodyBytes
-        - name: ocsf_http_response.latency
-          from: EdgeTimeToFirstByteMs
-        - name: http_status
-          expr: COALESCE(OriginResponseStatus, EdgeResponseStatus)
-        - name: ocsf_traffic.bytes
-          expr: CAST(ClientRequestBytes AS BIGINT) + CAST(CASE WHEN OriginResponseBytes = 0 OR OriginResponseBytes = null THEN EdgeResponseBytes ELSE OriginResponseBytes END AS BIGINT)
-        - name: ocsf_traffic.bytes_in
-          expr: CAST(ClientRequestBytes AS BIGINT)
-        - name: ocsf_traffic.bytes_out
-          expr: CAST(CASE WHEN OriginResponseBytes = 0 OR OriginResponseBytes = null THEN EdgeResponseBytes ELSE OriginResponseBytes END AS BIGINT)
-        - name: ocsf_tls.cipher
-          from: ClientSSLCipher
-        - name: ocsf_tls.version
-          expr: CASE WHEN ClientSSLProtocol != 'none' THEN ClientSSLProtocol ELSE OriginSSLProtocol END
-        - name: action
-          expr: CASE WHEN array_contains(ARRAY('allow'), SecurityAction) THEN 'Allowed' WHEN array_contains(ARRAY('connectionClose','forceConnectionClose','block'), SecurityAction) THEN 'Denied' WHEN array_contains(ARRAY('skip','bypass','log'), SecurityAction) THEN 'Observed' WHEN array_contains(ARRAY('rewrite','challenge','jschallenge','managedChallenge','managedChallengeNonInteractiveSolved','managedChallengeInteractiveSolved','challengeSolved','jschallengeSolved','challengeBypassed','managedChallengeBypassed','jschallengeBypassed'), SecurityAction) THEN 'Modified' WHEN array_contains(ARRAY('unknown'), SecurityAction) THEN 'Unknown' ELSE 'Other' END
-        - name: action_id
-          expr: CASE WHEN array_contains(ARRAY('allow'), SecurityAction) THEN 1 WHEN array_contains(ARRAY('connectionClose','forceConnectionClose','block'), SecurityAction) THEN 2 WHEN array_contains(ARRAY('skip','bypass','log'), SecurityAction) THEN 3 WHEN array_contains(ARRAY('rewrite','challenge','jschallenge','managedChallenge','managedChallengeNonInteractiveSolved','managedChallengeInteractiveSolved','challengeSolved','jschallengeSolved','challengeBypassed','managedChallengeBypassed','jschallengeBypassed'), SecurityAction) THEN 4 WHEN array_contains(ARRAY('unknown'), SecurityAction) THEN 0 ELSE 99 END
-        - name: disposition
-          expr: CASE WHEN array_contains(ARRAY('unknown'), SecurityAction) THEN 'Unknown' WHEN array_contains(ARRAY('allow'), SecurityAction) THEN 'Allowed' WHEN array_contains(ARRAY('block'), SecurityAction) THEN 'Blocked' WHEN array_contains(ARRAY('connectionClose', 'forceConnectionClose'), SecurityAction) THEN 'Dropped' WHEN array_contains(ARRAY('challengeSolved', 'jschallengeSolved', 'managedChallengeNonInteractiveSolved', 'managedChallengeInteractiveSolved'), SecurityAction) THEN 'Approved' WHEN array_contains(ARRAY('skip', 'bypass', 'challengeBypassed', 'jschallengeBypassed', 'managedChallengeBypassed'), SecurityAction) THEN 'No Action' WHEN array_contains(ARRAY('log'), SecurityAction) THEN 'Logged' WHEN array_contains(ARRAY('challenge', 'jschallenge', 'managedChallenge'), SecurityAction) THEN 'Challenge' ELSE 'Other' END
-        - name: disposition_id
-          expr: CASE WHEN array_contains(ARRAY('unknown'), SecurityAction) THEN 0 WHEN array_contains(ARRAY('allow'), SecurityAction) THEN 1 WHEN array_contains(ARRAY('block'), SecurityAction) THEN 2 WHEN array_contains(ARRAY('connectionClose', 'forceConnectionClose'), SecurityAction) THEN 6 WHEN array_contains(ARRAY('challengeSolved', 'jschallengeSolved', 'managedChallengeNonInteractiveSolved', 'managedChallengeInteractiveSolved'), SecurityAction) THEN 8 WHEN array_contains(ARRAY('skip', 'bypass', 'challengeBypassed', 'jschallengeBypassed', 'managedChallengeBypassed'), SecurityAction) THEN 16 WHEN array_contains(ARRAY('log'), SecurityAction) THEN 17 WHEN array_contains(ARRAY('challenge', 'jschallenge', 'managedChallenge'), SecurityAction) THEN 23 ELSE 99 END
-        - name: ocsf_firewall_rule.uid
-          from: SecurityRuleID
-        - name: ocsf_firewall_rule.desc
-          from: SecurityRuleDescription
-        - name: ocsf_firewall_rule.match_location
-          from: WAFMatchedVar
-        - name: ocsf_connection_info.uid
-          from: RayID
-        - name: risk_score
-          expr: CASE WHEN WAFRCEAttackScore >= WAFSQLiAttackScore AND WAFRCEAttackScore >= WAFXSSAttackScore AND WAFRCEAttackScore > 0 THEN WAFRCEAttackScore WHEN WAFSQLiAttackScore >= WAFRCEAttackScore AND WAFSQLiAttackScore >= WAFXSSAttackScore AND WAFSQLiAttackScore > 0 THEN WAFSQLiAttackScore WHEN WAFXSSAttackScore >= WAFRCEAttackScore AND WAFXSSAttackScore >= WAFSQLiAttackScore AND WAFXSSAttackScore > 0 THEN WAFXSSAttackScore ELSE 0 END
-        - name: risk_details
-          expr: CASE WHEN WAFRCEAttackScore >= WAFSQLiAttackScore AND WAFRCEAttackScore >= WAFXSSAttackScore AND WAFRCEAttackScore > 0 THEN 'Remote code execution.' WHEN WAFSQLiAttackScore >= WAFRCEAttackScore AND WAFSQLiAttackScore >= WAFXSSAttackScore AND WAFSQLiAttackScore > 0 THEN 'SQL injection.' WHEN WAFXSSAttackScore >= WAFRCEAttackScore AND WAFXSSAttackScore >= WAFSQLiAttackScore AND WAFXSSAttackScore > 0 THEN 'Cross-site script.' ELSE 'None' END
-        - name: ocsf_unmapped
-          expr: "to_json(
-                  named_struct(
-                    'CacheCacheStatus', CacheCacheStatus, 
-                    'CacheReserveUsed', CacheReserveUsed, 
-                    'CacheResponseBytes', CacheResponseBytes, 
-                    'CacheResponseStatus', CacheResponseStatus, 
-                    'CacheTieredFill', CacheTieredFill,
-                    'ClientRequestSource', ClientRequestSource,
-                    'ClientIPClass', ClientIPClass,
-                    'ClientMTLSAuthCertFingerprint', ClientMTLSAuthCertFingerprint,
-                    'ClientMTLSAuthStatus', ClientMTLSAuthStatus,
-                    'ClientTCPRTTMs', ClientTCPRTTMs,
-                    'ClientXRequestedWith', ClientXRequestedWith,
-                    'EdgeCFConnectingO2O', EdgeCFConnectingO2O,
-                    'EdgeColoCode', EdgeColoCode,
-                    'EdgeColoID', EdgeColoID,
-                    'EdgePathingOp', EdgePathingOp,
-                    'EdgePathingSrc', EdgePathingSrc,
-                    'EdgePathingStatus', EdgePathingStatus,
-                    'EdgeResponseCompressionRatio', EdgeResponseCompressionRatio,
-                    'OriginDNSResponseTimeMs', OriginDNSResponseTimeMs,
-                    'OriginRequestHeaderSendDurationMs', OriginRequestHeaderSendDurationMs,
-                    'OriginResponseDurationMs', OriginResponseDurationMs,
-                    'OriginResponseHTTPExpires', OriginResponseHTTPExpires,
-                    'OriginResponseHTTPLastModified', OriginResponseHTTPLastModified,
-                    'OriginResponseHeaderReceiveDurationMs', OriginResponseHeaderReceiveDurationMs,
-                    'OriginResponseTime', OriginResponseTime,
-                    'OriginTCPHandshakeDurationMs', OriginTCPHandshakeDurationMs,
-                    'OriginTLSHandshakeDurationMs', OriginTLSHandshakeDurationMs,
-                    'SecurityActions', SecurityActions,
-                    'SecurityRuleIDs', SecurityRuleIDs,
-                    'SecuritySources', SecuritySources,
-                    'WAFAttackScore', WAFAttackScore,
-                    'WAFRCEAttackScore', WAFRCEAttackScore,
-                    'WAFSQLiAttackScore', WAFSQLiAttackScore,
-                    'WAFXSSAttackScore', WAFXSSAttackScore,
-                    'WAFFlags', WAFFlags,
-                    'LeakedCredentialCheckResult', LeakedCredentialCheckResult,
-                    'ParentRayID', ParentRayID,
-                    'ContentScanObjResults', ContentScanObjResults,
-                    'ContentScanObjSizes', ContentScanObjSizes,
-                    'ContentScanObjTypes', ContentScanObjTypes,
-                    'SmartRouteColoID', SmartRouteColoID,
-                    'UpperTierColoID', UpperTierColoID,
-                    'WorkerStatus', WorkerStatus,
-                    'WorkerCPUTime', WorkerCPUTime,
-                    'WorkerSubrequest', WorkerSubrequest,
-                    'WorkerSubrequestCount', WorkerSubrequestCount,
-                    'WorkerWallTimeUs', WorkerWallTimeUs
-                  )
-                )"
-      utils:
-        unreferencedColumns:
-          preserve: true
+  - name: cloudflare_waf_http_requests
+    fields:
+    - name: CacheCacheStatus
+      from: CacheCacheStatus
+    - name: CacheResponseBytes
+      from: CacheResponseBytes
+    - name: ClientASN
+      from: ClientASN
+    - name: ClientCountry
+      from: ClientCountry
+    - name: ClientDeviceType
+      from: ClientDeviceType
+    - name: ClientIP
+      from: ClientIP
+    - name: ClientIPClass
+      from: ClientIPClass
+    - name: ClientMTLSAuthCertFingerprint
+      from: ClientMTLSAuthCertFingerprint
+    - name: ClientMTLSAuthStatus
+      from: ClientMTLSAuthStatus
+    - name: ClientRegionCode
+      from: ClientRegionCode
+    - name: ClientRequestBytes
+      from: ClientRequestBytes
+    - name: ClientRequestHost
+      from: ClientRequestHost
+    - name: ClientRequestMethod
+      from: ClientRequestMethod
+    - name: ClientRequestPath
+      from: ClientRequestPath
+    - name: ClientRequestProtocol
+      from: ClientRequestProtocol
+    - name: ClientRequestReferer
+      from: ClientRequestReferer
+    - name: ClientRequestScheme
+      from: ClientRequestScheme
+    - name: ClientRequestSource
+      from: ClientRequestSource
+    - name: ClientRequestURI
+      from: ClientRequestURI
+    - name: ClientRequestUserAgent
+      from: ClientRequestUserAgent
+    - name: ClientSSLProtocol
+      from: ClientSSLProtocol
+    - name: EdgeColoCode
+      from: EdgeColoCode
+    - name: EdgeEndTimestamp
+      from: EdgeEndTimestamp
+    - name: EdgePathingOp
+      from: EdgePathingOp
+    - name: EdgePathingSrc
+      from: EdgePathingSrc
+    - name: EdgePathingStatus
+      from: EdgePathingStatus
+    - name: EdgeResponseBytes
+      from: EdgeResponseBytes
+    - name: EdgeResponseContentType
+      from: EdgeResponseContentType
+    - name: EdgeResponseStatus
+      from: EdgeResponseStatus
+    - name: EdgeServerIP
+      from: EdgeServerIP
+    - name: EdgeStartTimestamp
+      from: EdgeStartTimestamp
+    - name: OriginIP
+      from: OriginIP
+    - name: OriginResponseDurationMs
+      from: OriginResponseDurationMs
+    - name: OriginResponseHTTPLastModified
+      from: OriginResponseHTTPLastModified
+    - name: OriginResponseStatus
+      from: OriginResponseStatus
+    - name: OriginSSLProtocol
+      from: OriginSSLProtocol
+    - name: ParentRayID
+      from: ParentRayID
+    - name: RayID
+      from: RayID
+    - name: SecurityAction
+      from: SecurityAction
+    - name: SecurityActions
+      from: SecurityActions
+    - name: SecurityRuleDescription
+      from: SecurityRuleDescription
+    - name: SecurityRuleID
+      from: SecurityRuleID
+    - name: SecurityRuleIDs
+      from: SecurityRuleIDs
+    - name: SecuritySources
+      from: SecuritySources
+    - name: WAFAttackScore
+      from: WAFAttackScore
+    - name: WAFRCEAttackScore
+      from: WAFRCEAttackScore
+    - name: WAFSQLiAttackScore
+      from: WAFSQLiAttackScore
+    - name: WAFXSSAttackScore
+      from: WAFXSSAttackScore
+    - name: WorkerStatus
+      from: WorkerStatus
+    - name: WorkerSubrequest
+      from: WorkerSubrequest
+    - name: ZoneName
+      from: ZoneName
+
 gold:
   - name: http_activity
     input: cloudflare_waf_http_requests
     fields:
-      - name: activity_id
-        from: ocsf_activity_id
-      - name: activity_name
-        from: ocsf_activity_name
-      - name: category_uid
-        from: ocsf_category_uid
-      - name: category_name
-        from: ocsf_category_name
-      - name: class_uid
-        from: ocsf_class_uid
-      - name: class_name
-        from: ocsf_class_name
-      - name: time
-        from: time
-      - name: metadata
-        from: ocsf_metadata
-      - name: duration
-        from: duration
-      - name: severity_id
-        from: ocsf_severity_id
-      - name: severity
-        from: ocsf_severity
-      - name: type_uid
-        from: ocsf_type_uid
-      - name: type_name
-        from: ocsf_type_name
-      - name: device
-        from: ocsf_device
-      - name: src_endpoint
-        from: ocsf_src_endpoint
-      - name: dst_endpoint
-        from: ocsf_dst_endpoint
-      - name: proxy
-        from: ocsf_proxy
-      - name: http_request
-        from: ocsf_http_request
-      - name: http_response
-        from: ocsf_http_response
-      - name: http_status
-        from: http_status
-      - name: traffic
-        from: ocsf_traffic
-      - name: tls
-        from: ocsf_tls
+
       - name: action
-        from: action
+        expr: CASE WHEN array_contains(ARRAY('allow'), SecurityAction) THEN 'Allowed' WHEN array_contains(ARRAY('connectionClose','forceConnectionClose','block'), SecurityAction) THEN 'Denied' WHEN array_contains(ARRAY('skip','bypass','log'), SecurityAction) THEN 'Observed' WHEN array_contains(ARRAY('rewrite','challenge','jschallenge','managedChallenge','managedChallengeNonInteractiveSolved','managedChallengeInteractiveSolved','challengeSolved','jschallengeSolved','challengeBypassed','managedChallengeBypassed','jschallengeBypassed'), SecurityAction) THEN 'Modified' WHEN array_contains(ARRAY('unknown'), SecurityAction) THEN 'Unknown' ELSE 'Other' END
+
       - name: action_id
-        from: action_id
-      - name: disposition
-        from: disposition
-      - name: disposition_id
-        from: disposition_id
-      - name: firewall_rule
-        from: ocsf_firewall_rule
-      - name: connection_info
-        from: ocsf_connection_info
-      - name: risk_score
-        from: risk_score
-      - name: risk_details
-        from: risk_details
-      - name: unmapped
-        expr: CAST(ocsf_unmapped AS VARIANT)
+        expr: CASE WHEN array_contains(ARRAY('allow'), SecurityAction) THEN 1 WHEN array_contains(ARRAY('connectionClose','forceConnectionClose','block'), SecurityAction) THEN 2 WHEN array_contains(ARRAY('skip','bypass','log'), SecurityAction) THEN 3 WHEN array_contains(ARRAY('rewrite','challenge','jschallenge','managedChallenge','managedChallengeNonInteractiveSolved','managedChallengeInteractiveSolved','challengeSolved','jschallengeSolved','challengeBypassed','managedChallengeBypassed','jschallengeBypassed'), SecurityAction) THEN 4 WHEN array_contains(ARRAY('unknown'), SecurityAction) THEN 0 ELSE 99 END
+
+      - name: message
+        literal: "message"
+
+      - name: metadata.log_level
+        literal: "Informational" 
+
+      - name: metadata.log_name
+        literal: "http"
+
+      - name: metadata.log_provider
+        literal: "cloudflare"
+
+      - name: metadata.log_version
+        literal: "unknown"
+
+      - name: metadata.logged_time
+        expr: current_timestamp()
+
+      - name: metadata.product.name
+        literal: "web application firewall"
+
+      - name: metadata.product.vendor_name
+        literal: cloudflare
+
+      - name: metadata.version
+        literal: 1.4.0
+
+      - name: severity
+        literal: "Informational"
+
+      - name: severity_id
+        expr: CAST("1" AS INT)
+      
+      - name: status_id
+        expr: CAST("1" AS INT)
+
+      - name: time
+        expr: CAST(EdgeStartTimestamp AS TIMESTAMP)
+
+      - name: time_dt
+        expr: CAST(to_date(EdgeStartTimestamp) AS TIMESTAMP)
+
+      - name: timezone_offset
+        expr: CAST("0" AS INT)
+      
+      - name: activity_id
+        expr: CASE WHEN LOWER(ClientRequestMethod) = 'connect' THEN 1 WHEN LOWER(ClientRequestMethod) = 'delete' THEN 2 WHEN LOWER(ClientRequestMethod) = 'get' THEN 3 WHEN LOWER(ClientRequestMethod) = 'head' THEN 4 WHEN LOWER(ClientRequestMethod) = 'options' THEN 5 WHEN LOWER(ClientRequestMethod) = 'post' THEN 6 WHEN LOWER(ClientRequestMethod) = 'put' THEN 7 WHEN LOWER(ClientRequestMethod) = 'trace' THEN 8 WHEN ClientRequestMethod IS NULL OR ClientRequestMethod = '' THEN 0 ELSE 99 END
+      
+      - name: activity_name
+        expr: CASE WHEN ClientRequestMethod IS NULL OR ClientRequestMethod = '' THEN ClientRequestMethod ELSE CONCAT(UPPER(SUBSTRING(ClientRequestMethod, 1, 1)), LOWER(SUBSTRING(ClientRequestMethod, 2))) END
+
+      - name: app_name
+        from: ClientRequestUserAgent
+
+      - name: category_uid
+        expr: CAST("4" AS INT)
+
+      - name: class_uid
+        literal: "4002"
+
+      - name: connection_info.direction_id
+        expr: CAST("1" AS INT)
+
+      - name: connection_info.protocol_name
+        from: ClientRequestProtocol
+
+      - name: connection_info.protocol_num
+        expr: CAST("6" AS INT)
+
+      - name: connection_info.uid
+        expr: CAST(RayId AS STRING)
+
+      - name: device.name
+        from: EdgeColoCode
+
+      - name: device.hostname
+        from: EdgeColoCode
+
+      - name: device.region
+        from: EdgeColoCode
+
+      - name: device.type_id
+        expr: CAST("99" AS INT)
+
+      - name: dst_endpoint.hostname
+        from: ClientRequestHost
+
+      - name: dst_endpoint.port
+        expr: CASE WHEN INSTR(ClientRequestHost, ':') > 0 THEN SPLIT(ClientRequestHost, ':')[1] WHEN LOWER(ClientRequestScheme) = 'https' THEN CAST('443' AS INT) WHEN LOWER(ClientRequestScheme) = 'http' THEN CAST('80' AS INT) ELSE CAST('0' AS INT) END 
+
+      - name: http_request.http_method
+        from: ClientRequestMethod
+
+      - name: http_request.referrer
+        expr: coalesce(ClientRequestReferer, '')
+
+      - name: http_request.url
+        expr: CONCAT(ClientRequestScheme, '://', ClientRequestHost, ClientRequestPath)
+
+      - name: http_request.user_agent
+        from: ClientRequestUserAgent
+
+      - name: http_request.version
+        expr: SPLIT(ClientRequestProtocol, '/')[SIZE(SPLIT(ClientRequestProtocol, '/')) - 1]
+
+      - name: http_response.length
+        expr: CAST(EdgeResponseBytes AS INT)
+
+      - name: http_response.code
+        expr: CAST(EdgeResponseStatus AS INT)
+
+      - name: http_response.content_type
+        from: EdgeResponseContentType
+
+      - name: src_endpoint.ip
+        from: ClientIP
+
+      - name: traffic.bytes_in
+        from: ClientRequestBytes
+
+      - name: traffic.bytes_out
+        from: EdgeResponseBytes
+
+      - name: traffic.bytes
+        expr: COALESCE(EdgeResponseBytes, 0) + COALESCE(ClientRequestBytes, 0)
+      
+      - name: type_uid
+        expr: CAST((400200 + CASE WHEN LOWER(ClientRequestMethod) = 'connect' THEN 1 WHEN LOWER(ClientRequestMethod) = 'delete' THEN 2 WHEN LOWER(ClientRequestMethod) = 'get' THEN 3 WHEN LOWER(ClientRequestMethod) = 'head' THEN 4 WHEN LOWER(ClientRequestMethod) = 'options' THEN 5 WHEN LOWER(ClientRequestMethod) = 'post' THEN 6 WHEN LOWER(ClientRequestMethod) = 'put' THEN 7 WHEN LOWER(ClientRequestMethod) = 'trace' THEN 8 WHEN ClientRequestMethod IS NULL OR ClientRequestMethod = '' THEN 0 ELSE 99 END) AS BIGINT)
