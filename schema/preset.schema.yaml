@@ -4,7 +4,8 @@ properties:
   name:
     description: >
       The name of the preset. Preset names must be unique and should follow established patterns such as
-      "${source}_${sourceType}_${optionalInfo}".
+      "${source}_${sourceType}_${optionalInfo}". User defined presets must NOT be given the "internal_" prefix -
+      this is automatically added by the API when listing or querying custom presets.
     type: string
   author:
     description: >
