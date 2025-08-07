@@ -565,6 +565,10 @@ silver:
 gold:
   - name: account_change
     input: aws_cloudtrail_account_change
+    filter: eventName IN ('CreateUser', 'CreateLoginProfile', 'DeleteUser', 'DeleteLoginProfile', 'ChangePassword', 'UpdateLoginProfile', 'ResetServiceSpecificCredential', 'AttachRolePolicy', 'PutRolePolicy', 'PutRolePermissionsBoundary',
+                          'DetachRolePolicy', 'DeleteRolePolicy', 'DeleteRolePermissionsBoundary', 'EnableMFADevice', 'DeactivateMFADevice', 'DeleteVirtualMFADevice', 'UpdateUser', 'CreateVirtualMFADevice', 'ResyncMFADevice', 'UpdateSSHPublicKey',
+                          'UploadSSHPublicKey', 'DeleteSSHPublicKey', 'UploadSigningCertificate', 'DeleteSigningCertificate', 'UpdateSigningCertificate', 'CreateServiceSpecificCredential', 'DeleteServiceSpecificCredential', 'UpdateServiceSpecificCredential',
+                          'CreateAccessKey', 'DeleteAccessKey', 'UpdateAccessKey', 'CreateAccountAlias', 'DeleteAccountAlias', 'UpdateAccountPasswordPolicy', 'DeleteAccountPasswordPolicy', 'TagUser', 'UntagUser', 'TagRole', 'UntagRole')
     fields:
       - name: action
         expr: |
@@ -733,14 +737,22 @@ gold:
             WHEN errorCode IS NOT NULL THEN 27
             ELSE 1
           END
-      - name: http_request.user_agent
-        from: userAgent
       - name: metadata.uid
         from: eventID
       - name: metadata.event_code
         from: eventName
       - name: metadata.log_provider
-        literal: AWS CloudTrail
+        literal: AWS
+      - name: metadata.log_name
+        literal: CloudTrail
+      - name: metadata.original_time
+        from: eventTime
+      - name: metadata.processed_time
+        expr: current_timestamp()
+      - name: metadata.logged_time
+        from: eventTime
+      - name: metadata.log_level
+        literal: Informational
       - name: observables
         expr: |
           filter(
@@ -771,8 +783,6 @@ gold:
       - name: src_endpoint.uid
         from: vpcEndpointId
       - name: time
-        from: time
-      - name: time_dt
         from: time
       - name: type_name
         expr: |
@@ -828,6 +838,16 @@ gold:
 
   - name: entity_management
     input: aws_cloudtrail_entity_management
+    filter: eventName IN ('CreateInstanceProfile', 'CreateOpenIDConnectProvider', 'CreatePolicy', 'CreatePolicyVersion', 'CreateRole', 'CreateSAMLProvider',
+                          'CreateServiceLinkedRole', 'UploadServerCertificate', 'GetGroup', 'GetGroupPolicy', 'GetUser', 'GetUserPolicy', 'GetRole',
+                          'GetRolePolicy', 'GetPolicy', 'GetPolicyVersion', 'GetInstanceProfile', 'GetLoginProfile', 'GetOpenIDConnectProvider', 'GetSAMLProvider', 'GetServerCertificate',
+                          'ListUserTags', 'ListGroupsForUser', 'ListRoleTags', 'ListInstanceProfilesForRole', 'ListInstanceProfileTags', 'ListSAMLProviderTags', 'ListOpenIDConnectProviderTags', 
+                          'ListServerCertificateTags', 'ListMFADevices', 'ListMFADeviceTags', 'ListSigningCertificates', 'ListSSHPublicKeys', 'ListServiceSpecificCredentials', 
+                          'ListPolicyVersions', 'ListPolicyTags', 'ListEntitiesForPolicy', 'ListAttachedUserPolicies', 'ListAttachedGroupPolicies', 'ListAttachedRolePolicies', 
+                          'GetMFADevice', 'ListAccessKeys', 'ListGroupPolicies', 'ListOrganizationsFeatures', 'ListRolePolicies', 'ListUserPolicies', 'ListVirtualMFADevices',
+                          'TagMFADevice', 'UntagMFADevice', 'TagOpenIDConnectProvider', 'UntagOpenIDConnectProvider', 'TagSAMLProvider', 'UntagSAMLProvider', 'TagServerCertificate', 'UntagServerCertificate', 'SetDefaultPolicyVersion', 'TagPolicy', 'UntagPolicy', 'TagInstanceProfile', 'UntagInstanceProfile', 'AddClientIDToOpenIDConnectProvider', 'AddRoleToInstanceProfile', 'RemoveClientIDFromOpenIDConnectProvider', 'RemoveRoleFromInstanceProfile', 'UpdateAssumeRolePolicy', 'UpdateOpenIDConnectProviderThumbprint', 'UpdateRole', 'UpdateRoleDescription', 'UpdateSAMLProvider', 'UpdateServerCertificate',
+                          'DeleteInstanceProfile', 'DeleteOpenIDConnectProvider', 'DeletePolicy', 'DeletePolicyVersion', 'DeleteRole', 'DeleteSAMLProvider', 'DeleteServerCertificate', 'DeleteServiceLinkedRole',
+                          'EnableOrganizationsRootCredentialsManagement', 'EnableOrganizationsRootSessions', 'DisableOrganizationsRootCredentialsManagement', 'DisableOrganizationsRootSessions')
     fields:
       - name: action
         expr: |
@@ -1138,7 +1158,17 @@ gold:
       - name: metadata.event_code
         from: eventName
       - name: metadata.log_provider
-        literal: AWS CloudTrail
+        literal: AWS
+      - name: metadata.log_name
+        literal: CloudTrail
+      - name: metadata.original_time
+        from: eventTime
+      - name: metadata.processed_time
+        expr: current_timestamp()
+      - name: metadata.logged_time
+        from: eventTime
+      - name: metadata.log_level
+        literal: Informational
       - name: observables
         expr: |
           filter(
@@ -1229,10 +1259,9 @@ gold:
             'tlsDetails', tlsDetails
           )) AS VARIANT)
 
-
-
   - name: user_access
     input: aws_cloudtrail_user_access
+    filter: eventName IN ('AttachUserPolicy', 'PutUserPolicy', 'PutUserPermissionsBoundary', 'DetachUserPolicy', 'DeleteUserPolicy', 'DeleteUserPermissionsBoundary')
     fields:
       - name: action
         expr: |
@@ -1319,7 +1348,7 @@ gold:
         expr: CAST(responseElements as VARIANT)
       - name: api.response.error
         from: errorCode
-      - name: api.response.error_message
+      - name: api.response.message
         from: errorMessage
       - name: api.service.name
         literal: Identity and Access Management
@@ -1335,24 +1364,6 @@ gold:
         literal: User Access Management
       - name: class_uid
         expr: CAST(3005 as INT)
-      - name: cloud.account.type
-        expr: |
-          CASE 
-            WHEN LOWER(userIdentity.type) = 'unknown' THEN 'Unknown'
-            WHEN LOWER(userIdentity.type) = 'iamuser' THEN 'AWS IAM User'
-            WHEN LOWER(userIdentity.type) IN ('assumedrole', 'role') THEN 'AWS IAM Role'
-            WHEN LOWER(userIdentity.type) IN ('awsaccount', 'root') THEN 'AWS Account'
-            ELSE LOWER(userIdentity.type)
-          END 
-      - name: cloud.account.type_id
-        expr: |
-          CASE 
-            WHEN LOWER(userIdentity.type) = 'unknown' THEN 0
-            WHEN LOWER(userIdentity.type) = 'iamuser' THEN 3
-            WHEN LOWER(userIdentity.type) IN ('assumedrole', 'role') THEN 4
-            WHEN LOWER(userIdentity.type) IN ('awsaccount', 'root') THEN 10
-            ELSE 99
-          END 
       - name: cloud.account.uid
         from: userIdentity.accountId
       - name: cloud.cloud_partition
@@ -1387,14 +1398,23 @@ gold:
             WHEN errorCode IS NOT NULL THEN 27
             ELSE 1
           END
-      - name: http_request.user_agent
-        from: userAgent
+
       - name: metadata.uid
         from: eventID
       - name: metadata.event_code
         from: eventName
       - name: metadata.log_provider
-        literal: AWS CloudTrail
+        literal: AWS
+      - name: metadata.log_name
+        literal: CloudTrail
+      - name: metadata.original_time
+        from: eventTime
+      - name: metadata.processed_time
+        expr: current_timestamp()
+      - name: metadata.logged_time
+        from: eventTime
+      - name: metadata.log_level
+        literal: Informational
       - name: observables
         expr: |
           filter(
@@ -1436,8 +1456,6 @@ gold:
           END
       - name: time
         from: time
-      - name: time_dt
-        from: time
       - name: type_name
         expr: |
           CASE
@@ -1476,11 +1494,9 @@ gold:
       - name: user.name
         expr: target.userName
 
-
-
-
   - name: group_management
     input: aws_cloudtrail_group_management
+    filter: eventName IN ('AttachGroupPolicy', 'PutGroupPolicy', 'DetachGroupPolicy', 'DeleteGroupPolicy', 'AddUserToGroup', 'RemoveUserFromGroup', 'DeleteGroup', 'CreateGroup', 'UpdateGroup')
     fields:
       - name: action
         expr: |
@@ -1545,8 +1561,7 @@ gold:
         from: userIdentity.sessionContext.sessionIssuer.arn
       - name: actor.user.uid
         from: userIdentity.arn
-      - name: actor.user.uid_alt
-        from: userIdentity.principalId
+
       - name: actor.user.has_mfa
         expr: IF (lower(userIdentity.sessionContext.attributes.mfaAuthenticated) = 'true', TRUE, NULL)
       - name: actor.user.name
@@ -1593,24 +1608,6 @@ gold:
         literal: Group Management
       - name: class_uid
         expr: CAST(3006 as INT)
-      - name: cloud.account.type
-        expr: |
-          CASE 
-            WHEN LOWER(userIdentity.type) = 'unknown' THEN 'Unknown'
-            WHEN LOWER(userIdentity.type) = 'iamuser' THEN 'AWS IAM User'
-            WHEN LOWER(userIdentity.type) IN ('assumedrole', 'role') THEN 'AWS IAM Role'
-            WHEN LOWER(userIdentity.type) IN ('awsaccount', 'root') THEN 'AWS Account'
-            ELSE LOWER(userIdentity.type)
-          END 
-      - name: cloud.account.type_id
-        expr: |
-          CASE 
-            WHEN LOWER(userIdentity.type) = 'unknown' THEN 0
-            WHEN LOWER(userIdentity.type) = 'iamuser' THEN 3
-            WHEN LOWER(userIdentity.type) IN ('assumedrole', 'role') THEN 4
-            WHEN LOWER(userIdentity.type) IN ('awsaccount', 'root') THEN 10
-            ELSE 99
-          END 
       - name: cloud.account.uid
         from: userIdentity.accountId
       - name: cloud.cloud_partition
@@ -1659,14 +1656,23 @@ gold:
           )
       - name: group.type
         literal: AWS IAM Group
-      - name: http_request.user_agent
-        from: userAgent
       - name: metadata.uid
         from: eventID
       - name: metadata.event_code
         from: eventName
       - name: metadata.log_provider
-        literal: AWS CloudTrail
+        literal: AWS
+      - name: metadata.log_name
+        literal: CloudTrail
+      - name: metadata.original_time
+        from: eventTime
+      - name: metadata.processed_time
+        expr: current_timestamp()
+      - name: metadata.logged_time
+        from: eventTime
+      - name: metadata.log_level
+        literal: Informational
+      
       - name: observables
         expr: |
           filter(
@@ -1706,8 +1712,6 @@ gold:
             ELSE 2
           END
       - name: time
-        from: time
-      - name: time_dt
         from: time
       - name: type_name
         expr: |
@@ -1757,10 +1761,14 @@ gold:
       - name: user.name
         expr: target.userName
 
-
-
   - name: api_activity
     input: aws_cloudtrail_api_activity
+    filter: eventName in ('GenerateCredentialReport', 'GenerateOrganizationsAccessReport', 'GenerateServiceLastAccessedDetails', 'GetCredentialReport',
+          'GetOrganizationsAccessReport', 'GetServiceLastAccessedDetails', 'GetServiceLastAccessedDetailsWithEntities', 'GetServiceLinkedRoleDeletionStatus',
+          'GetAccountAuthorizationDetails', 'GetAccountSummary', 'GetAccountPasswordPolicy', 'GetAccessKeyLastUsed', 'GetSSHPublicKey', 'GetContextKeysForCustomPolicy',
+          'GetContextKeysForPrincipalPolicy', 'ListUsers', 'ListGroups', 'ListRoles', 'ListInstanceProfiles', 'ListSAMLProviders', 'ListOpenIDConnectProviders',
+          'ListServerCertificates', 'ListPolicies', 'ListPoliciesGrantingServiceAccess', 'ListAccountAliases', 'SetSecurityTokenServicePreferences', 'SimulateCustomPolicy',
+          'SimulatePrincipalPolicy')
     fields:
       - name: action
         expr: |
@@ -1819,8 +1827,6 @@ gold:
         from: userIdentity.sessionContext.sessionIssuer.arn
       - name: actor.user.uid
         from: userIdentity.arn
-      - name: actor.user.uid_alt
-        from: userIdentity.principalId
       - name: actor.user.has_mfa
         expr: IF (lower(userIdentity.sessionContext.attributes.mfaAuthenticated) = 'true', TRUE, NULL)
       - name: actor.user.name
@@ -1851,7 +1857,7 @@ gold:
         expr: CAST(responseElements as VARIANT)
       - name: api.response.error
         from: errorCode
-      - name: api.response.error_message
+      - name: api.response.message
         from: errorMessage
       - name: api.service.name
         literal: Identity and Access Management
@@ -1867,24 +1873,6 @@ gold:
         literal: API Activity
       - name: class_uid
         expr: CAST(6003 as INT)
-      - name: cloud.account.type
-        expr: |
-          CASE 
-            WHEN LOWER(userIdentity.type) = 'unknown' THEN 'Unknown'
-            WHEN LOWER(userIdentity.type) = 'iamuser' THEN 'AWS IAM User'
-            WHEN LOWER(userIdentity.type) IN ('assumedrole', 'role') THEN 'AWS IAM Role'
-            WHEN LOWER(userIdentity.type) IN ('awsaccount', 'root') THEN 'AWS Account'
-            ELSE LOWER(userIdentity.type)
-          END 
-      - name: cloud.account.type_id
-        expr: |
-          CASE 
-            WHEN LOWER(userIdentity.type) = 'unknown' THEN 0
-            WHEN LOWER(userIdentity.type) = 'iamuser' THEN 3
-            WHEN LOWER(userIdentity.type) IN ('assumedrole', 'role') THEN 4
-            WHEN LOWER(userIdentity.type) IN ('awsaccount', 'root') THEN 10
-            ELSE 99
-          END 
       - name: cloud.account.uid
         from: userIdentity.accountId
       - name: cloud.cloud_partition
@@ -1919,14 +1907,22 @@ gold:
             WHEN errorCode IS NOT NULL THEN 27
             ELSE 1
           END
-      - name: http_request.user_agent
-        from: userAgent
       - name: metadata.uid
         from: eventID
       - name: metadata.event_code
         from: eventName
       - name: metadata.log_provider
-        literal: AWS CloudTrail
+        literal: AWS
+      - name: metadata.log_name
+        literal: CloudTrail
+      - name: metadata.original_time
+        from: eventTime
+      - name: metadata.processed_time
+        expr: current_timestamp()
+      - name: metadata.logged_time
+        from: eventTime
+      - name: metadata.log_level
+        literal: Informational
       - name: observables
         expr: |
           filter(
@@ -1957,8 +1953,6 @@ gold:
             ELSE 2
           END
       - name: time
-        from: time
-      - name: time_dt
         from: time
       - name: type_name
         expr: |

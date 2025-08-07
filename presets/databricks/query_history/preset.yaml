@@ -289,12 +289,8 @@ gold:
           from: ocsf_disposition
         - name: disposition_id
           from: ocsf_disposition_id
-        - name: duration
-          from: ocsf_duration
         - name: end_time
           from: ocsf_end_time
-        - name: end_time_dt
-          from: ocsf_end_time_dt
         - name: metadata
           from: ocsf_metadata
         - name: observables
@@ -305,16 +301,12 @@ gold:
           from: ocsf_severity_id
         - name: start_time
           from: ocsf_start_time
-        - name: start_time_dt
-          from: ocsf_start_time_dt
         - name: status
           from: ocsf_status
         - name: status_id
           from: ocsf_status_id
         - name: time
           from: time
-        - name: time_dt
-          from: ocsf_time_dt
         - name: type_name
           expr: |
             CASE

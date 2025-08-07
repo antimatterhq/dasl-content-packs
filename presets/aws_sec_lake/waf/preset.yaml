@@ -7,7 +7,32 @@ autoloader:
   format: parquet
   multiline: true
   cloudFiles:
-    schemaHints: "action string,action_id int,activity_id int,activity_name string,category_name string,category_uid int,class_name string,class_uid int,type_name string,type_uid bigint,time bigint,time_dt timestamp,disposition_id int,disposition string,cloud struct<provider:string>,firewall_rule struct<condition:string,match_details:array<string>,match_location:string,rate_limit:int,type:string,uid:string>,http_request struct<args:string,http_headers:array<struct<name:string,value:string>>,http_method:string,referrer:string,uid:string,url:struct<hostname:string,path:string>,user_agent:string,version:string,x_forwarded_for:array<string>>,http_status int,metadata struct<labels:array<string>,product:struct<feature:struct<uid:string>,name:string,vendor_name:string,version:string>,profiles:array<string>,version:string>,observables array<struct<name:string,type:string,type_id:int,value:string>>,severity string,severity_id int,src_endpoint struct<ip:string,location:struct<country:string>,svc_name:string,uid:string>,unmapped map<string,string>,_rescued_data string"
+    schemaHints: >
+      action string,
+      action_id int,
+      activity_id int,
+      activity_name string,
+      category_name string,
+      category_uid int,
+      class_name string,
+      class_uid int,
+      type_name string,
+      type_uid bigint,
+      time bigint,
+      time_dt timestamp,
+      disposition_id int,
+      disposition string,
+      cloud struct<provider:string>,
+      firewall_rule struct<condition:string,match_details:array<string>,match_location:string,rate_limit:int,type:string,uid:string>,
+      http_request struct<args:string,http_headers:array<struct<name:string,value:string>>,http_method:string,referrer:string,uid:string,url:struct<hostname:string,path:string>,user_agent:string,version:string,x_forwarded_for:array<string>>,
+      http_status int,
+      metadata struct<labels:array<string>,product:struct<feature:struct<uid:string>,name:string,vendor_name:string,version:string>,profiles:array<string>,version:string>,
+      observables array<struct<name:string,type:string,type_id:int,value:string>>,
+      severity string,
+      severity_id int,
+      src_endpoint struct<ip:string,location:struct<country:string>,svc_name:string,uid:string>,
+      unmapped map<string,string>,
+      _rescued_data string
 silver:
   transform:
     - name: aws_sec_lake_waf
@@ -88,8 +113,6 @@ gold:
         from: severity
       - name: time
         from: time
-      - name: time_dt
-        from: time_dt
       - name: type_uid
         from: type_uid
       - name: type_name
