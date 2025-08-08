@@ -5,63 +5,50 @@ title: "OKTA - Syslog"
 iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/okta/syslog/icon.png"
 autoloader:
   format: jsonl
-  cloudFiles:
-    schemaHints: |
-      actor struct<`alternateId`:string,`detailEntry`:string,`displayName`:string,`id`:string,`type`:string>,
-      authenticationContext struct<`authenticationProvider`:string,`authenticationStep`:bigint,`authenticatorContext`:struct<`applicationVersion`:string,`binaryIdentifier`:string,`binaryPath`:string,`bindingMethod`:string,`requestOrigin`:string,`signerDistinguishedName`:string,`signerKeyIdentifier`:string,`userConsent`:string,`validationStatus`:string>,`credentialProvider`:string,`credentialType`:string,`externalSessionId`:string,`interface`:string,`issuer`:struct<`id`:string>,`rootSessionId`:string>,
-      client struct<`device`:string,`geographicalContext`:struct<`city`:string,`country`:string,`geolocation`:struct<`lat`:double,`lon`:double>,`postalCode`:string,`state`:string>,`id`:string,`ipAddress`:string,`userAgent`:struct<`browser`:string,`os`:string,`rawUserAgent`:string>,`zone`:string>,
-      debugContext struct<`debugData`:struct<`aaguid`:string,`addedObjects`:string,`appContextName`:string,`appname`:string,`audience`:string,`authCode`:string,`authMethodFirstEnrollment`:string,`authMethodFirstType`:string,`authMethodFirstVerificationTime`:string,`authMethodSecondEnrollment`:string,`authMethodSecondType`:string,`authMethodSecondVerificationTime`:string,`authTime`:string,`authenticationClassRef`:string,`authenticatorMethodChallengeTime`:string,`authnRequestId`:string,`backupEligible`:string,`behaviors`:string,`category`:string,`challengeAuthenticatorsList`:string,`changedAttributes`:string,`clientAuthType`:string,`clientId`:string,`clientSecret`:string,`clientType`:string,`deletedObjects`:string,`detailedmessage`:string,`device`:string,`deviceCategory`:string,`deviceFingerprint`:string,`devicePlatform`:string,`deviceTokenHash`:string,`dtHash`:string,`emailProvider`:string,`emailRequestId`:string,`enrollmentMethodChallengeTime`:string,`expiryTime`:string,`factor`:string,`factorIntent`:string,`grantType`:string,`grantedScopes`:string,`idpType`:string,`importLastToken`:string,`importTrigger`:string,`importType`:string,`initiationType`:string,`ip`:string,`issuedAt`:string,`issuer`:string,`jobId`:string,`jti`:string,`keyTypeUsedForAuthentication`:string,`logOnlySecurityData`:string,`loginResult`:string,`matchedAuthenticatorGroups`:string,`oktaUserAgentExtended`:string,`operationRateLimitScopeType`:string,`operationRateLimitSecondsToReset`:string,`operationRateLimitSubtype`:string,`operationRateLimitThreshold`:string,`operationRateLimitTimeSpan`:string,`operationRateLimitTimeUnit`:string,`operationRateLimitType`:string,`orgId`:string,`origin`:string,`pushOnlyResponseType`:string,`pushWithNumberChallengeResponseType`:string,`redirectUri`:string,`requestId`:string,`requestUri`:string,`requestedScopes`:string,`responseMode`:string,`responseTime`:string,`responseType`:string,`risk`:string,`signOnMode`:string,`state`:string,`subject`:string,`targetEventHookIds`:string,`threatSuspected`:string,`threshold`:string,`timeSpan`:string,`timeUnit`:string,`totalObjects`:string,`totalTime`:string,`traceId`:string,`tunnels`:string,`unchangedObjects`:string,`updatedObjects`:string,`url`:string,`userId`:string>>,
-      device struct<`device_integrator`:string,`disk_encryption_type`:string,`id`:string,`jailbreak`:boolean,`managed`:boolean,`name`:string,`os_platform`:string,`os_version`:string,`registered`:boolean,`screen_lock_type`:string,`secure_hardware_present`:boolean>,
-      outcome struct<`reason`:string,`result`:string>,
-      request struct<`ipChain`:array<struct<`geographicalContext`:struct<`city`:string,`country`:string,`geolocation`:struct<`lat`:double,`lon`:double>,`postalCode`:string,`state`:string>,`ip`:string,`source`:string,`version`:string>>>,
-      securityContext struct<`asNumber`:bigint,`asOrg`:string,`domain`:string,`isProxy`:boolean,`isp`:string>,
-      target array<struct<`alternateId`:string,`detailEntry`:struct<`appInstanceId`:string,`appUserId`:string,`appUsername`:string,`audience`:string,`authenticatorKey`:string,`authenticatorMethodVerificationTime`:string,`certName`:string,`certStatus`:string,`completedAt`:string,`deviceIntegrator`:string,`deviceStatus`:string,`expires`:string,`hash`:string,`identifyingAttribute`:string,`initiatedAt`:string,`initiatedBy`:string,`managed`:string,`methodTypeUsed`:string,`methodUsedVerifiedProperties`:string,`notAfter`:string,`notBefore`:string,`oktaDeviceId`:string,`osPlatform`:string,`osVersion`:string,`policyName`:string,`policyRuleFactorMode`:string,`policyType`:string,`refreshtokentype`:string,`resolution`:string,`serialNumber`:string,`signOnModeEvaluationResult`:string,`signOnModeType`:string,`subject`:string,`tpmPresent`:string,`udid`:string,`userId`:string>,`displayName`:string,`id`:string,`type`:string>>,
-      transaction struct<`detail`:struct<`requestApiTokenClientId`:string,`requestApiTokenId`:string,`rootApiTokenId`:string>,`id`:string,`type`:string>
-
+bronze:
+  loadAsSingleVariant: true
 silver:
   preTransform:
     - name: unbox_cribl
       fields:
         - name: _time
-          from: _time
+          expr: CAST(data:_time AS BIGINT)
         - name: actor
-          from: actor
+          expr: CAST(data:actor AS struct<`alternateId`:string,`detailEntry`:string,`displayName`:string,`id`:string,`type`:string>)
         - name: authenticationContext
-          from: authenticationContext
+          expr: CAST(data:authenticationContext AS struct<`authenticationProvider`:string,`authenticationStep`:bigint,`authenticatorContext`:struct<`applicationVersion`:string,`binaryIdentifier`:string,`binaryPath`:string,`bindingMethod`:string,`requestOrigin`:string,`signerDistinguishedName`:string,`signerKeyIdentifier`:string,`userConsent`:string,`validationStatus`:string>,`credentialProvider`:string,`credentialType`:string,`externalSessionId`:string,`interface`:string,`issuer`:struct<`id`:string>,`rootSessionId`:string>)
         - name: client
-          from: client
+          expr: CAST(data:client AS struct<`device`:string,`geographicalContext`:struct<`city`:string,`country`:string,`geolocation`:struct<`lat`:double,`lon`:double>,`postalCode`:string,`state`:string>,`id`:string,`ipAddress`:string,`userAgent`:struct<`browser`:string,`os`:string,`rawUserAgent`:string>,`zone`:string>)
         - name: debugContext
-          from: debugContext
+          expr: CAST(data:debugContext AS struct<`debugData`:struct<`aaguid`:string,`addedObjects`:string,`appContextName`:string,`appname`:string,`audience`:string,`authCode`:string,`authMethodFirstEnrollment`:string,`authMethodFirstType`:string,`authMethodFirstVerificationTime`:string,`authMethodSecondEnrollment`:string,`authMethodSecondType`:string,`authMethodSecondVerificationTime`:string,`authTime`:string,`authenticationClassRef`:string,`authenticatorMethodChallengeTime`:string,`authnRequestId`:string,`backupEligible`:string,`behaviors`:string,`category`:string,`challengeAuthenticatorsList`:string,`changedAttributes`:string,`clientAuthType`:string,`clientId`:string,`clientSecret`:string,`clientType`:string,`deletedObjects`:string,`detailedmessage`:string,`device`:string,`deviceCategory`:string,`deviceFingerprint`:string,`devicePlatform`:string,`deviceTokenHash`:string,`dtHash`:string,`emailProvider`:string,`emailRequestId`:string,`enrollmentMethodChallengeTime`:string,`expiryTime`:string,`factor`:string,`factorIntent`:string,`grantType`:string,`grantedScopes`:string,`idpType`:string,`importLastToken`:string,`importTrigger`:string,`importType`:string,`initiationType`:string,`ip`:string,`issuedAt`:string,`issuer`:string,`jobId`:string,`jti`:string,`keyTypeUsedForAuthentication`:string,`logOnlySecurityData`:string,`loginResult`:string,`matchedAuthenticatorGroups`:string,`oktaUserAgentExtended`:string,`operationRateLimitScopeType`:string,`operationRateLimitSecondsToReset`:string,`operationRateLimitSubtype`:string,`operationRateLimitThreshold`:string,`operationRateLimitTimeSpan`:string,`operationRateLimitTimeUnit`:string,`operationRateLimitType`:string,`orgId`:string,`origin`:string,`pushOnlyResponseType`:string,`pushWithNumberChallengeResponseType`:string,`redirectUri`:string,`requestId`:string,`requestUri`:string,`requestedScopes`:string,`responseMode`:string,`responseTime`:string,`responseType`:string,`risk`:string,`signOnMode`:string,`state`:string,`subject`:string,`targetEventHookIds`:string,`threatSuspected`:string,`threshold`:string,`timeSpan`:string,`timeUnit`:string,`totalObjects`:string,`totalTime`:string,`traceId`:string,`tunnels`:string,`unchangedObjects`:string,`updatedObjects`:string,`url`:string,`userId`:string>>)
         - name: device
-          from: device
+          expr: CAST(data:device AS struct<`device_integrator`:string,`disk_encryption_type`:string,`id`:string,`jailbreak`:boolean,`managed`:boolean,`name`:string,`os_platform`:string,`os_version`:string,`registered`:boolean,`screen_lock_type`:string,`secure_hardware_present`:boolean>)
         - name: displayMessage
-          from: displayMessage
+          expr: CAST(data:displayMessage AS string)
         - name: eventType
-          from: eventType
+          expr: CAST(data:eventType AS string)
         - name: host
-          from: host
+          expr: CAST(data:host AS string)
         - name: legacyEventType
-          from: legacyEventType
+          expr: CAST(data:legacyEventType AS string)
         - name: outcome
-          from: outcome
+          expr: CAST(data:outcome AS struct<`reason`:string,`result`:string>)
         - name: published
-          from: published
+          expr: CAST(data:published AS timestamp)
         - name: request
-          from: request
+          expr: CAST(data:request AS struct<`ipChain`:array<struct<`geographicalContext`:struct<`city`:string,`country`:string,`geolocation`:struct<`lat`:double,`lon`:double>,`postalCode`:string,`state`:string>,`ip`:string,`source`:string,`version`:string>>>)
         - name: securityContext
-          from: securityContext
+          expr: CAST(data:securityContext AS struct<`asNumber`:bigint,`asOrg`:string,`domain`:string,`isProxy`:boolean,`isp`:string>)
         - name: severity
-          from: severity
+          expr: CAST(data:severity AS string)
         - name: target
-          from: target
+          expr: CAST(data:target AS array<struct<`alternateId`:string,`detailEntry`:struct<`appInstanceId`:string,`appUserId`:string,`appUsername`:string,`audience`:string,`authenticatorKey`:string,`authenticatorMethodVerificationTime`:string,`certName`:string,`certStatus`:string,`completedAt`:string,`deviceIntegrator`:string,`deviceStatus`:string,`expires`:string,`hash`:string,`identifyingAttribute`:string,`initiatedAt`:string,`initiatedBy`:string,`managed`:string,`methodTypeUsed`:string,`methodUsedVerifiedProperties`:string,`notAfter`:string,`notBefore`:string,`oktaDeviceId`:string,`osPlatform`:string,`osVersion`:string,`policyName`:string,`policyRuleFactorMode`:string,`policyType`:string,`refreshtokentype`:string,`resolution`:string,`serialNumber`:string,`signOnModeEvaluationResult`:string,`signOnModeType`:string,`subject`:string,`tpmPresent`:string,`udid`:string,`userId`:string>,`displayName`:string,`id`:string,`type`:string>>)
         - name: transaction
-          from: transaction
+          expr: CAST(data:transaction AS struct<`detail`:struct<`requestApiTokenClientId`:string,`requestApiTokenId`:string,`rootApiTokenId`:string>,`id`:string,`type`:string>)
         - name: uuid
-          from: uuid
+          expr: CAST(data:uuid AS string)
         - name: version
-          from: version
-        - name: _rescued_data
-          from: _rescued_data
+          expr: CAST(data:version AS string)
 
   transform:
 
@@ -74,16 +61,7 @@ silver:
 
     - name: okta_syslog_ocsf_staged
       fields:
-        - name: metadata.product.name
-          literal: Okta System Log
-        - name: metadata.product.vendor_name
-          literal: Okta
-        - name: metadata.product.version
-          from: version
-        - name: metadata.product.uid
-          from: uuid
-        - name: metadata.event_code
-          from: eventType
+
         - name: eventType
           from: eventType
 
@@ -290,7 +268,7 @@ silver:
         - name: ocsf_message
           expr: COALESCE(NULLIF(displayMessage, ''), NULLIF(debugContext.debugData.detailedmessage, ''), NULLIF(outcome.reason, ''))
         - name: ocsf_time
-          expr: timestamp_millis(cast(_time AS BIGINT) * 1000)
+          expr: try_to_timestamp(published)
         - name: ocsf_severity
           expr: |
             CASE 
@@ -372,7 +350,7 @@ silver:
         - name: ocsf_src_endpoint.autonomous_system.name
           from: securityContext.asOrg
         - name: ocsf_src_endpoint.autonomous_system.number
-          from: securityContext.asNumber
+          expr: CAST(securityContext.asNumber as int)
 
         - name: ocsf_src_endpoint.proxy_endpoint.intermediate_ips
           expr: TRANSFORM(request.ipChain, x -> x.ip)
@@ -732,42 +710,7 @@ silver:
                 ELSE named_struct('id', 0, 'name', 'Unknown')
               END
 
-        - name: ocsf_os.name
-          expr: |
-              CASE
-                WHEN (device.os_platform IS NULL) THEN client.userAgent.os
-                ELSE device.os_platform
-              END
-        - name: ocsf_os.version
-          from: device.os_version
-        - name: ocsf_os.build
-          from: device.os_version
-        - name: ocsf_os.type_id
-          expr: |
-              CASE
-                WHEN (LOWER(device.os_platform) LIKE 'android%' OR LOWER(client.userAgent.os) LIKE 'android%') THEN CAST('201' AS INT)
-                WHEN (LOWER(device.os_platform) LIKE 'linux%' OR LOWER(client.userAgent.os) LIKE 'linux%') THEN CAST('200' AS INT)
-                WHEN (LOWER(device.os_platform) LIKE 'ubuntu%' OR LOWER(client.userAgent.os) LIKE 'ubuntu%') THEN CAST('200' AS INT)
-                WHEN (LOWER(device.os_platform) LIKE 'chrome os%' OR LOWER(client.userAgent.os) LIKE 'chrome os%') THEN CAST('200' AS INT)
-                WHEN (LOWER(device.os_platform) LIKE 'web os%' OR LOWER(client.userAgent.os) LIKE 'web os%') THEN CAST('200' AS INT)
-                WHEN (LOWER(device.os_platform) LIKE 'mac os%' OR LOWER(client.userAgent.os) LIKE 'mac os%') THEN CAST('300' AS INT)
-                WHEN (LOWER(device.os_platform) LIKE 'windows%' OR LOWER(client.userAgent.os) LIKE 'windows%') THEN CAST('100' AS INT)
-                WHEN (LOWER(device.os_platform) LIKE 'ios%' OR LOWER(client.userAgent.os) LIKE 'ios%') THEN CAST('301' AS INT)
-                ELSE CAST('0' AS INT)
-              END
-        - name: ocsf_os.type
-          expr: |
-              CASE
-                WHEN (LOWER(device.os_platform) LIKE 'android%' OR LOWER(client.userAgent.os) LIKE 'android%') THEN 'android'
-                WHEN (LOWER(device.os_platform) LIKE 'linux%' OR LOWER(client.userAgent.os) LIKE 'linux%') THEN 'windows'
-                WHEN (LOWER(device.os_platform) LIKE 'ubuntu%' OR LOWER(client.userAgent.os) LIKE 'ubuntu%') THEN 'linux'
-                WHEN (LOWER(device.os_platform) LIKE 'chrome os%' OR LOWER(client.userAgent.os) LIKE 'chrome os%') THEN 'linux'
-                WHEN (LOWER(device.os_platform) LIKE 'web os%' OR LOWER(client.userAgent.os) LIKE 'web os%') THEN 'linux'
-                WHEN (LOWER(device.os_platform) LIKE 'mac os%' OR LOWER(client.userAgent.os) LIKE 'mac os%') THEN 'macos'
-                WHEN (LOWER(device.os_platform) LIKE 'windows%' OR LOWER(client.userAgent.os) LIKE 'windows%') THEN 'windows'
-                WHEN (LOWER(device.os_platform) LIKE 'ios%' OR LOWER(client.userAgent.os) LIKE 'ios%') THEN 'ios'
-                ELSE 'unknown'
-              END
+        
         - name: ocsf_metadata.log_provider
           literal: Okta
         - name: ocsf_metadata.correlation_uid
@@ -781,7 +724,7 @@ silver:
         - name: ocsf_metadata.modified_time
           expr: TRY_TO_TIMESTAMP(published)
         - name: ocsf_metadata.original_time
-          expr: TRY_TO_TIMESTAMP(published)
+          expr: CAST(published as string)
         - name: ocsf_metadata.processed_time
           expr: CURRENT_TIMESTAMP()
         - name: ocsf_metadata.product.name
@@ -800,6 +743,43 @@ silver:
           preserve: true
           omitColumns:
             - _time
+        temporaryFields:
+          - name: ocsf_os.name
+            expr: |
+                CASE
+                  WHEN (device.os_platform IS NULL) THEN client.userAgent.os
+                  ELSE device.os_platform
+                END
+          - name: ocsf_os.version
+            from: device.os_version
+          - name: ocsf_os.build
+            from: device.os_version
+          - name: ocsf_os.type_id
+            expr: |
+                CASE
+                  WHEN (LOWER(device.os_platform) LIKE 'android%' OR LOWER(client.userAgent.os) LIKE 'android%') THEN CAST('201' AS INT)
+                  WHEN (LOWER(device.os_platform) LIKE 'linux%' OR LOWER(client.userAgent.os) LIKE 'linux%') THEN CAST('200' AS INT)
+                  WHEN (LOWER(device.os_platform) LIKE 'ubuntu%' OR LOWER(client.userAgent.os) LIKE 'ubuntu%') THEN CAST('200' AS INT)
+                  WHEN (LOWER(device.os_platform) LIKE 'chrome os%' OR LOWER(client.userAgent.os) LIKE 'chrome os%') THEN CAST('200' AS INT)
+                  WHEN (LOWER(device.os_platform) LIKE 'web os%' OR LOWER(client.userAgent.os) LIKE 'web os%') THEN CAST('200' AS INT)
+                  WHEN (LOWER(device.os_platform) LIKE 'mac os%' OR LOWER(client.userAgent.os) LIKE 'mac os%') THEN CAST('300' AS INT)
+                  WHEN (LOWER(device.os_platform) LIKE 'windows%' OR LOWER(client.userAgent.os) LIKE 'windows%') THEN CAST('100' AS INT)
+                  WHEN (LOWER(device.os_platform) LIKE 'ios%' OR LOWER(client.userAgent.os) LIKE 'ios%') THEN CAST('301' AS INT)
+                  ELSE CAST('0' AS INT)
+                END
+          - name: ocsf_os.type
+            expr: |
+                CASE
+                  WHEN (LOWER(device.os_platform) LIKE 'android%' OR LOWER(client.userAgent.os) LIKE 'android%') THEN 'android'
+                  WHEN (LOWER(device.os_platform) LIKE 'linux%' OR LOWER(client.userAgent.os) LIKE 'linux%') THEN 'windows'
+                  WHEN (LOWER(device.os_platform) LIKE 'ubuntu%' OR LOWER(client.userAgent.os) LIKE 'ubuntu%') THEN 'linux'
+                  WHEN (LOWER(device.os_platform) LIKE 'chrome os%' OR LOWER(client.userAgent.os) LIKE 'chrome os%') THEN 'linux'
+                  WHEN (LOWER(device.os_platform) LIKE 'web os%' OR LOWER(client.userAgent.os) LIKE 'web os%') THEN 'linux'
+                  WHEN (LOWER(device.os_platform) LIKE 'mac os%' OR LOWER(client.userAgent.os) LIKE 'mac os%') THEN 'macos'
+                  WHEN (LOWER(device.os_platform) LIKE 'windows%' OR LOWER(client.userAgent.os) LIKE 'windows%') THEN 'windows'
+                  WHEN (LOWER(device.os_platform) LIKE 'ios%' OR LOWER(client.userAgent.os) LIKE 'ios%') THEN 'ios'
+                  ELSE 'unknown'
+                END
 
 
 gold:
@@ -814,7 +794,7 @@ gold:
         literal: System
 
       - name: type_uid
-        expr: (ocsf_class_uid * 100) + (`activity`.`1006`.`id`)
+        expr: CAST((ocsf_class_uid * 100) + (`activity`.`1006`.`id`) as bigint)
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
@@ -886,7 +866,7 @@ gold:
         literal: Findings
 
       - name: type_uid
-        expr: (ocsf_class_uid * 100) + (`activity`.`2004`.`id`)
+        expr: CAST((ocsf_class_uid * 100) + (`activity`.`2004`.`id`) as bigint)
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
@@ -959,7 +939,7 @@ gold:
         literal: Network
 
       - name: type_uid
-        expr: (ocsf_class_uid * 100) + (`activity`.`4009`.`id`)
+        expr: CAST((ocsf_class_uid * 100) + (`activity`.`4009`.`id`) as bigint)
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
@@ -1052,7 +1032,7 @@ gold:
         literal: Identity & Access Management
 
       - name: type_uid
-        expr: (ocsf_class_uid * 100) + (`activity`.`3001`.`id`)
+        expr: CAST((ocsf_class_uid * 100) + (`activity`.`3001`.`id`) as bigint)
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
@@ -1127,7 +1107,7 @@ gold:
       - name: category_name
         literal: Identity & Access Management
       - name: type_uid
-        expr: (ocsf_class_uid * 100) + (`activity`.`3002`.`id`)
+        expr: CAST((ocsf_class_uid * 100) + (`activity`.`3002`.`id`) as bigint)
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
@@ -1201,7 +1181,7 @@ gold:
       - name: category_name
         literal: Identity & Access Management
       - name: type_uid
-        expr: (ocsf_class_uid * 100) + (`activity`.`3003`.`id`)
+        expr: CAST((ocsf_class_uid * 100) + (`activity`.`3003`.`id`) as bigint)
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
@@ -1280,7 +1260,7 @@ gold:
       - name: category_name
         literal: Identity & Access Management
       - name: type_uid
-        expr: (ocsf_class_uid * 100) + (`activity`.`3004`.`id`)
+        expr: CAST((ocsf_class_uid * 100) + (`activity`.`3004`.`id`) as bigint)
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
@@ -1354,7 +1334,7 @@ gold:
       - name: category_name
         literal: Identity & Access Management
       - name: type_uid
-        expr: (ocsf_class_uid * 100) + (`activity`.`3005`.`id`)
+        expr: CAST((ocsf_class_uid * 100) + (`activity`.`3005`.`id`) as bigint)
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
@@ -1429,7 +1409,7 @@ gold:
       - name: category_name
         literal: Identity & Access Management
       - name: type_uid
-        expr: (ocsf_class_uid * 100) + (`activity`.`3006`.`id`)
+        expr: CAST((ocsf_class_uid * 100) + (`activity`.`3006`.`id`) as bigint)
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
@@ -1504,7 +1484,7 @@ gold:
       - name: category_name
         literal: Application
       - name: type_uid
-        expr: (ocsf_class_uid * 100) + (`activity`.`6001`.`id`)
+        expr: CAST((ocsf_class_uid * 100) + (`activity`.`6001`.`id`) as bigint)
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
@@ -1580,7 +1560,7 @@ gold:
       - name: category_name
         literal: Application
       - name: type_uid
-        expr: (ocsf_class_uid * 100) + (`activity`.`6002`.`id`)
+        expr: CAST((ocsf_class_uid * 100) + (`activity`.`6002`.`id`) as bigint)
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
@@ -1669,7 +1649,7 @@ gold:
       - name: category_name
         literal: Application
       - name: type_uid
-        expr: (ocsf_class_uid * 100) + (`activity`.`6003`.`id`)
+        expr: CAST((ocsf_class_uid * 100) + (`activity`.`6003`.`id`) as bigint)
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
@@ -1760,7 +1740,7 @@ gold:
       - name: category_name
         literal: Application
       - name: type_uid
-        expr: (ocsf_class_uid * 100) + (`activity`.`6008`.`id`)
+        expr: CAST((ocsf_class_uid * 100) + (`activity`.`6008`.`id`) as bigint)
       - name: class_uid
         from: ocsf_class_uid
       - name: class_name
