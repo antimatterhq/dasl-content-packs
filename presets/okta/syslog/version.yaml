@@ -2,3 +2,6 @@ versions:
   - versionNumber: 1
     changes: Initial commit of Okta preset
     commit: 9bc30afe24ad3337d6adf498a77bd7f77fffbacc
+  - versionNumber: 2
+    changes: Updated preset to new OCSF-Lite schema.
+    commit: 8c0dc2e1366f7b463ee7737668e02f49847b624c
