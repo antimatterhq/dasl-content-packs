@@ -2,3 +2,6 @@ versions:
   - versionNumber: 1
     changes: Initial commit of AWS Security Lake CloudTrail Management Event presets
     commit: df5cd227f8e31d20ace59be0051618bd4e41838d
+  - versionNumber: 2
+    changes: Updated preset to new OCSF-Lite schema.
+    commit: 8c0dc2e1366f7b463ee7737668e02f49847b624c
