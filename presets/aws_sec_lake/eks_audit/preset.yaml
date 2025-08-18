@@ -7,7 +7,35 @@ autoloader:
   format: parquet
   multiline: true
   cloudFiles:
-    schemaHints: "metadata struct<log_level:string,product:struct<version:string,vendor_name:string,name:string,feature:struct<name:string>>,profiles:array<string>,version:string>,api struct<request:struct<uid:string,containers:array<struct<name:string,image:struct<name:string,path:string,uid:string>>>>,operation:string,version:string,response:struct<code:int,message:string,error:string,error_message:string,containers:array<struct<name:string,image:struct<name:string,path:string,uid:string>>>>,group:struct<name:string>>,message string,http_request struct<url:struct<path:string>,user_agent:string>,actor struct<user:struct<name:string,uid:string,groups:array<struct<name:string>>,type_id:int>,session:struct<credential_uid:string,issuer:string,uid:string>>,cloud struct<account:struct<uid:string>,provider:string>,src_endpoint struct<ip:string,intermediate_ips:array<string>>,resources array<struct<namespace:string,name:string,uid:string,version:string,type:string>>,start_time_dt timestamp,time_dt timestamp,time bigint,severity_id int,severity string,class_name string,class_uid int,category_name string,category_uid int,activity_name string,activity_id int,type_name string,type_uid bigint,unmapped map<string,string>,accountId bigint,region string,asl_version string,observables array<struct<name:string,value:string,type:string,type_id:int>>,eventDay int,_rescued_data string"
+    schemaHints: >
+      metadata struct<log_level:string,product:struct<version:string,vendor_name:string,name:string,feature:struct<name:string>>,profiles:array<string>,version:string>,
+      api struct<request:struct<uid:string,containers:array<struct<name:string,image:struct<name:string,path:string,uid:string>>>>,operation:string,version:string,response:struct<code:int,message:string,error:string,error_message:string,containers:array<struct<name:string,image:struct<name:string,path:string,uid:string>>>>,group:struct<name:string>>,
+      message string,
+      http_request struct<url:struct<path:string>,user_agent:string>,
+      actor struct<user:struct<name:string,uid:string,groups:array<struct<name:string>>,type_id:int>,session:struct<credential_uid:string,issuer:string,uid:string>>,
+      cloud struct<account:struct<uid:string>,provider:string>,
+      src_endpoint struct<ip:string,intermediate_ips:array<string>>,
+      resources array<struct<namespace:string,name:string,uid:string,version:string,type:string>>,
+      start_time_dt timestamp,
+      time_dt timestamp,
+      time bigint,
+      severity_id int,
+      severity string,
+      class_name string,
+      class_uid int,
+      category_name string,
+      category_uid int,
+      activity_name string,
+      activity_id int,
+      type_name string,
+      type_uid bigint,
+      unmapped map<string,string>,
+      accountId bigint,
+      region string,
+      asl_version string,
+      observables array<struct<name:string,value:string,type:string,type_id:int>>,
+      eventDay int,
+      _rescued_data string
 silver:
   transform:
     - name: aws_sec_lake_eks_audit_api_activity
@@ -92,8 +120,6 @@ gold:
         from: start_time_dt
       - name: time
         from: time
-      - name: time_dt
-        from: time_dt
       - name: type_uid
         from: type_uid
       - name: type_name
@@ -112,3 +138,4 @@ gold:
         from: resources
       - name: src_endpoint
         from: src_endpoint
+

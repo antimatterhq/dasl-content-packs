@@ -6,7 +6,15 @@ iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs
 autoloader:
   format: json
   cloudFiles:
-    schemaHints: "properties struct<Action:string,ActionReason:string,DestinationPort:int,Fqdn:string,IsExplicitProxyRequest:boolean,IsTlsInspected:boolean,Policy:string,Protocol:string,Rule:string,RuleCollection:string,RuleCollectionGroup:string,SourceIp:string,SourcePort:int,TargetUrl:string,WebCategory:string,DestinationIp:string,instanceId:string,clientIp:string,requestUri:string,ruleSetType:string,ruleSetVersion:string,ruleId:string,ruleGroup:string,message:string,clientPort:int,httpMethod:string,originalRequestUriWithArgs:string,requestQuery:string,Url:string,ThreatDescription:string,details:struct<message:string,data:string,file:string,line:string>,hostname:string,transactionId:string,policyId:string,policyScopt:string,policyScopeName:string,engine:string,policyScope:string,userAgent:string,contentType:string,error_info:string,httpStatus:int,httpVersion:string,receivedBytes:int,sentBytes:int,connectionSerialNumber:int,noOfConnectionRequests:int,clientResponseTime:float,timeTaken:float,WAFMode:string,WAFEvaluationTime:string,WAFPolicyID:string,sslEnabled:string,sslCipher:string,sslProtocol:string,sslClientVerify:string,sslClientCertificateFingerprint:string,sslClientCertificateIssuerName:string,serverRouted:string,serverStatus:string,serverResponseLatency:string,upstreamSourcePort:string,originalHost:string,host:string,msg:string,TranslatedIp:string,TranslatedPort:int,priority:int>,time timestamp,timeStamp timestamp,operationName string,listenerName string,ruleName string,backendPoolName string,backendSettingName string"
+    schemaHints: >
+      properties struct<Action:string,ActionReason:string,DestinationPort:int,Fqdn:string,IsExplicitProxyRequest:boolean,IsTlsInspected:boolean,Policy:string,Protocol:string,Rule:string,RuleCollection:string,RuleCollectionGroup:string,SourceIp:string,SourcePort:int,TargetUrl:string,WebCategory:string,DestinationIp:string,instanceId:string,clientIp:string,requestUri:string,ruleSetType:string,ruleSetVersion:string,ruleId:string,ruleGroup:string,message:string,clientPort:int,httpMethod:string,originalRequestUriWithArgs:string,requestQuery:string,Url:string,ThreatDescription:string,details:struct<message:string,data:string,file:string,line:string>,hostname:string,transactionId:string,policyId:string,policyScopt:string,policyScopeName:string,engine:string,policyScope:string,userAgent:string,contentType:string,error_info:string,httpStatus:int,httpVersion:string,receivedBytes:int,sentBytes:int,connectionSerialNumber:int,noOfConnectionRequests:int,clientResponseTime:float,timeTaken:float,WAFMode:string,WAFEvaluationTime:string,WAFPolicyID:string,sslEnabled:string,sslCipher:string,sslProtocol:string,sslClientVerify:string,sslClientCertificateFingerprint:string,sslClientCertificateIssuerName:string,serverRouted:string,serverStatus:string,serverResponseLatency:string,upstreamSourcePort:string,originalHost:string,host:string,msg:string,TranslatedIp:string,TranslatedPort:int,priority:int>,
+      time timestamp,
+      timeStamp timestamp,
+      operationName string,
+      listenerName string,
+      ruleName string,
+      backendPoolName string,
+      backendSettingName string
 silver:
   transform:
     - name: azure_waf_application_gateway_access_log
@@ -240,8 +248,7 @@ silver:
           from: properties.policyScope
         - name: ocsf_observables
           expr: "array(
-            named_struct('name', 'transactionId', 'type_id', 38, 'type', 'Resource Details Object: transactionId', 'value', properties.transactionId)
-          )"
+            named_struct('name', 'transactionId', 'type_id', 38, 'type', 'Resource Details Object: transactionId', 'value', properties.transactionId))"
         - name: ocsf_firewall_rule.version
           from: properties.ruleSetVersion
         - name: ocsf_firewall_rule.type
@@ -628,8 +635,6 @@ gold:
         from: ocsf_http_response
       - name: connection_info
         from: ocsf_connection_info
-      - name: tls
-        from: ocsf_tls
       - name: traffic
         from: ocsf_traffic
       - name: src_endpoint
@@ -918,42 +923,3 @@ gold:
         from: ocsf_policy
       - name: unmapped
         expr: CAST(ocsf_unmapped AS VARIANT)
-  - name: security_finding
-    input: azure_waf_az_fw_threat_intel
-    fields:
-      - name: activity_id
-        from: ocsf_activity_id
-      - name: activity_name
-        from: ocsf_activity_name
-      - name: category_uid
-        from: ocsf_category_uid
-      - name: category_name
-        from: ocsf_category_name
-      - name: class_uid
-        from: ocsf_class_uid
-      - name: class_name
-        from: ocsf_class_name
-      - name: severity_id
-        from: ocsf_severity_id
-      - name: severity
-        from: ocsf_severity
-      - name: type_uid
-        from: ocsf_type_uid
-      - name: type_name
-        from: ocsf_type_name
-      - name: time
-        from: time
-      - name: metadata
-        from: ocsf_metadata
-      - name: action
-        from: action
-      - name: action_id
-        from: action_id
-      - name: disposition
-        from: disposition
-      - name: disposition_id
-        from: disposition_id
-      - name: finding
-        from: ocsf_finding
-      - name: osint
-        expr: array(ocsf_osint)

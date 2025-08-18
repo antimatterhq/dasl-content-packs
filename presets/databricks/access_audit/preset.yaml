@@ -235,12 +235,6 @@ gold:
       - name: disposition
         from: ocsf_disposition
 
-      - name: http_request
-        from: ocsf_http_request
-
-      - name: http_response
-        from: ocsf_http_response
-
       - name: metadata
         from: ocsf_metadata
 
@@ -381,13 +375,6 @@ gold:
 
       - name: group.uid
         from: request_params.targetGroupId
-
-
-      - name: http_request
-        from: ocsf_http_request
-
-      - name: http_response
-        from: ocsf_http_response
 
       - name: metadata
         from: ocsf_metadata
@@ -539,7 +526,6 @@ gold:
       - name: severity
         from: ocsf_severity
 
-
       - name: src_endpoint
         from: ocsf_src_endpoint
 
@@ -548,7 +534,6 @@ gold:
 
       - name: status_id
         from: ocsf_status_id
-
 
       - name: type_uid
         expr: |
@@ -646,12 +631,6 @@ gold:
 
       - name: dst_endpoint
         from: ocsf_dst_endpoint
-
-      - name: http_request
-        from: ocsf_http_request
-
-      - name: http_response
-        from: ocsf_http_response
 
       - name: is_mfa
         expr: |

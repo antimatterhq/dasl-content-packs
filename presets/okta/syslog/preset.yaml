@@ -290,7 +290,7 @@ silver:
         - name: ocsf_message
           expr: COALESCE(NULLIF(displayMessage, ''), NULLIF(debugContext.debugData.detailedmessage, ''), NULLIF(outcome.reason, ''))
         - name: ocsf_time
-          expr: timestamp_millis(cast(_time AS BIGINT) * 1000)
+          expr: try_to_timestamp(published)
         - name: ocsf_severity
           expr: |
             CASE 
