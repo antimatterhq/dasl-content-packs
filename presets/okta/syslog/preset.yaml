@@ -5,63 +5,55 @@ title: "OKTA - Syslog"
 iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/okta/syslog/icon.png"
 autoloader:
   format: jsonl
-  cloudFiles:
-    schemaHints: |
-      actor struct<`alternateId`:string,`detailEntry`:string,`displayName`:string,`id`:string,`type`:string>,
-      authenticationContext struct<`authenticationProvider`:string,`authenticationStep`:bigint,`authenticatorContext`:struct<`applicationVersion`:string,`binaryIdentifier`:string,`binaryPath`:string,`bindingMethod`:string,`requestOrigin`:string,`signerDistinguishedName`:string,`signerKeyIdentifier`:string,`userConsent`:string,`validationStatus`:string>,`credentialProvider`:string,`credentialType`:string,`externalSessionId`:string,`interface`:string,`issuer`:struct<`id`:string>,`rootSessionId`:string>,
-      client struct<`device`:string,`geographicalContext`:struct<`city`:string,`country`:string,`geolocation`:struct<`lat`:double,`lon`:double>,`postalCode`:string,`state`:string>,`id`:string,`ipAddress`:string,`userAgent`:struct<`browser`:string,`os`:string,`rawUserAgent`:string>,`zone`:string>,
-      debugContext struct<`debugData`:struct<`aaguid`:string,`addedObjects`:string,`appContextName`:string,`appname`:string,`audience`:string,`authCode`:string,`authMethodFirstEnrollment`:string,`authMethodFirstType`:string,`authMethodFirstVerificationTime`:string,`authMethodSecondEnrollment`:string,`authMethodSecondType`:string,`authMethodSecondVerificationTime`:string,`authTime`:string,`authenticationClassRef`:string,`authenticatorMethodChallengeTime`:string,`authnRequestId`:string,`backupEligible`:string,`behaviors`:string,`category`:string,`challengeAuthenticatorsList`:string,`changedAttributes`:string,`clientAuthType`:string,`clientId`:string,`clientSecret`:string,`clientType`:string,`deletedObjects`:string,`detailedmessage`:string,`device`:string,`deviceCategory`:string,`deviceFingerprint`:string,`devicePlatform`:string,`deviceTokenHash`:string,`dtHash`:string,`emailProvider`:string,`emailRequestId`:string,`enrollmentMethodChallengeTime`:string,`expiryTime`:string,`factor`:string,`factorIntent`:string,`grantType`:string,`grantedScopes`:string,`idpType`:string,`importLastToken`:string,`importTrigger`:string,`importType`:string,`initiationType`:string,`ip`:string,`issuedAt`:string,`issuer`:string,`jobId`:string,`jti`:string,`keyTypeUsedForAuthentication`:string,`logOnlySecurityData`:string,`loginResult`:string,`matchedAuthenticatorGroups`:string,`oktaUserAgentExtended`:string,`operationRateLimitScopeType`:string,`operationRateLimitSecondsToReset`:string,`operationRateLimitSubtype`:string,`operationRateLimitThreshold`:string,`operationRateLimitTimeSpan`:string,`operationRateLimitTimeUnit`:string,`operationRateLimitType`:string,`orgId`:string,`origin`:string,`pushOnlyResponseType`:string,`pushWithNumberChallengeResponseType`:string,`redirectUri`:string,`requestId`:string,`requestUri`:string,`requestedScopes`:string,`responseMode`:string,`responseTime`:string,`responseType`:string,`risk`:string,`signOnMode`:string,`state`:string,`subject`:string,`targetEventHookIds`:string,`threatSuspected`:string,`threshold`:string,`timeSpan`:string,`timeUnit`:string,`totalObjects`:string,`totalTime`:string,`traceId`:string,`tunnels`:string,`unchangedObjects`:string,`updatedObjects`:string,`url`:string,`userId`:string>>,
-      device struct<`device_integrator`:string,`disk_encryption_type`:string,`id`:string,`jailbreak`:boolean,`managed`:boolean,`name`:string,`os_platform`:string,`os_version`:string,`registered`:boolean,`screen_lock_type`:string,`secure_hardware_present`:boolean>,
-      outcome struct<`reason`:string,`result`:string>,
-      request struct<`ipChain`:array<struct<`geographicalContext`:struct<`city`:string,`country`:string,`geolocation`:struct<`lat`:double,`lon`:double>,`postalCode`:string,`state`:string>,`ip`:string,`source`:string,`version`:string>>>,
-      securityContext struct<`asNumber`:bigint,`asOrg`:string,`domain`:string,`isProxy`:boolean,`isp`:string>,
-      target array<struct<`alternateId`:string,`detailEntry`:struct<`appInstanceId`:string,`appUserId`:string,`appUsername`:string,`audience`:string,`authenticatorKey`:string,`authenticatorMethodVerificationTime`:string,`certName`:string,`certStatus`:string,`completedAt`:string,`deviceIntegrator`:string,`deviceStatus`:string,`expires`:string,`hash`:string,`identifyingAttribute`:string,`initiatedAt`:string,`initiatedBy`:string,`managed`:string,`methodTypeUsed`:string,`methodUsedVerifiedProperties`:string,`notAfter`:string,`notBefore`:string,`oktaDeviceId`:string,`osPlatform`:string,`osVersion`:string,`policyName`:string,`policyRuleFactorMode`:string,`policyType`:string,`refreshtokentype`:string,`resolution`:string,`serialNumber`:string,`signOnModeEvaluationResult`:string,`signOnModeType`:string,`subject`:string,`tpmPresent`:string,`udid`:string,`userId`:string>,`displayName`:string,`id`:string,`type`:string>>,
-      transaction struct<`detail`:struct<`requestApiTokenClientId`:string,`requestApiTokenId`:string,`rootApiTokenId`:string>,`id`:string,`type`:string>
+bronze:
+  loadAsSingleVariant: true
+  preTransform:
+   - ["data", "CAST(data:published AS TIMESTAMP) AS time", "CAST('okta' AS STRING) as source", "CAST('syslog' AS STRING) AS sourcetype"]
 
 silver:
   preTransform:
     - name: unbox_cribl
       fields:
+        - name: time
+          from: time
         - name: _time
-          from: _time
+          expr: CAST(data:_time AS BIGINT)
         - name: actor
-          from: actor
+          expr: CAST(data:actor AS struct<`alternateId`:string,`detailEntry`:string,`displayName`:string,`id`:string,`type`:string>)
         - name: authenticationContext
-          from: authenticationContext
+          expr: CAST(data:authenticationContext AS struct<`authenticationProvider`:string,`authenticationStep`:bigint,`authenticatorContext`:struct<`applicationVersion`:string,`binaryIdentifier`:string,`binaryPath`:string,`bindingMethod`:string,`requestOrigin`:string,`signerDistinguishedName`:string,`signerKeyIdentifier`:string,`userConsent`:string,`validationStatus`:string>,`credentialProvider`:string,`credentialType`:string,`externalSessionId`:string,`interface`:string,`issuer`:struct<`id`:string>,`rootSessionId`:string>)
         - name: client
-          from: client
+          expr: CAST(data:client AS struct<`device`:string,`geographicalContext`:struct<`city`:string,`country`:string,`geolocation`:struct<`lat`:double,`lon`:double>,`postalCode`:string,`state`:string>,`id`:string,`ipAddress`:string,`userAgent`:struct<`browser`:string,`os`:string,`rawUserAgent`:string>,`zone`:string>)
         - name: debugContext
-          from: debugContext
+          expr: CAST(data:debugContext AS struct<`debugData`:struct<`aaguid`:string,`addedObjects`:string,`appContextName`:string,`appname`:string,`audience`:string,`authCode`:string,`authMethodFirstEnrollment`:string,`authMethodFirstType`:string,`authMethodFirstVerificationTime`:string,`authMethodSecondEnrollment`:string,`authMethodSecondType`:string,`authMethodSecondVerificationTime`:string,`authTime`:string,`authenticationClassRef`:string,`authenticatorMethodChallengeTime`:string,`authnRequestId`:string,`backupEligible`:string,`behaviors`:string,`category`:string,`challengeAuthenticatorsList`:string,`changedAttributes`:string,`clientAuthType`:string,`clientId`:string,`clientSecret`:string,`clientType`:string,`deletedObjects`:string,`detailedmessage`:string,`device`:string,`deviceCategory`:string,`deviceFingerprint`:string,`devicePlatform`:string,`deviceTokenHash`:string,`dtHash`:string,`emailProvider`:string,`emailRequestId`:string,`enrollmentMethodChallengeTime`:string,`expiryTime`:string,`factor`:string,`factorIntent`:string,`grantType`:string,`grantedScopes`:string,`idpType`:string,`importLastToken`:string,`importTrigger`:string,`importType`:string,`initiationType`:string,`ip`:string,`issuedAt`:string,`issuer`:string,`jobId`:string,`jti`:string,`keyTypeUsedForAuthentication`:string,`logOnlySecurityData`:string,`loginResult`:string,`matchedAuthenticatorGroups`:string,`oktaUserAgentExtended`:string,`operationRateLimitScopeType`:string,`operationRateLimitSecondsToReset`:string,`operationRateLimitSubtype`:string,`operationRateLimitThreshold`:string,`operationRateLimitTimeSpan`:string,`operationRateLimitTimeUnit`:string,`operationRateLimitType`:string,`orgId`:string,`origin`:string,`pushOnlyResponseType`:string,`pushWithNumberChallengeResponseType`:string,`redirectUri`:string,`requestId`:string,`requestUri`:string,`requestedScopes`:string,`responseMode`:string,`responseTime`:string,`responseType`:string,`risk`:string,`signOnMode`:string,`state`:string,`subject`:string,`targetEventHookIds`:string,`threatSuspected`:string,`threshold`:string,`timeSpan`:string,`timeUnit`:string,`totalObjects`:string,`totalTime`:string,`traceId`:string,`tunnels`:string,`unchangedObjects`:string,`updatedObjects`:string,`url`:string,`userId`:string>>)
         - name: device
-          from: device
+          expr: CAST(data:device AS struct<`device_integrator`:string,`disk_encryption_type`:string,`id`:string,`jailbreak`:boolean,`managed`:boolean,`name`:string,`os_platform`:string,`os_version`:string,`registered`:boolean,`screen_lock_type`:string,`secure_hardware_present`:boolean>)
         - name: displayMessage
-          from: displayMessage
+          expr: CAST(data:displayMessage AS string)
         - name: eventType
-          from: eventType
+          expr: CAST(data:eventType AS string)
         - name: host
-          from: host
+          expr: CAST(data:host AS string)
         - name: legacyEventType
-          from: legacyEventType
+          expr: CAST(data:legacyEventType AS string)
         - name: outcome
-          from: outcome
+          expr: CAST(data:outcome AS struct<`reason`:string,`result`:string>)
         - name: published
-          from: published
+          expr: CAST(data:published AS timestamp)
         - name: request
-          from: request
+          expr: CAST(data:request AS struct<`ipChain`:array<struct<`geographicalContext`:struct<`city`:string,`country`:string,`geolocation`:struct<`lat`:double,`lon`:double>,`postalCode`:string,`state`:string>,`ip`:string,`source`:string,`version`:string>>>)
         - name: securityContext
-          from: securityContext
+          expr: CAST(data:securityContext AS struct<`asNumber`:bigint,`asOrg`:string,`domain`:string,`isProxy`:boolean,`isp`:string>)
         - name: severity
-          from: severity
+          expr: CAST(data:severity AS string)
         - name: target
-          from: target
+          expr: CAST(data:target AS array<struct<`alternateId`:string,`detailEntry`:struct<`appInstanceId`:string,`appUserId`:string,`appUsername`:string,`audience`:string,`authenticatorKey`:string,`authenticatorMethodVerificationTime`:string,`certName`:string,`certStatus`:string,`completedAt`:string,`deviceIntegrator`:string,`deviceStatus`:string,`expires`:string,`hash`:string,`identifyingAttribute`:string,`initiatedAt`:string,`initiatedBy`:string,`managed`:string,`methodTypeUsed`:string,`methodUsedVerifiedProperties`:string,`notAfter`:string,`notBefore`:string,`oktaDeviceId`:string,`osPlatform`:string,`osVersion`:string,`policyName`:string,`policyRuleFactorMode`:string,`policyType`:string,`refreshtokentype`:string,`resolution`:string,`serialNumber`:string,`signOnModeEvaluationResult`:string,`signOnModeType`:string,`subject`:string,`tpmPresent`:string,`udid`:string,`userId`:string>,`displayName`:string,`id`:string,`type`:string>>)
         - name: transaction
-          from: transaction
+          expr: CAST(data:transaction AS struct<`detail`:struct<`requestApiTokenClientId`:string,`requestApiTokenId`:string,`rootApiTokenId`:string>,`id`:string,`type`:string>)
         - name: uuid
-          from: uuid
+          expr: CAST(data:uuid AS string)
         - name: version
-          from: version
-        - name: _rescued_data
-          from: _rescued_data
+          expr: CAST(data:version AS string)
 
   transform:
 
@@ -74,19 +66,12 @@ silver:
 
     - name: okta_syslog_ocsf_staged
       fields:
-        - name: metadata.product.name
-          literal: Okta System Log
-        - name: metadata.product.vendor_name
-          literal: Okta
-        - name: metadata.product.version
-          from: version
-        - name: metadata.product.uid
-          from: uuid
-        - name: metadata.event_code
-          from: eventType
+
         - name: eventType
           from: eventType
-
+        
+        - name: time
+          from: time
 
         - name: ocsf_class_uid
           expr: |
@@ -372,7 +357,7 @@ silver:
         - name: ocsf_src_endpoint.autonomous_system.name
           from: securityContext.asOrg
         - name: ocsf_src_endpoint.autonomous_system.number
-          from: securityContext.asNumber
+          expr: CAST(securityContext.asNumber as int)
 
         - name: ocsf_src_endpoint.proxy_endpoint.intermediate_ips
           expr: TRANSFORM(request.ipChain, x -> x.ip)
@@ -412,6 +397,8 @@ silver:
           from: client.geographicalContext.postalCode
         - name: ocsf_src_endpoint.location.isp
           from: securityContext.isp
+        - name: ocsf_target_user
+          from: target.displayName
 
       # per-class action & activity mapping
 
@@ -732,44 +719,11 @@ silver:
                 ELSE named_struct('id', 0, 'name', 'Unknown')
               END
 
-        - name: ocsf_os.name
-          expr: |
-              CASE
-                WHEN (device.os_platform IS NULL) THEN client.userAgent.os
-                ELSE device.os_platform
-              END
-        - name: ocsf_os.version
-          from: device.os_version
-        - name: ocsf_os.build
-          from: device.os_version
-        - name: ocsf_os.type_id
-          expr: |
-              CASE
-                WHEN (LOWER(device.os_platform) LIKE 'android%' OR LOWER(client.userAgent.os) LIKE 'android%') THEN CAST('201' AS INT)
-                WHEN (LOWER(device.os_platform) LIKE 'linux%' OR LOWER(client.userAgent.os) LIKE 'linux%') THEN CAST('200' AS INT)
-                WHEN (LOWER(device.os_platform) LIKE 'ubuntu%' OR LOWER(client.userAgent.os) LIKE 'ubuntu%') THEN CAST('200' AS INT)
-                WHEN (LOWER(device.os_platform) LIKE 'chrome os%' OR LOWER(client.userAgent.os) LIKE 'chrome os%') THEN CAST('200' AS INT)
-                WHEN (LOWER(device.os_platform) LIKE 'web os%' OR LOWER(client.userAgent.os) LIKE 'web os%') THEN CAST('200' AS INT)
-                WHEN (LOWER(device.os_platform) LIKE 'mac os%' OR LOWER(client.userAgent.os) LIKE 'mac os%') THEN CAST('300' AS INT)
-                WHEN (LOWER(device.os_platform) LIKE 'windows%' OR LOWER(client.userAgent.os) LIKE 'windows%') THEN CAST('100' AS INT)
-                WHEN (LOWER(device.os_platform) LIKE 'ios%' OR LOWER(client.userAgent.os) LIKE 'ios%') THEN CAST('301' AS INT)
-                ELSE CAST('0' AS INT)
-              END
-        - name: ocsf_os.type
-          expr: |
-              CASE
-                WHEN (LOWER(device.os_platform) LIKE 'android%' OR LOWER(client.userAgent.os) LIKE 'android%') THEN 'android'
-                WHEN (LOWER(device.os_platform) LIKE 'linux%' OR LOWER(client.userAgent.os) LIKE 'linux%') THEN 'windows'
-                WHEN (LOWER(device.os_platform) LIKE 'ubuntu%' OR LOWER(client.userAgent.os) LIKE 'ubuntu%') THEN 'linux'
-                WHEN (LOWER(device.os_platform) LIKE 'chrome os%' OR LOWER(client.userAgent.os) LIKE 'chrome os%') THEN 'linux'
-                WHEN (LOWER(device.os_platform) LIKE 'web os%' OR LOWER(client.userAgent.os) LIKE 'web os%') THEN 'linux'
-                WHEN (LOWER(device.os_platform) LIKE 'mac os%' OR LOWER(client.userAgent.os) LIKE 'mac os%') THEN 'macos'
-                WHEN (LOWER(device.os_platform) LIKE 'windows%' OR LOWER(client.userAgent.os) LIKE 'windows%') THEN 'windows'
-                WHEN (LOWER(device.os_platform) LIKE 'ios%' OR LOWER(client.userAgent.os) LIKE 'ios%') THEN 'ios'
-                ELSE 'unknown'
-              END
+        
         - name: ocsf_metadata.log_provider
-          literal: Okta
+          literal: okta
+        - name: ocsf_metadata.log_name
+          literal: syslog
         - name: ocsf_metadata.correlation_uid
           from: transaction.id
         - name: ocsf_metadata.log_level
@@ -781,11 +735,11 @@ silver:
         - name: ocsf_metadata.modified_time
           expr: TRY_TO_TIMESTAMP(published)
         - name: ocsf_metadata.original_time
-          expr: TRY_TO_TIMESTAMP(published)
+          expr: CAST(published as string)
         - name: ocsf_metadata.processed_time
           expr: CURRENT_TIMESTAMP()
         - name: ocsf_metadata.product.name
-          literal: Syslog
+          literal: syslog
         - name: ocsf_metadata.product.vendor_name
           literal: Okta
         - name: ocsf_metadata.product.version
@@ -795,280 +749,489 @@ silver:
         - name: ocsf_metadata.version
           literal: 1.0.0
 
+
       utils:
         unreferencedColumns:
           preserve: true
           omitColumns:
             - _time
+        temporaryFields:
+          - name: ocsf_os.name
+            expr: |
+                CASE
+                  WHEN (device.os_platform IS NULL) THEN client.userAgent.os
+                  ELSE device.os_platform
+                END
+          - name: ocsf_os.version
+            from: device.os_version
+          - name: ocsf_os.build
+            from: device.os_version
+          - name: ocsf_os.type_id
+            expr: |
+                CASE
+                  WHEN (LOWER(device.os_platform) LIKE 'android%' OR LOWER(client.userAgent.os) LIKE 'android%') THEN CAST('201' AS INT)
+                  WHEN (LOWER(device.os_platform) LIKE 'linux%' OR LOWER(client.userAgent.os) LIKE 'linux%') THEN CAST('200' AS INT)
+                  WHEN (LOWER(device.os_platform) LIKE 'ubuntu%' OR LOWER(client.userAgent.os) LIKE 'ubuntu%') THEN CAST('200' AS INT)
+                  WHEN (LOWER(device.os_platform) LIKE 'chrome os%' OR LOWER(client.userAgent.os) LIKE 'chrome os%') THEN CAST('200' AS INT)
+                  WHEN (LOWER(device.os_platform) LIKE 'web os%' OR LOWER(client.userAgent.os) LIKE 'web os%') THEN CAST('200' AS INT)
+                  WHEN (LOWER(device.os_platform) LIKE 'mac os%' OR LOWER(client.userAgent.os) LIKE 'mac os%') THEN CAST('300' AS INT)
+                  WHEN (LOWER(device.os_platform) LIKE 'windows%' OR LOWER(client.userAgent.os) LIKE 'windows%') THEN CAST('100' AS INT)
+                  WHEN (LOWER(device.os_platform) LIKE 'ios%' OR LOWER(client.userAgent.os) LIKE 'ios%') THEN CAST('301' AS INT)
+                  ELSE CAST('0' AS INT)
+                END
+          - name: ocsf_os.type
+            expr: |
+                CASE
+                  WHEN (LOWER(device.os_platform) LIKE 'android%' OR LOWER(client.userAgent.os) LIKE 'android%') THEN 'android'
+                  WHEN (LOWER(device.os_platform) LIKE 'linux%' OR LOWER(client.userAgent.os) LIKE 'linux%') THEN 'windows'
+                  WHEN (LOWER(device.os_platform) LIKE 'ubuntu%' OR LOWER(client.userAgent.os) LIKE 'ubuntu%') THEN 'linux'
+                  WHEN (LOWER(device.os_platform) LIKE 'chrome os%' OR LOWER(client.userAgent.os) LIKE 'chrome os%') THEN 'linux'
+                  WHEN (LOWER(device.os_platform) LIKE 'web os%' OR LOWER(client.userAgent.os) LIKE 'web os%') THEN 'linux'
+                  WHEN (LOWER(device.os_platform) LIKE 'mac os%' OR LOWER(client.userAgent.os) LIKE 'mac os%') THEN 'macos'
+                  WHEN (LOWER(device.os_platform) LIKE 'windows%' OR LOWER(client.userAgent.os) LIKE 'windows%') THEN 'windows'
+                  WHEN (LOWER(device.os_platform) LIKE 'ios%' OR LOWER(client.userAgent.os) LIKE 'ios%') THEN 'ios'
+                  ELSE 'unknown'
+                END
 
 
 gold:
   - name: scheduled_job_activity
     input: okta_syslog_ocsf_staged
     filter: ocsf_class_uid = 1006
-    
     fields:
-      - name: category_uid
-        expr: CAST('1' AS INT)
-      - name: category_name
-        literal: System
-
-      - name: type_uid
-        expr: (ocsf_class_uid * 100) + (`activity`.`1006`.`id`)
-      - name: class_uid
-        from: ocsf_class_uid
-      - name: class_name
-        from: ocsf_class_name
+      # ---------------- core / ids / type ----------------
+      - name: action
+        from: action.1006.name
+      - name: action_id
+        from: action.1006.id
+      - name: activity
+        from: activity.1006.name
       - name: activity_id
         from: activity.1006.id
       - name: activity_name
         from: activity.1006.name
-      - name: action_id
-        from: action.1006.id
-      - name: action
-        from: action.1006.name
-      - name: metadata
-        from: ocsf_metadata
-      - name: start_time
-        expr: TRY_TO_TIMESTAMP(published)
-      - name: status
-        from: ocsf_status
-      - name: status_id
-        from: ocsf_status_id
-      - name: status_code
-        from: ocsf_status_code
-      - name: status_detail
-        from: ocsf_status_detail
-      - name: time
-        from: ocsf_time
-      - name: message
-        from: ocsf_message
-      - name: severity
-        from: ocsf_severity
-      - name: severity_id
-        from: ocsf_severity_id
-      - name: actor
-        from: ocsf_actor
-      - name: device
-        from: ocsf_device
-      - name: risk_details
-        expr: NULLIF(debugContext.debugData.risk, '')
-      - name: risk_level
-        expr: |
-          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
-            WHEN 'INFO' THEN 'Info' 
-            WHEN 'LOW' THEN 'Low' 
-            WHEN 'MEDIUM' THEN 'Medium' 
-            WHEN 'HIGH' THEN 'High' 
-            WHEN 'CRITICAL' THEN 'Critical' 
-            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
-          END
-      - name: risk_level_id
-        expr: |
-          CASE UPPER(regexp_extract(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
-            WHEN 'INFO' THEN 0 
-            WHEN 'LOW' THEN 1 
-            WHEN 'MEDIUM' THEN 2 
-            WHEN 'HIGH' THEN 3 
-            WHEN 'CRITICAL' THEN 4 
-            ELSE 99
-          END
 
-
-  - name: detection_finding
-    input: okta_syslog_ocsf_staged
-    filter: ocsf_class_uid = 2004
-    
-    fields:
-      - name: category_uid
-        expr: CAST('2' AS INT)
       - name: category_name
-        literal: Findings
+        literal: System
+      - name: category_uid
+        expr: CAST(1 AS INT)
 
-      - name: type_uid
-        expr: (ocsf_class_uid * 100) + (`activity`.`2004`.`id`)
-      - name: class_uid
-        from: ocsf_class_uid
       - name: class_name
         from: ocsf_class_name
-      - name: activity_id
-        from: activity.2004.id
-      - name: activity_name
-        from: activity.2004.name
-      - name: action_id
-        from: action.2004.id
-      - name: action
-        from: action.2004.name
-      - name: metadata
-        from: ocsf_metadata
-      - name: start_time
-        expr: TRY_TO_TIMESTAMP(published)
-      - name: status
-        from: ocsf_status
-      - name: status_id
-        from: ocsf_status_id
-      - name: status_code
-        from: ocsf_status_code
-      - name: status_detail
-        from: ocsf_status_detail
-      - name: time
-        from: ocsf_time
+      - name: class_uid
+        from: ocsf_class_uid
+
+      - name: type_uid
+        expr: CAST((ocsf_class_uid * 100) + (`activity`.`1006`.`id`) AS BIGINT)
+      - name: type_name
+        expr: |
+          CASE
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`1006`.`id`) = 100600) THEN 'Scheduled Job Activity: Unknown'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`1006`.`id`) = 100601) THEN 'Scheduled Job Activity: Create'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`1006`.`id`) = 100602) THEN 'Scheduled Job Activity: Update'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`1006`.`id`) = 100603) THEN 'Scheduled Job Activity: Delete'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`1006`.`id`) = 100604) THEN 'Scheduled Job Activity: Enable'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`1006`.`id`) = 100605) THEN 'Scheduled Job Activity: Disable'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`1006`.`id`) = 100606) THEN 'Scheduled Job Activity: Start'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`1006`.`id`) = 100699) THEN 'Scheduled Job Activity: Other'
+          END
+
+      # ---------------- disposition (required by DDL) ----------------
+      - name: disposition
+        expr: CAST(NULL AS STRING)
+      - name: disposition_id
+        expr: CAST(NULL AS INT)
+
+      # ---------------- actor (STRUCT matches DDL exactly) ----------------
+      - name: actor
+        expr: |
+          struct(
+            CAST(NULL AS STRING) AS app_name,
+            CAST(NULL AS STRING) AS app_uid,
+            array(named_struct('decision', CAST(NULL AS STRING))) AS authorizations,
+            struct(
+              CAST(NULL AS STRING) AS domain,
+              CAST(NULL AS STRING) AS name,
+              CAST(NULL AS STRING) AS protocol_name,
+              CAST(NULL AS STRING) AS tenant_uid,
+              CAST(NULL AS STRING) AS uid
+            ) AS idp,
+            struct(
+              CAST(NULL AS STRING) AS cmd_line,
+              CAST(NULL AS STRING) AS cpid,
+              CAST(NULL AS STRING) AS name,
+              CAST(NULL AS INT)    AS pid,
+              struct(
+                CAST(NULL AS TIMESTAMP) AS created_time,
+                CAST(NULL AS STRING)    AS credential_uid,
+                CAST(NULL AS STRING)    AS expiration_reason,
+                CAST(NULL AS TIMESTAMP) AS expiration_time,
+                CAST(NULL AS BOOLEAN)   AS is_mfa,
+                CAST(NULL AS BOOLEAN)   AS is_remote,
+                CAST(NULL AS BOOLEAN)   AS is_vpn,
+                CAST(NULL AS STRING)    AS issuer,
+                CAST(NULL AS STRING)    AS terminal,
+                CAST(NULL AS STRING)    AS uid,
+                CAST(NULL AS STRING)    AS uid_alt,
+                CAST(NULL AS STRING)    AS uuid
+              ) AS session,
+              CAST(NULL AS STRING) AS uid,
+              struct(
+                CAST(NULL AS BOOLEAN) AS has_mfa,
+                CAST(NULL AS STRING)  AS name,
+                CAST(NULL AS STRING)  AS type,
+                CAST(NULL AS INT)     AS type_id,
+                CAST(NULL AS STRING)  AS uid
+              ) AS user
+            ) AS process,
+            struct(
+              CAST(NULL AS BOOLEAN) AS has_mfa,
+              CAST(NULL AS STRING)  AS name,
+              CAST(NULL AS STRING)  AS type,
+              CAST(NULL AS INT)     AS type_id,
+              CAST(NULL AS STRING)  AS uid
+            ) AS user
+          )
+
+      # ---------------- device (STRUCT matches DDL exactly) ----------------
+      - name: device
+        expr: |
+          struct(
+            CAST(NULL AS TIMESTAMP) AS created_time,
+            CAST(NULL AS STRING)    AS desc,
+            CAST(NULL AS STRING)    AS domain,
+            CAST(array() AS ARRAY<STRUCT<name: STRING, privileges: STRING, type: STRING, uid: STRING>>) AS groups,
+            CAST(NULL AS STRING)    AS hostname,
+            CAST(NULL AS STRING)    AS ip,
+            CAST(NULL AS BOOLEAN)   AS is_compliant,
+            CAST(NULL AS BOOLEAN)   AS is_managed,
+            CAST(NULL AS BOOLEAN)   AS is_personal,
+            CAST(NULL AS BOOLEAN)   AS is_trusted,
+            CAST(NULL AS STRING)    AS name,
+            CAST(NULL AS STRING)    AS region,
+            CAST(NULL AS STRING)    AS risk_level,
+            CAST(NULL AS INT)       AS risk_level_id,
+            CAST(NULL AS INT)       AS risk_score,
+            CAST(NULL AS STRING)    AS subnet,
+            CAST(NULL AS STRING)    AS type,
+            CAST(NULL AS INT)       AS type_id,
+            CAST(NULL AS STRING)    AS uid
+          )
+
+      # ---------------- job (STRUCT matches DDL exactly) ----------------
+      - name: job
+        expr: |
+          struct(
+            CAST(NULL AS STRING)    AS cmd_line,
+            CAST(NULL AS TIMESTAMP) AS created_time,
+            CAST(NULL AS STRING)    AS desc,
+            struct(
+              CAST(NULL AS STRING) AS name,
+              CAST(NULL AS STRING) AS path
+            ) AS file,
+            CAST(NULL AS TIMESTAMP) AS last_run_time,
+            CAST(NULL AS STRING)    AS name,
+            CAST(NULL AS TIMESTAMP) AS next_run_time,
+            CAST(NULL AS STRING)    AS run_state,
+            CAST(NULL AS INT)       AS run_state_id,
+            struct(
+              CAST(NULL AS BOOLEAN) AS has_mfa,
+              CAST(NULL AS STRING)  AS name,
+              CAST(NULL AS STRING)  AS type,
+              CAST(NULL AS INT)     AS type_id,
+              CAST(NULL AS STRING)  AS uid
+            ) AS user
+          )
+
+      # ---------------- small scalars ----------------
       - name: message
         from: ocsf_message
+
+      - name: metadata
+        from: ocsf_metadata
+
+      - name: enrichments
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<data: VARIANT, desc: STRING, name: STRING, value: STRING>>)
+
+      - name: observables
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<name: STRING, type: STRING, value: STRING>>)
+
+      - name: risk_details
+        expr: NULLIF(debugContext.debugData.risk, '')
+
+      - name: risk_level
+        expr: |
+          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1))
+            WHEN 'INFO' THEN 'Info'
+            WHEN 'LOW' THEN 'Low'
+            WHEN 'MEDIUM' THEN 'Medium'
+            WHEN 'HIGH' THEN 'High'
+            WHEN 'CRITICAL' THEN 'Critical'
+            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
+          END
+
+      - name: risk_level_id
+        expr: |
+          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1))
+            WHEN 'INFO' THEN 0
+            WHEN 'LOW' THEN 1
+            WHEN 'MEDIUM' THEN 2
+            WHEN 'HIGH' THEN 3
+            WHEN 'CRITICAL' THEN 4
+            ELSE 99
+          END
+
+      - name: risk_score
+        expr: CAST(NULL AS INT)
+
       - name: severity
         from: ocsf_severity
       - name: severity_id
         from: ocsf_severity_id
-      - name: actor
-        from: ocsf_actor
-      - name: device
-        from: ocsf_device
-      - name: risk_details
-        expr: NULLIF(debugContext.debugData.risk, '')
-      - name: risk_level
-        expr: |
-          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
-            WHEN 'INFO' THEN 'Info' 
-            WHEN 'LOW' THEN 'Low' 
-            WHEN 'MEDIUM' THEN 'Medium' 
-            WHEN 'HIGH' THEN 'High' 
-            WHEN 'CRITICAL' THEN 'Critical' 
-            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
-          END
-      - name: risk_level_id
-        expr: |
-          CASE UPPER(regexp_extract(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
-            WHEN 'INFO' THEN 0 
-            WHEN 'LOW' THEN 1 
-            WHEN 'MEDIUM' THEN 2 
-            WHEN 'HIGH' THEN 3 
-            WHEN 'CRITICAL' THEN 4 
-            ELSE 99
-          END
 
+      - name: start_time
+        from: ocsf_time
 
+      - name: status
+        from: ocsf_status
+      - name: status_code
+        from: ocsf_status_code
+      - name: status_detail
+        from: ocsf_status_detail
+      - name: status_id
+        from: ocsf_status_id
+
+      - name: time
+        from: ocsf_time
+      - name: timezone_offset
+        expr: CAST(0 AS INT)
+
+      # ---------------- misc / required ----------------
+      - name: raw_data
+        expr: parse_json(to_json(struct(*)))
+      - name: unmapped
+        expr: CAST(NULL AS VARIANT)
 
   - name: email_activity
     input: okta_syslog_ocsf_staged
     filter: ocsf_class_uid = 4009
-
     fields:
-      - name: category_uid
-        expr: CAST('4' AS INT)
-      - name: category_name
-        literal: Network
-
-      - name: type_uid
-        expr: (ocsf_class_uid * 100) + (`activity`.`4009`.`id`)
-      - name: class_uid
-        from: ocsf_class_uid
-      - name: class_name
-        from: ocsf_class_name
+      - name: action
+        from: action.4009.name
+      - name: action_id
+        from: action.4009.id
+      - name: activity
+        from: activity.4009.name
       - name: activity_id
         from: activity.4009.id
       - name: activity_name
         from: activity.4009.name
-      - name: action_id
-        from: action.4009.id
-      - name: action
-        from: action.4009.name
-      - name: metadata
-        from: ocsf_metadata
-      - name: start_time
-        expr: TRY_TO_TIMESTAMP(published)
-      - name: status
-        from: ocsf_status
-      - name: status_id
-        from: ocsf_status_id
-      - name: status_code
-        from: ocsf_status_code
-      - name: status_detail
-        from: ocsf_status_detail
-      - name: time
-        from: ocsf_time
+
+      - name: category_name
+        literal: Network
+      - name: category_uid
+        expr: CAST(4 AS INT)
+
+      - name: class_name
+        from: ocsf_class_name
+      - name: class_uid
+        from: ocsf_class_uid
+
+      
+
+      # event specifics
+      - name: direction
+        literal: Outbound
+      - name: direction_id
+        expr: CAST(2 AS INT)
+
+      - name: disposition
+        expr: |
+          CASE
+            WHEN UPPER(outcome.result) = 'SUCCESS' THEN 'Allowed'
+            WHEN UPPER(outcome.result) IN ('FAILED','FAILURE') THEN 'Blocked'
+            ELSE COALESCE(NULLIF(outcome.result,''),'Unknown')
+          END
+      - name: disposition_id
+        expr: |
+          CASE
+            WHEN UPPER(outcome.result) = 'SUCCESS' THEN 1
+            WHEN UPPER(outcome.result) IN ('FAILED','FAILURE') THEN 2
+            WHEN NULLIF(outcome.result,'') IS NOT NULL THEN 99
+            ELSE 0
+          END
+
+      # dst_endpoint and src_endpoint match DDL (full struct)
+      - name: dst_endpoint
+        expr: |
+          struct(
+            CAST(NULL AS STRING) AS domain,
+            CAST(NULL AS STRING) AS hostname,
+            CAST(NULL AS STRING) AS instance_uid,
+            CAST(NULL AS STRING) AS interface_name,
+            CAST(NULL AS STRING) AS interface_uid,
+            CAST(NULL AS STRING) AS ip,
+            CAST(NULL AS STRING) AS name,
+            CAST(NULL AS INT)    AS port,
+            CAST(NULL AS STRING) AS svc_name,
+            CAST(NULL AS STRING) AS type,
+            CAST(NULL AS INT)    AS type_id,
+            CAST(NULL AS STRING) AS uid,
+            struct(
+              CAST(NULL AS STRING) AS city,
+              CAST(NULL AS STRING) AS continent,
+              CAST(NULL AS STRING) AS country,
+              CAST(NULL AS FLOAT)  AS lat,
+              CAST(NULL AS FLOAT)  AS long,
+              CAST(NULL AS STRING) AS postal_code
+            ) AS location,
+            CAST(NULL AS STRING) AS mac,
+            CAST(NULL AS STRING) AS vpc_uid,
+            CAST(NULL AS STRING) AS zone
+          )
+      - name: src_endpoint
+        expr: |
+          struct(
+            CAST(NULL AS STRING) AS domain,
+            CAST(NULL AS STRING) AS hostname,
+            CAST(NULL AS STRING) AS instance_uid,
+            CAST(NULL AS STRING) AS interface_name,
+            CAST(NULL AS STRING) AS interface_uid,
+            CAST(NULL AS STRING) AS ip,
+            CAST(NULL AS STRING) AS name,
+            CAST(NULL AS INT)    AS port,
+            CAST(NULL AS STRING) AS svc_name,
+            CAST(NULL AS STRING) AS type,
+            CAST(NULL AS INT)    AS type_id,
+            CAST(NULL AS STRING) AS uid,
+            struct(
+              CAST(NULL AS STRING) AS city,
+              CAST(NULL AS STRING) AS continent,
+              CAST(NULL AS STRING) AS country,
+              CAST(NULL AS FLOAT)  AS lat,
+              CAST(NULL AS FLOAT)  AS long,
+              CAST(NULL AS STRING) AS postal_code
+            ) AS location,
+            CAST(NULL AS STRING) AS mac,
+            CAST(NULL AS STRING) AS vpc_uid,
+            CAST(NULL AS STRING) AS zone
+          )
+
+      # email struct (DDL has email STRUCT<to:STRING>)
+      - name: email
+        expr: |
+          struct(
+            CAST(NULL AS STRING) AS `to`
+          )
+
+      - name: enrichments
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<data: VARIANT, desc: STRING, name: STRING, value: STRING>>)
+
       - name: message
         from: ocsf_message
+
+      - name: message_trace_uid
+        expr: CAST(NULL AS STRING)
+
+      - name: metadata
+        from: ocsf_metadata
+
+      - name: observables
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<name: STRING, type: STRING, value: STRING>>)
+
+      - name: protocol_name
+        expr: CAST(NULL AS STRING)
+
+      - name: raw_data
+        expr: parse_json(to_json(struct(*)))
+
       - name: severity
         from: ocsf_severity
       - name: severity_id
         from: ocsf_severity_id
-      - name: actor
-        from: ocsf_actor
-      - name: device
-        from: ocsf_device
-      - name: risk_details
-        expr: NULLIF(debugContext.debugData.risk, '')
-      - name: risk_level
-        expr: |
-          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
-            WHEN 'INFO' THEN 'Info' 
-            WHEN 'LOW' THEN 'Low' 
-            WHEN 'MEDIUM' THEN 'Medium' 
-            WHEN 'HIGH' THEN 'High' 
-            WHEN 'CRITICAL' THEN 'Critical' 
-            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
-          END
-      - name: risk_level_id
-        expr: |
-          CASE UPPER(regexp_extract(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
-            WHEN 'INFO' THEN 0 
-            WHEN 'LOW' THEN 1 
-            WHEN 'MEDIUM' THEN 2 
-            WHEN 'HIGH' THEN 3 
-            WHEN 'CRITICAL' THEN 4 
-            ELSE 99
-          END
 
-      # event specific fields
-      - name: direction
-        literal: Outbound
-      - name: direction_id
-        expr: CAST('2' AS INT)
-      - name: disposition
-        expr: |
-          CASE 
-            WHEN UPPER(outcome.result) = 'SUCCESS' THEN 'Allowed' 
-            WHEN UPPER(outcome.result) IN ('FAILED', 'FAILURE') THEN 'Blocked'
-            ELSE COALESCE(NULLIF(outcome.result, ''), 'Unknown')  
-          END
-      - name: disposition_id
-        expr: |
-          CASE 
-            WHEN UPPER(outcome.result) = 'SUCCESS' THEN 1 
-            WHEN UPPER(outcome.result) IN ('FAILED', 'FAILURE') THEN 2 
-            WHEN NULLIF(outcome.result, '') IS NOT NULL THEN 99
-            ELSE 0
-          END
+      - name: status
+        from: ocsf_status
+      - name: status_code
+        from: ocsf_status_code
+      - name: status_detail
+        from: ocsf_status_detail
+      - name: status_id
+        from: ocsf_status_id
 
+      - name: time
+        from: ocsf_time
+      - name: timezone_offset
+        expr: CAST(0 AS INT)
+
+      - name: type_name
+        expr: |
+          CASE
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`4009`.`id`) = 400900) THEN 'Email Activity: Unknown'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`4009`.`id`) = 400901) THEN 'Email Activity: Send'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`4009`.`id`) = 400902) THEN 'Email Activity: Receive'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`4009`.`id`) = 400903) THEN 'Email Activity: Scan'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`4009`.`id`) = 400999) THEN 'Email Activity: Other'
+          END
+      - name: type_uid
+        expr: CAST((ocsf_class_uid * 100) + (`activity`.`4009`.`id`) AS BIGINT)
+
+      - name: unmapped
+        expr: CAST(NULL AS VARIANT)
 
   - name: account_change
     input: okta_syslog_ocsf_staged
     filter: ocsf_class_uid = 3001
-    
     fields:
-      - name: category_uid
-        expr: CAST('3' AS INT)
-      - name: category_name
-        literal: Identity & Access Management
-
-      - name: type_uid
-        expr: (ocsf_class_uid * 100) + (`activity`.`3001`.`id`)
-      - name: class_uid
-        from: ocsf_class_uid
-      - name: class_name
-        from: ocsf_class_name
+      - name: action
+        from: action.3001.name
+      - name: action_id
+        from: action.3001.id
+      - name: activity
+        from: activity.3001.name
       - name: activity_id
         from: activity.3001.id
       - name: activity_name
         from: activity.3001.name
-      - name: action_id
-        from: action.3001.id
-      - name: action
-        from: action.3001.name
+
+      - name: category_name
+        literal: Identity & Access Management
+      - name: category_uid
+        expr: CAST(3 AS INT)
+
+      - name: class_name
+        from: ocsf_class_name
+      - name: class_uid
+        from: ocsf_class_uid
+
+      - name: type_uid
+        expr: CAST((ocsf_class_uid * 100) + (`activity`.`3001`.`id`) AS BIGINT)
+      - name: type_name
+        expr: |
+          CASE
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3001`.`id`) = 300100) THEN 'Account Change: Unknown'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3001`.`id`) = 300101) THEN 'Account Change: Create'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3001`.`id`) = 300102) THEN 'Account Change: Enable'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3001`.`id`) = 300103) THEN 'Account Change: Password Change'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3001`.`id`) = 300104) THEN 'Account Change: Password Reset'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3001`.`id`) = 300105) THEN 'Account Change: Disable'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3001`.`id`) = 300106) THEN 'Account Change: Delete'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3001`.`id`) = 300107) THEN 'Account Change: Attach Policy'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3001`.`id`) = 300108) THEN 'Account Change: Detach Policy'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3001`.`id`) = 300109) THEN 'Account Change: Lock'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3001`.`id`) = 300110) THEN 'Account Change: MFA Factor Enable'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3001`.`id`) = 300111) THEN 'Account Change: MFA Factor Disable'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3001`.`id`) = 300112) THEN 'Account Change: Unlock'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3001`.`id`) = 300199) THEN 'Account Change: Other'
+          END
+
       - name: metadata
         from: ocsf_metadata
-      - name: start_time
-        expr: TRY_TO_TIMESTAMP(published)
+
       - name: status
         from: ocsf_status
       - name: status_id
@@ -1077,147 +1240,215 @@ gold:
         from: ocsf_status_code
       - name: status_detail
         from: ocsf_status_detail
+
       - name: time
         from: ocsf_time
+      - name: timezone_offset
+        expr: CAST(0 AS INT)
+
       - name: message
         from: ocsf_message
+
       - name: severity
         from: ocsf_severity
       - name: severity_id
         from: ocsf_severity_id
-      - name: actor
-        from: ocsf_actor
-      - name: device
-        from: ocsf_device
-      - name: http_request
-        from: ocsf_http_request
-      - name: src_endpoint
-        from: ocsf_src_endpoint
-      - name: risk_details
-        expr: NULLIF(debugContext.debugData.risk, '')
-      - name: risk_level
-        expr: |
-          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
-            WHEN 'INFO' THEN 'Info' 
-            WHEN 'LOW' THEN 'Low' 
-            WHEN 'MEDIUM' THEN 'Medium' 
-            WHEN 'HIGH' THEN 'High' 
-            WHEN 'CRITICAL' THEN 'Critical' 
-            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
-          END
-      - name: risk_level_id
-        expr: |
-          CASE UPPER(regexp_extract(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
-            WHEN 'INFO' THEN 0 
-            WHEN 'LOW' THEN 1 
-            WHEN 'MEDIUM' THEN 2 
-            WHEN 'HIGH' THEN 3 
-            WHEN 'CRITICAL' THEN 4 
-            ELSE 99
-          END
 
+      # ------------- actor (STRUCT matches DDL) -------------
+      - name: actor
+        expr: |
+          struct(
+            CAST(NULL AS STRING) AS app_name,
+            CAST(NULL AS STRING) AS app_uid,
+            array(named_struct('decision', CAST(NULL AS STRING))) AS authorizations,
+            struct(
+              CAST(NULL AS STRING) AS domain,
+              CAST(NULL AS STRING) AS name,
+              CAST(NULL AS STRING) AS protocol_name,
+              CAST(NULL AS STRING) AS tenant_uid,
+              CAST(NULL AS STRING) AS uid
+            ) AS idp,
+            struct(
+              CAST(NULL AS STRING) AS cmd_line,
+              CAST(NULL AS STRING) AS cpid,
+              CAST(NULL AS STRING) AS name,
+              CAST(NULL AS INT)    AS pid,
+              struct(
+                CAST(NULL AS TIMESTAMP) AS created_time,
+                CAST(NULL AS STRING)    AS credential_uid,
+                CAST(NULL AS STRING)    AS expiration_reason,
+                CAST(NULL AS TIMESTAMP) AS expiration_time,
+                CAST(NULL AS BOOLEAN)   AS is_mfa,
+                CAST(NULL AS BOOLEAN)   AS is_remote,
+                CAST(NULL AS BOOLEAN)   AS is_vpn,
+                CAST(NULL AS STRING)    AS issuer,
+                CAST(NULL AS STRING)    AS terminal,
+                CAST(NULL AS STRING)    AS uid,
+                CAST(NULL AS STRING)    AS uid_alt,
+                CAST(NULL AS STRING)    AS uuid
+              ) AS session,
+              CAST(NULL AS STRING) AS uid,
+              struct(
+                CAST(NULL AS BOOLEAN) AS has_mfa,
+                CAST(NULL AS STRING)  AS name,
+                CAST(NULL AS STRING)  AS type,
+                CAST(NULL AS INT)     AS type_id,
+                CAST(NULL AS STRING)  AS uid
+              ) AS user
+            ) AS process,
+            struct(
+              CAST(NULL AS BOOLEAN) AS has_mfa,
+              CAST(NULL AS STRING)  AS name,
+              CAST(NULL AS STRING)  AS type,
+              CAST(NULL AS INT)     AS type_id,
+              CAST(NULL AS STRING)  AS uid
+            ) AS user
+          )
+
+      # ------------- api (STRUCT matches DDL) -------------
+      - name: api
+        expr: |
+          struct(
+            CAST(NULL AS STRING) AS operation,
+            struct(
+              CAST(NULL AS VARIANT) AS data,
+              CAST(NULL AS STRING)  AS uid
+            ) AS request,
+            struct(
+              CAST(NULL AS INT)     AS code,
+              CAST(NULL AS VARIANT) AS data,
+              CAST(NULL AS STRING)  AS error,
+              CAST(NULL AS STRING)  AS message
+            ) AS response
+          )
+
+      # ------------- cloud (STRUCT matches DDL; DDL excludes org VARIANT) -------------
+      - name: cloud
+        expr: |
+          struct(
+            struct(
+              CAST(NULL AS STRING) AS name,
+              CAST(NULL AS STRING) AS uid
+            ) AS account,
+            CAST(NULL AS STRING) AS cloud_partition,
+            CAST(NULL AS STRING) AS project_uid,
+            CAST(NULL AS STRING) AS provider,
+            CAST(NULL AS STRING) AS region,
+            CAST(NULL AS STRING) AS zone
+          )
+
+      # ------------- enrichments / observables -------------
+      - name: enrichments
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<data: VARIANT, desc: STRING, name: STRING, value: STRING>>)
+      - name: observables
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<name: STRING, type: STRING, value: STRING>>)
+
+      # ------------- policies (DDL has array<struct>) -------------
+      - name: policies
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<is_applied: BOOLEAN, name: STRING, uid: STRING, version: STRING>>)
+
+      # ------------- src_endpoint (STRUCT from staged) -------------
+      - name: src_endpoint
+        expr: |
+          struct(
+            CAST(NULL AS STRING)           AS domain,
+            ocsf_src_endpoint.hostname     AS hostname,
+            CAST(NULL AS STRING)           AS instance_uid,
+            CAST(NULL AS STRING)           AS interface_name,
+            CAST(NULL AS STRING)           AS interface_uid,
+            ocsf_src_endpoint.ip           AS ip,
+            ocsf_src_endpoint.name         AS name,
+            CAST(NULL AS INT)              AS port,
+            CAST(NULL AS STRING)           AS svc_name,
+            ocsf_src_endpoint.type         AS type,
+            CAST(ocsf_src_endpoint.type_id AS INT) AS type_id,
+            ocsf_src_endpoint.uid          AS uid,
+            struct(
+              ocsf_src_endpoint.location.city        AS city,
+              CAST(NULL AS STRING)                   AS continent,
+              ocsf_src_endpoint.location.country     AS country,
+              CAST(ocsf_src_endpoint.location.lat  AS FLOAT) AS lat,
+              CAST(ocsf_src_endpoint.location.long AS FLOAT) AS long,
+              ocsf_src_endpoint.location.postal_code AS postal_code
+            ) AS location,
+            CAST(NULL AS STRING) AS mac,
+            CAST(NULL AS STRING) AS vpc_uid,
+            CAST(NULL AS STRING) AS zone
+          )
+
+      # ------------- user (STRUCT per DDL; only actor.user available) -------------
+      - name: user
+        expr: |
+          named_struct(
+            'has_mfa', CAST(NULL AS BOOLEAN),
+            'name',    ocsf_actor.user.name,
+            'type',    ocsf_actor.user.type,
+            'type_id', CAST(ocsf_actor.user.type_id AS INT),
+            'uid',     ocsf_actor.user.uid
+          )
+
+      # ------------- user_result (STRUCT required by DDL, placeholder) -------------
+      - name: user_result
+        expr: |
+          named_struct(
+            'has_mfa', CAST(NULL AS BOOLEAN),
+            'name',    CAST(NULL AS STRING),
+            'type',    CAST(NULL AS STRING),
+            'type_id', CAST(NULL AS INT),
+            'uid',     CAST(NULL AS STRING)
+          )
+
+      - name: raw_data
+        expr: parse_json(to_json(struct(*)))
+      - name: unmapped
+        expr: CAST(NULL AS VARIANT)
 
   - name: authentication
     input: okta_syslog_ocsf_staged
     filter: ocsf_class_uid = 3002
-    
     fields:
-      - name: category_uid
-        expr: CAST('3' AS INT)
-      - name: category_name
-        literal: Identity & Access Management
-      - name: type_uid
-        expr: (ocsf_class_uid * 100) + (`activity`.`3002`.`id`)
-      - name: class_uid
-        from: ocsf_class_uid
-      - name: class_name
-        from: ocsf_class_name
+      - name: action
+        from: action.3002.name
+      - name: action_id
+        from: action.3002.id
+      - name: activity
+        from: activity.3002.name
       - name: activity_id
         from: activity.3002.id
       - name: activity_name
         from: activity.3002.name
-      - name: action_id
-        from: action.3002.id
-      - name: action
-        from: action.3002.name
-      - name: metadata
-        from: ocsf_metadata
-      - name: start_time
-        expr: TRY_TO_TIMESTAMP(published)
-      - name: status
-        from: ocsf_status
-      - name: status_id
-        from: ocsf_status_id
-      - name: status_code
-        from: ocsf_status_code
-      - name: status_detail
-        from: ocsf_status_detail
-      - name: time
-        from: ocsf_time
-      - name: message
-        from: ocsf_message
-      - name: severity
-        from: ocsf_severity
-      - name: severity_id
-        from: ocsf_severity_id
-      - name: actor
-        from: ocsf_actor
-      - name: device
-        from: ocsf_device
-      - name: http_request
-        from: ocsf_http_request
-      - name: src_endpoint
-        from: ocsf_src_endpoint
-      - name: risk_details
-        expr: NULLIF(debugContext.debugData.risk, '')
-      - name: risk_level
-        expr: |
-          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
-            WHEN 'INFO' THEN 'Info' 
-            WHEN 'LOW' THEN 'Low' 
-            WHEN 'MEDIUM' THEN 'Medium' 
-            WHEN 'HIGH' THEN 'High' 
-            WHEN 'CRITICAL' THEN 'Critical' 
-            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
-          END
-      - name: risk_level_id
-        expr: |
-          CASE UPPER(regexp_extract(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
-            WHEN 'INFO' THEN 0 
-            WHEN 'LOW' THEN 1 
-            WHEN 'MEDIUM' THEN 2 
-            WHEN 'HIGH' THEN 3 
-            WHEN 'CRITICAL' THEN 4 
-            ELSE 99
-          END
 
-  - name: authorize_session
-    input: okta_syslog_ocsf_staged
-    filter: ocsf_class_uid = 3003
-
-    fields:
-      - name: category_uid
-        expr: CAST('3' AS INT)
       - name: category_name
         literal: Identity & Access Management
-      - name: type_uid
-        expr: (ocsf_class_uid * 100) + (`activity`.`3003`.`id`)
-      - name: class_uid
-        from: ocsf_class_uid
+      - name: category_uid
+        expr: CAST(3 AS INT)
+
       - name: class_name
         from: ocsf_class_name
-      - name: activity_id
-        from: activity.3003.id
-      - name: activity_name
-        from: activity.3003.name
-      - name: action_id
-        from: action.3003.id
-      - name: action
-        from: action.3003.name
+      - name: class_uid
+        from: ocsf_class_uid
+
+      - name: type_uid
+        expr: CAST((ocsf_class_uid * 100) + (`activity`.`3002`.`id`) AS BIGINT)
+      - name: type_name
+        expr: |
+          CASE
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3002`.`id`) = 300200) THEN 'Authentication: Unknown'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3002`.`id`) = 300201) THEN 'Authentication: Logon'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3002`.`id`) = 300202) THEN 'Authentication: Logoff'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3002`.`id`) = 300203) THEN 'Authentication: Authentication Ticket'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3002`.`id`) = 300204) THEN 'Authentication: Service Ticket Request'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3002`.`id`) = 300205) THEN 'Authentication: Service Ticket Renew'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3002`.`id`) = 300206) THEN 'Authentication: Preauth'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3002`.`id`) = 300299) THEN 'Authentication: Other'
+          END
+
       - name: metadata
         from: ocsf_metadata
-      - name: start_time
-        expr: TRY_TO_TIMESTAMP(published)
+
       - name: status
         from: ocsf_status
       - name: status_id
@@ -1226,151 +1457,470 @@ gold:
         from: ocsf_status_code
       - name: status_detail
         from: ocsf_status_detail
+
       - name: time
         from: ocsf_time
+      - name: timezone_offset
+        expr: CAST(0 AS INT)
+
       - name: message
         from: ocsf_message
+
       - name: severity
         from: ocsf_severity
       - name: severity_id
         from: ocsf_severity_id
+
+      # ---------- booleans & ids (present in DDL; placeholders when missing) ----------
+      - name: auth_factors
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<factor_type: STRING, factor_type_id: INT>>)
+      - name: auth_protocol
+        expr: CAST(NULL AS STRING)
+      - name: auth_protocol_id
+        expr: CAST(NULL AS INT)
+      - name: disposition
+        expr: CAST(NULL AS STRING)
+      - name: disposition_id
+        expr: CAST(NULL AS INT)
+      - name: is_mfa
+        expr: CAST(NULL AS BOOLEAN)
+      - name: is_remote
+        expr: CAST(NULL AS BOOLEAN)
+      - name: logon_type
+        expr: CAST(NULL AS STRING)
+      - name: logon_type_id
+        expr: CAST(NULL AS INT)
+
+      # ---------- actor STRUCT (matches DDL) ----------
       - name: actor
-        from: ocsf_actor
-      - name: device
-        from: ocsf_device
-      - name: http_request
-        from: ocsf_http_request
+        expr: |
+          struct(
+            CAST(NULL AS STRING) AS app_name,
+            CAST(NULL AS STRING) AS app_uid,
+            array(named_struct('decision', CAST(NULL AS STRING))) AS authorizations,
+            struct(
+              CAST(NULL AS STRING) AS domain,
+              CAST(NULL AS STRING) AS name,
+              CAST(NULL AS STRING) AS protocol_name,
+              CAST(NULL AS STRING) AS tenant_uid,
+              CAST(NULL AS STRING) AS uid
+            ) AS idp,
+            struct(
+              CAST(NULL AS STRING) AS cmd_line,
+              CAST(NULL AS STRING) AS cpid,
+              CAST(NULL AS STRING) AS name,
+              CAST(NULL AS INT)    AS pid,
+              struct(
+                CAST(NULL AS TIMESTAMP) AS created_time,
+                CAST(NULL AS STRING)    AS credential_uid,
+                CAST(NULL AS STRING)    AS expiration_reason,
+                CAST(NULL AS TIMESTAMP) AS expiration_time,
+                CAST(NULL AS BOOLEAN)   AS is_mfa,
+                CAST(NULL AS BOOLEAN)   AS is_remote,
+                CAST(NULL AS BOOLEAN)   AS is_vpn,
+                CAST(NULL AS STRING)    AS issuer,
+                CAST(NULL AS STRING)    AS terminal,
+                CAST(NULL AS STRING)    AS uid,
+                CAST(NULL AS STRING)    AS uid_alt,
+                CAST(NULL AS STRING)    AS uuid
+              ) AS session,
+              CAST(NULL AS STRING) AS uid,
+              struct(
+                CAST(NULL AS BOOLEAN) AS has_mfa,
+                CAST(NULL AS STRING)  AS name,
+                CAST(NULL AS STRING)  AS type,
+                CAST(NULL AS INT)     AS type_id,
+                CAST(NULL AS STRING)  AS uid
+              ) AS user
+            ) AS process,
+            struct(
+              CAST(NULL AS BOOLEAN) AS has_mfa,
+              CAST(NULL AS STRING)  AS name,
+              CAST(NULL AS STRING)  AS type,
+              CAST(NULL AS INT)     AS type_id,
+              CAST(NULL AS STRING)  AS uid
+            ) AS user
+          )
+
+      # ---------- cloud STRUCT (matches DDL) ----------
+      - name: cloud
+        expr: |
+          struct(
+            struct(CAST(NULL AS STRING) AS name, CAST(NULL AS STRING) AS uid) AS account,
+            CAST(NULL AS STRING) AS cloud_partition,
+            CAST(NULL AS STRING) AS project_uid,
+            CAST(NULL AS STRING) AS provider,
+            CAST(NULL AS STRING) AS region,
+            CAST(NULL AS STRING) AS zone
+          )
+
+      # ---------- dst / src endpoints ----------
+      - name: dst_endpoint
+        expr: |
+          struct(
+            CAST(NULL AS STRING) AS domain,
+            CAST(NULL AS STRING) AS hostname,
+            CAST(NULL AS STRING) AS instance_uid,
+            CAST(NULL AS STRING) AS interface_name,
+            CAST(NULL AS STRING) AS interface_uid,
+            CAST(NULL AS STRING) AS ip,
+            CAST(NULL AS STRING) AS name,
+            CAST(NULL AS INT)    AS port,
+            CAST(NULL AS STRING) AS svc_name,
+            CAST(NULL AS STRING) AS type,
+            CAST(NULL AS INT)    AS type_id,
+            CAST(NULL AS STRING) AS uid,
+            struct(
+              CAST(NULL AS STRING) AS city,
+              CAST(NULL AS STRING) AS continent,
+              CAST(NULL AS STRING) AS country,
+              CAST(NULL AS FLOAT)  AS lat,
+              CAST(NULL AS FLOAT)  AS long,
+              CAST(NULL AS STRING) AS postal_code
+            ) AS location,
+            CAST(NULL AS STRING) AS mac,
+            CAST(NULL AS STRING) AS vpc_uid,
+            CAST(NULL AS STRING) AS zone
+          )
       - name: src_endpoint
-        from: ocsf_src_endpoint
-      - name: risk_details
-        expr: NULLIF(debugContext.debugData.risk, '')
-      - name: risk_level
         expr: |
-          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
-            WHEN 'INFO' THEN 'Info' 
-            WHEN 'LOW' THEN 'Low' 
-            WHEN 'MEDIUM' THEN 'Medium' 
-            WHEN 'HIGH' THEN 'High' 
-            WHEN 'CRITICAL' THEN 'Critical' 
-            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
-          END
-      - name: risk_level_id
+          struct(
+            CAST(NULL AS STRING)           AS domain,
+            ocsf_src_endpoint.hostname     AS hostname,
+            CAST(NULL AS STRING)           AS instance_uid,
+            CAST(NULL AS STRING)           AS interface_name,
+            CAST(NULL AS STRING)           AS interface_uid,
+            ocsf_src_endpoint.ip           AS ip,
+            ocsf_src_endpoint.name         AS name,
+            CAST(NULL AS INT)              AS port,
+            CAST(NULL AS STRING)           AS svc_name,
+            ocsf_src_endpoint.type         AS type,
+            CAST(ocsf_src_endpoint.type_id AS INT) AS type_id,
+            ocsf_src_endpoint.uid          AS uid,
+            struct(
+              ocsf_src_endpoint.location.city        AS city,
+              CAST(NULL AS STRING)                   AS continent,
+              ocsf_src_endpoint.location.country     AS country,
+              CAST(ocsf_src_endpoint.location.lat  AS FLOAT) AS lat,
+              CAST(ocsf_src_endpoint.location.long AS FLOAT) AS long,
+              ocsf_src_endpoint.location.postal_code AS postal_code
+            ) AS location,
+            CAST(NULL AS STRING) AS mac,
+            CAST(NULL AS STRING) AS vpc_uid,
+            CAST(NULL AS STRING) AS zone
+          )
+
+      # ---------- service / session (STRUCTs) ----------
+      - name: service
         expr: |
-          CASE UPPER(regexp_extract(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
-            WHEN 'INFO' THEN 0 
-            WHEN 'LOW' THEN 1 
-            WHEN 'MEDIUM' THEN 2 
-            WHEN 'HIGH' THEN 3 
-            WHEN 'CRITICAL' THEN 4 
-            ELSE 99
-          END
+          struct(
+            CAST(NULL AS STRING) AS name,
+            CAST(NULL AS STRING) AS uid
+          )
+      - name: session
+        expr: |
+          struct(
+            CAST(NULL AS TIMESTAMP) AS created_time,
+            CAST(NULL AS STRING)    AS credential_uid,
+            CAST(NULL AS STRING)    AS expiration_reason,
+            CAST(NULL AS TIMESTAMP) AS expiration_time,
+            CAST(NULL AS BOOLEAN)   AS is_mfa,
+            CAST(NULL AS BOOLEAN)   AS is_remote,
+            CAST(NULL AS BOOLEAN)   AS is_vpn,
+            CAST(NULL AS STRING)    AS issuer,
+            CAST(NULL AS STRING)    AS terminal,
+            CAST(NULL AS STRING)    AS uid,
+            CAST(NULL AS STRING)    AS uid_alt,
+            CAST(NULL AS STRING)    AS uuid
+          )
 
-      # event specific fields
-      - name: dst_endpoint.svc_name
-        expr: debugContext.debugData.url
+      # ---------- collections ----------
+      - name: enrichments
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<data: VARIANT, desc: STRING, name: STRING, value: STRING>>)
+      - name: observables
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<name: STRING, type: STRING, value: STRING>>)
 
+      # ---------- user (STRUCT per DDL; only actor.user available) ----------
+      - name: user
+        expr: |
+          named_struct(
+            'has_mfa', CAST(NULL AS BOOLEAN),
+            'name',    ocsf_actor.user.name,
+            'type',    ocsf_actor.user.type,
+            'type_id', CAST(ocsf_actor.user.type_id AS INT),
+            'uid',     ocsf_actor.user.uid
+          )
+
+      - name: raw_data
+        expr: parse_json(to_json(struct(*)))
+      - name: unmapped
+        expr: CAST(NULL AS VARIANT)
 
   - name: entity_management
     input: okta_syslog_ocsf_staged
     filter: ocsf_class_uid = 3004
-    
     fields:
-      - name: category_uid
-        expr: CAST('3' AS INT)
-      - name: category_name
-        literal: Identity & Access Management
-      - name: type_uid
-        expr: (ocsf_class_uid * 100) + (`activity`.`3004`.`id`)
-      - name: class_uid
-        from: ocsf_class_uid
-      - name: class_name
-        from: ocsf_class_name
+      - name: action
+        from: action.3004.name
+      - name: action_id
+        from: action.3004.id
       - name: activity_id
         from: activity.3004.id
       - name: activity_name
         from: activity.3004.name
-      - name: action_id
-        from: action.3004.id
-      - name: action
-        from: action.3004.name
-      - name: metadata
-        from: ocsf_metadata
-      - name: start_time
-        expr: TRY_TO_TIMESTAMP(published)
-      - name: status
-        from: ocsf_status
-      - name: status_id
-        from: ocsf_status_id
-      - name: status_code
-        from: ocsf_status_code
-      - name: status_detail
-        from: ocsf_status_detail
-      - name: time
-        from: ocsf_time
+
+      - name: category_name
+        literal: Identity & Access Management
+      - name: category_uid
+        expr: CAST(3 AS INT)
+
+      - name: class_name
+        from: ocsf_class_name
+      - name: class_uid
+        from: ocsf_class_uid
+
+      - name: type_uid
+        expr: CAST((ocsf_class_uid * 100) + (`activity`.`3004`.`id`) AS BIGINT)
+      - name: type_name
+        expr: |
+          CASE
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3004`.`id`) = 300400) THEN 'Entity Management: Unknown'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3004`.`id`) = 300401) THEN 'Entity Management: Create'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3004`.`id`) = 300402) THEN 'Entity Management: Read'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3004`.`id`) = 300403) THEN 'Entity Management: Update'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3004`.`id`) = 300404) THEN 'Entity Management: Delete'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3004`.`id`) = 300499) THEN 'Entity Management: Other'
+          END
+
+      # actor STRUCT
+      - name: actor
+        expr: |
+          struct(
+            CAST(NULL AS STRING) AS app_name,
+            CAST(NULL AS STRING) AS app_uid,
+            array(named_struct('decision', CAST(NULL AS STRING))) AS authorizations,
+            struct(
+              CAST(NULL AS STRING) AS domain,
+              CAST(NULL AS STRING) AS name,
+              CAST(NULL AS STRING) AS protocol_name,
+              CAST(NULL AS STRING) AS tenant_uid,
+              CAST(NULL AS STRING) AS uid
+            ) AS idp,
+            struct(
+              CAST(NULL AS STRING) AS cmd_line,
+              CAST(NULL AS STRING) AS cpid,
+              CAST(NULL AS STRING) AS name,
+              CAST(NULL AS INT)    AS pid,
+              struct(
+                CAST(NULL AS TIMESTAMP) AS created_time,
+                CAST(NULL AS STRING)    AS credential_uid,
+                CAST(NULL AS STRING)    AS expiration_reason,
+                CAST(NULL AS TIMESTAMP) AS expiration_time,
+                CAST(NULL AS BOOLEAN)   AS is_mfa,
+                CAST(NULL AS BOOLEAN)   AS is_remote,
+                CAST(NULL AS BOOLEAN)   AS is_vpn,
+                CAST(NULL AS STRING)    AS issuer,
+                CAST(NULL AS STRING)    AS terminal,
+                CAST(NULL AS STRING)    AS uid,
+                CAST(NULL AS STRING)    AS uid_alt,
+                CAST(NULL AS STRING)    AS uuid
+              ) AS session,
+              CAST(NULL AS STRING) AS uid,
+              -- DDL requires STRUCT here, not ARRAY
+              named_struct(
+                'has_mfa', CAST(NULL AS BOOLEAN),
+                'name',    CAST(NULL AS STRING),
+                'type',    CAST(NULL AS STRING),
+                'type_id', CAST(NULL AS INT),
+                'uid',     CAST(NULL AS STRING)
+              ) AS user
+            ) AS process,
+            -- Top-level user (STRUCT) — populate from staged actor.user when available, else placeholders
+            named_struct(
+              'has_mfa', CAST(NULL AS BOOLEAN),
+              'name',    ocsf_actor.user.name,
+              'type',    ocsf_actor.user.type,
+              'type_id', CAST(ocsf_actor.user.type_id AS INT),
+              'uid',     ocsf_actor.user.uid
+            ) AS user
+          )
+
+      - name: api
+        expr: |
+          struct(
+            CAST(NULL AS STRING) AS operation,
+            struct(
+              CAST(NULL AS VARIANT) AS data,
+              CAST(NULL AS STRING)  AS uid
+            ) AS request,
+            struct(
+              CAST(NULL AS INT)     AS code,
+              CAST(NULL AS VARIANT) AS data,
+              CAST(NULL AS STRING)  AS error,
+              CAST(NULL AS STRING)  AS message
+            ) AS response
+          )
+
+
+      - name: entity
+        expr: |
+          struct(
+            CAST(NULL AS STRING)  AS name,
+            CAST(NULL AS STRING)  AS uid,
+            CAST(NULL AS VARIANT) AS data,
+            struct(CAST(NULL AS STRING) AS to) AS email,
+            struct(
+              CAST(NULL AS STRING) AS name,
+              CAST(NULL AS STRING) AS privileges,
+              CAST(NULL AS STRING) AS type,
+              CAST(NULL AS STRING) AS uid
+            ) AS `group`,
+            struct(
+              CAST(NULL AS STRING) AS city,
+              CAST(NULL AS STRING) AS continent,
+              CAST(NULL AS STRING) AS country,
+              CAST(NULL AS FLOAT)  AS lat,
+              CAST(NULL AS FLOAT)  AS long,
+              CAST(NULL AS STRING) AS postal_code
+            ) AS location,
+            CAST(array() AS ARRAY<STRUCT<is_applied: BOOLEAN, name: STRING, uid: STRING, version: STRING>>) AS policies,
+            CAST(NULL AS STRING)  AS type,
+            CAST(NULL AS INT)     AS type_id,
+            -- DDL requires STRUCT here, not STRING
+            named_struct(
+              'has_mfa', CAST(NULL AS BOOLEAN),
+              'name',    CAST(NULL AS STRING),
+              'type',    CAST(NULL AS STRING),
+              'type_id', CAST(NULL AS INT),
+              'uid',     CAST(NULL AS STRING)
+            ) AS user,
+            CAST(NULL AS STRING)  AS version
+          )
+
+      - name: access_list
+        expr: CAST(array() AS ARRAY<STRING>)
+      - name: access_mask
+        expr: CAST(NULL AS INT)
+      - name: cloud
+        expr: |
+          struct(
+            struct(CAST(NULL AS STRING) AS name, CAST(NULL AS STRING) AS uid) AS account,
+            CAST(NULL AS STRING) AS cloud_partition,
+            CAST(NULL AS STRING) AS project_uid,
+            CAST(NULL AS STRING) AS provider,
+            CAST(NULL AS STRING) AS region,
+            CAST(NULL AS STRING) AS zone
+          )
+      - name: comment
+        expr: CAST(NULL AS STRING)
+
+      - name: device
+        expr: |
+          struct(
+            CAST(NULL AS TIMESTAMP) AS created_time,
+            CAST(NULL AS STRING)    AS desc,
+            CAST(NULL AS STRING)    AS domain,
+            CAST(array() AS ARRAY<STRUCT<name: STRING, privileges: STRING, type: STRING, uid: STRING>>) AS groups,
+            CAST(NULL AS STRING)    AS hostname,
+            CAST(NULL AS STRING)    AS ip,
+            CAST(NULL AS BOOLEAN)   AS is_compliant,
+            CAST(NULL AS BOOLEAN)   AS is_managed,
+            CAST(NULL AS BOOLEAN)   AS is_personal,
+            CAST(NULL AS BOOLEAN)   AS is_trusted,
+            CAST(NULL AS STRING)    AS name,
+            CAST(NULL AS STRING)    AS region,
+            CAST(NULL AS STRING)    AS risk_level,
+            CAST(NULL AS INT)       AS risk_level_id,
+            CAST(NULL AS INT)       AS risk_score,
+            CAST(NULL AS STRING)    AS subnet,
+            CAST(NULL AS STRING)    AS type,
+            CAST(NULL AS INT)       AS type_id,
+            CAST(NULL AS STRING)    AS uid
+          )
+
+      - name: disposition
+        expr: CAST(NULL AS STRING)
+      - name: disposition_id
+        expr: CAST(NULL AS INT)
+
+      - name: enrichments
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<data: VARIANT, desc: STRING, name: STRING, value: STRING>>)
+      - name: observables
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<name: STRING, type: STRING, value: STRING>>)
+
       - name: message
         from: ocsf_message
+      - name: metadata
+        from: ocsf_metadata
+
       - name: severity
         from: ocsf_severity
       - name: severity_id
         from: ocsf_severity_id
-      - name: actor
-        from: ocsf_actor
-      - name: device
-        from: ocsf_device
-      - name: http_request
-        from: ocsf_http_request
-      - name: src_endpoint
-        from: ocsf_src_endpoint
-      - name: risk_details
-        expr: NULLIF(debugContext.debugData.risk, '')
-      - name: risk_level
-        expr: |
-          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
-            WHEN 'INFO' THEN 'Info' 
-            WHEN 'LOW' THEN 'Low' 
-            WHEN 'MEDIUM' THEN 'Medium' 
-            WHEN 'HIGH' THEN 'High' 
-            WHEN 'CRITICAL' THEN 'Critical' 
-            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
-          END
-      - name: risk_level_id
-        expr: |
-          CASE UPPER(regexp_extract(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
-            WHEN 'INFO' THEN 0 
-            WHEN 'LOW' THEN 1 
-            WHEN 'MEDIUM' THEN 2 
-            WHEN 'HIGH' THEN 3 
-            WHEN 'CRITICAL' THEN 4 
-            ELSE 99
-          END
+
+      - name: status
+        from: ocsf_status
+      - name: status_code
+        from: ocsf_status_code
+      - name: status_detail
+        from: ocsf_status_detail
+      - name: status_id
+        from: ocsf_status_id
+
+      - name: time
+        from: ocsf_time
+      - name: timezone_offset
+        expr: CAST(0 AS INT)
+
+      - name: raw_data
+        expr: parse_json(to_json(struct(*)))
+      - name: unmapped
+        expr: CAST(NULL AS VARIANT)
 
   - name: user_access
     input: okta_syslog_ocsf_staged
     filter: ocsf_class_uid = 3005
-    
     fields:
-      - name: category_uid
-        expr: CAST('3' AS INT)
-      - name: category_name
-        literal: Identity & Access Management
-      - name: type_uid
-        expr: (ocsf_class_uid * 100) + (`activity`.`3005`.`id`)
-      - name: class_uid
-        from: ocsf_class_uid
-      - name: class_name
-        from: ocsf_class_name
+      - name: action
+        from: action.3005.name
+      - name: action_id
+        from: action.3005.id
+      - name: activity
+        from: activity.3005.name
       - name: activity_id
         from: activity.3005.id
       - name: activity_name
         from: activity.3005.name
-      - name: action_id
-        from: action.3005.id
-      - name: action
-        from: action.3005.name
+
+      - name: category_name
+        literal: Identity & Access Management
+      - name: category_uid
+        expr: CAST(3 AS INT)
+
+      - name: class_name
+        from: ocsf_class_name
+      - name: class_uid
+        from: ocsf_class_uid
+
+      - name: type_uid
+        expr: CAST((ocsf_class_uid * 100) + (`activity`.`3005`.`id`) AS BIGINT)
+      - name: type_name
+        expr: |
+          CASE
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3005`.`id`) = 300500) THEN 'User Access: Unknown'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3005`.`id`) = 300501) THEN 'User Access: Assign Privileges'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3005`.`id`) = 300502) THEN 'User Access: Revoke Privileges'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3005`.`id`) = 300599) THEN 'User Access: Other'
+          END
+
       - name: metadata
         from: ocsf_metadata
-      - name: start_time
-        expr: TRY_TO_TIMESTAMP(published)
+
       - name: status
         from: ocsf_status
       - name: status_id
@@ -1379,224 +1929,184 @@ gold:
         from: ocsf_status_code
       - name: status_detail
         from: ocsf_status_detail
+
       - name: time
         from: ocsf_time
+      - name: timezone_offset
+        expr: CAST(0 AS INT)
+
       - name: message
         from: ocsf_message
+
       - name: severity
         from: ocsf_severity
       - name: severity_id
         from: ocsf_severity_id
-      - name: actor
-        from: ocsf_actor
-      - name: device
-        from: ocsf_device
-      - name: http_request
-        from: ocsf_http_request
-      - name: src_endpoint
-        from: ocsf_src_endpoint
-      - name: risk_details
-        expr: NULLIF(debugContext.debugData.risk, '')
-      - name: risk_level
-        expr: |
-          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
-            WHEN 'INFO' THEN 'Info' 
-            WHEN 'LOW' THEN 'Low' 
-            WHEN 'MEDIUM' THEN 'Medium' 
-            WHEN 'HIGH' THEN 'High' 
-            WHEN 'CRITICAL' THEN 'Critical' 
-            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
-          END
-      - name: risk_level_id
-        expr: |
-          CASE UPPER(regexp_extract(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
-            WHEN 'INFO' THEN 0 
-            WHEN 'LOW' THEN 1 
-            WHEN 'MEDIUM' THEN 2 
-            WHEN 'HIGH' THEN 3 
-            WHEN 'CRITICAL' THEN 4 
-            ELSE 99
-          END
 
+      - name: privileges
+        expr: CAST(array() AS ARRAY<STRING>)
+
+      - name: resource
+        expr: |
+          struct(
+            CAST(NULL AS STRING) AS hostname,
+            CAST(NULL AS STRING) AS ip,
+            CAST(NULL AS STRING) AS name,
+            CAST(NULL AS STRING) AS uid
+          )
+
+      # actor STRUCT
+      - name: actor
+        expr: |
+          struct(
+            CAST(NULL AS STRING) AS app_name,
+            CAST(NULL AS STRING) AS app_uid,
+            array(named_struct('decision', CAST(NULL AS STRING))) AS authorizations,
+            struct(
+              CAST(NULL AS STRING) AS domain,
+              CAST(NULL AS STRING) AS name,
+              CAST(NULL AS STRING) AS protocol_name,
+              CAST(NULL AS STRING) AS tenant_uid,
+              CAST(NULL AS STRING) AS uid
+            ) AS idp,
+            struct(
+              CAST(NULL AS STRING) AS cmd_line,
+              CAST(NULL AS STRING) AS cpid,
+              CAST(NULL AS STRING) AS name,
+              CAST(NULL AS INT)    AS pid,
+              struct(
+                CAST(NULL AS TIMESTAMP) AS created_time,
+                CAST(NULL AS STRING)    AS credential_uid,
+                CAST(NULL AS STRING)    AS expiration_reason,
+                CAST(NULL AS TIMESTAMP) AS expiration_time,
+                CAST(NULL AS BOOLEAN)   AS is_mfa,
+                CAST(NULL AS BOOLEAN)   AS is_remote,
+                CAST(NULL AS BOOLEAN)   AS is_vpn,
+                CAST(NULL AS STRING)    AS issuer,
+                CAST(NULL AS STRING)    AS terminal,
+                CAST(NULL AS STRING)    AS uid,
+                CAST(NULL AS STRING)    AS uid_alt,
+                CAST(NULL AS STRING)    AS uuid
+              ) AS session,
+              CAST(NULL AS STRING) AS uid,
+              struct(
+                CAST(NULL AS BOOLEAN) AS has_mfa,
+                CAST(NULL AS STRING)  AS name,
+                CAST(NULL AS STRING)  AS type,
+                CAST(NULL AS INT)     AS type_id,
+                CAST(NULL AS STRING)  AS uid
+              ) AS user
+            ) AS process,
+            struct(
+              CAST(NULL AS BOOLEAN) AS has_mfa,
+              CAST(NULL AS STRING)  AS name,
+              CAST(NULL AS STRING)  AS type,
+              CAST(NULL AS INT)     AS type_id,
+              CAST(NULL AS STRING)  AS uid
+            ) AS user
+          )
+
+      - name: enrichments
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<data: VARIANT, desc: STRING, name: STRING, value: STRING>>)
+      - name: observables
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<name: STRING, type: STRING, value: STRING>>)
+
+      - name: src_endpoint
+        expr: |
+          struct(
+            CAST(NULL AS STRING)           AS domain,
+            ocsf_src_endpoint.hostname     AS hostname,
+            CAST(NULL AS STRING)           AS instance_uid,
+            CAST(NULL AS STRING)           AS interface_name,
+            CAST(NULL AS STRING)           AS interface_uid,
+            ocsf_src_endpoint.ip           AS ip,
+            ocsf_src_endpoint.name         AS name,
+            CAST(NULL AS INT)              AS port,
+            CAST(NULL AS STRING)           AS svc_name,
+            ocsf_src_endpoint.type         AS type,
+            CAST(ocsf_src_endpoint.type_id AS INT) AS type_id,
+            ocsf_src_endpoint.uid          AS uid,
+            struct(
+              CAST(NULL AS STRING) AS city,
+              CAST(NULL AS STRING) AS continent,
+              CAST(NULL AS STRING) AS country,
+              CAST(NULL AS FLOAT)  AS lat,
+              CAST(NULL AS FLOAT)  AS long,
+              CAST(NULL AS STRING) AS postal_code
+            ) AS location,
+            CAST(NULL AS STRING) AS mac,
+            CAST(NULL AS STRING) AS vpc_uid,
+            CAST(NULL AS STRING) AS zone
+          )
+
+      - name: user
+        expr: |
+          named_struct(
+            'has_mfa', CAST(NULL AS BOOLEAN),
+            'name',    ocsf_actor.user.name,
+            'type',    ocsf_actor.user.type,
+            'type_id', CAST(ocsf_actor.user.type_id AS INT),
+            'uid',     ocsf_actor.user.uid
+          )
+
+      - name: raw_data
+        expr: parse_json(to_json(struct(*)))
+      - name: unmapped
+        expr: CAST(NULL AS VARIANT)
 
   - name: group_management
     input: okta_syslog_ocsf_staged
     filter: ocsf_class_uid = 3006
-    
     fields:
-      - name: category_uid
-        expr: CAST('3' AS INT)
-      - name: category_name
-        literal: Identity & Access Management
-      - name: type_uid
-        expr: (ocsf_class_uid * 100) + (`activity`.`3006`.`id`)
-      - name: class_uid
-        from: ocsf_class_uid
-      - name: class_name
-        from: ocsf_class_name
+      - name: action
+        from: action.3006.name
+      - name: action_id
+        from: action.3006.id
+      - name: activity
+        from: activity.3006.name
       - name: activity_id
         from: activity.3006.id
       - name: activity_name
         from: activity.3006.name
-      - name: action_id
-        from: action.3006.id
-      - name: action
-        from: action.3006.name
-      - name: metadata
-        from: ocsf_metadata
-      - name: start_time
-        expr: TRY_TO_TIMESTAMP(published)
-      - name: status
-        from: ocsf_status
-      - name: status_id
-        from: ocsf_status_id
-      - name: status_code
-        from: ocsf_status_code
-      - name: status_detail
-        from: ocsf_status_detail
-      - name: time
-        from: ocsf_time
-      - name: message
-        from: ocsf_message
-      - name: severity
-        from: ocsf_severity
-      - name: severity_id
-        from: ocsf_severity_id
-      - name: actor
-        from: ocsf_actor
-      - name: device
-        from: ocsf_device
-      - name: http_request
-        from: ocsf_http_request
-      - name: src_endpoint
-        from: ocsf_src_endpoint
-      - name: risk_details
-        expr: NULLIF(debugContext.debugData.risk, '')
-      - name: risk_level
-        expr: |
-          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
-            WHEN 'INFO' THEN 'Info' 
-            WHEN 'LOW' THEN 'Low' 
-            WHEN 'MEDIUM' THEN 'Medium' 
-            WHEN 'HIGH' THEN 'High' 
-            WHEN 'CRITICAL' THEN 'Critical' 
-            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
-          END
-      - name: risk_level_id
-        expr: |
-          CASE UPPER(regexp_extract(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
-            WHEN 'INFO' THEN 0 
-            WHEN 'LOW' THEN 1 
-            WHEN 'MEDIUM' THEN 2 
-            WHEN 'HIGH' THEN 3 
-            WHEN 'CRITICAL' THEN 4 
-            ELSE 99
-          END
 
-
-  - name: web_resources_activity
-    input: okta_syslog_ocsf_staged
-    filter: ocsf_class_uid = 6001
-    
-    fields:
-      - name: category_uid
-        expr: CAST('6' AS INT)
       - name: category_name
-        literal: Application
-      - name: type_uid
-        expr: (ocsf_class_uid * 100) + (`activity`.`6001`.`id`)
-      - name: class_uid
-        from: ocsf_class_uid
+        literal: Identity & Access Management
+      - name: category_uid
+        expr: CAST(3 AS INT)
+
       - name: class_name
         from: ocsf_class_name
-      - name: activity_id
-        from: activity.6001.id
-      - name: activity_name
-        from: activity.6001.name
-      - name: action_id
-        from: action.6001.id
-      - name: action
-        from: action.6001.name
-      - name: metadata
-        from: ocsf_metadata
-      - name: start_time
-        expr: TRY_TO_TIMESTAMP(published)
-      - name: status
-        from: ocsf_status
-      - name: status_id
-        from: ocsf_status_id
-      - name: status_code
-        from: ocsf_status_code
-      - name: status_detail
-        from: ocsf_status_detail
-      - name: time
-        from: ocsf_time
-      - name: message
-        from: ocsf_message
-      - name: severity
-        from: ocsf_severity
-      - name: severity_id
-        from: ocsf_severity_id
-      - name: actor
-        from: ocsf_actor
-      - name: device
-        from: ocsf_device
-      - name: http_request
-        from: ocsf_http_request
-      - name: src_endpoint
-        from: ocsf_src_endpoint
-      - name: risk_details
-        expr: NULLIF(debugContext.debugData.risk, '')
-      - name: risk_level
-        expr: |
-          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
-            WHEN 'INFO' THEN 'Info' 
-            WHEN 'LOW' THEN 'Low' 
-            WHEN 'MEDIUM' THEN 'Medium' 
-            WHEN 'HIGH' THEN 'High' 
-            WHEN 'CRITICAL' THEN 'Critical' 
-            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
-          END
-      - name: risk_level_id
-        expr: |
-          CASE UPPER(regexp_extract(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
-            WHEN 'INFO' THEN 0 
-            WHEN 'LOW' THEN 1 
-            WHEN 'MEDIUM' THEN 2 
-            WHEN 'HIGH' THEN 3 
-            WHEN 'CRITICAL' THEN 4 
-            ELSE 99
-          END
-
-
-
-  - name: application_lifecycle
-    input: okta_syslog_ocsf_staged
-    filter: ocsf_class_uid = 6002
-    
-    fields:
-      - name: category_uid
-        expr: CAST('6' AS INT)
-      - name: category_name
-        literal: Application
-      - name: type_uid
-        expr: (ocsf_class_uid * 100) + (`activity`.`6002`.`id`)
       - name: class_uid
         from: ocsf_class_uid
-      - name: class_name
-        from: ocsf_class_name
-      - name: activity_id
-        from: activity.6002.id
-      - name: activity_name
-        from: activity.6002.name
-      - name: action_id
-        from: action.6002.id
-      - name: action
-        from: action.6002.name
+
+      - name: enrichments
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<data: VARIANT, desc: STRING, name: STRING, value: STRING>>)
+
+      - name: type_uid
+        expr: CAST((ocsf_class_uid * 100) + (`activity`.`3006`.`id`) AS BIGINT)
+      - name: type_name
+        expr: |
+          CASE
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3006`.`id`) = 300600) THEN 'Group Management: Unknown'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3006`.`id`) = 300601) THEN 'Group Management: Assign Privileges'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3006`.`id`) = 300602) THEN 'Group Management: Revoke Privileges'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3006`.`id`) = 300603) THEN 'Group Management: Add User'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3006`.`id`) = 300604) THEN 'Group Management: Remove User'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3006`.`id`) = 300605) THEN 'Group Management: Delete'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3006`.`id`) = 300606) THEN 'Group Management: Create'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`3006`.`id`) = 300699) THEN 'Group Management: Other'
+          END
+
+      - name: observables
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<name: STRING, type: STRING, value: STRING>>)
+          
       - name: metadata
         from: ocsf_metadata
-      - name: start_time
-        expr: TRY_TO_TIMESTAMP(published)
+
       - name: status
         from: ocsf_status
       - name: status_id
@@ -1605,87 +2115,187 @@ gold:
         from: ocsf_status_code
       - name: status_detail
         from: ocsf_status_detail
+
       - name: time
         from: ocsf_time
+      - name: timezone_offset
+        expr: CAST(0 AS INT)
+
       - name: message
         from: ocsf_message
+
       - name: severity
         from: ocsf_severity
       - name: severity_id
         from: ocsf_severity_id
-      - name: actor
-        from: ocsf_actor
-      - name: device
-        from: ocsf_device
-      - name: risk_details
-        expr: NULLIF(debugContext.debugData.risk, '')
-      - name: risk_level
-        expr: |
-          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
-            WHEN 'INFO' THEN 'Info' 
-            WHEN 'LOW' THEN 'Low' 
-            WHEN 'MEDIUM' THEN 'Medium' 
-            WHEN 'HIGH' THEN 'High' 
-            WHEN 'CRITICAL' THEN 'Critical' 
-            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
-          END
-      - name: risk_level_id
-        expr: |
-          CASE UPPER(regexp_extract(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
-            WHEN 'INFO' THEN 0 
-            WHEN 'LOW' THEN 1 
-            WHEN 'MEDIUM' THEN 2 
-            WHEN 'HIGH' THEN 3 
-            WHEN 'CRITICAL' THEN 4 
-            ELSE 99
-          END
 
-      # event specific fields
       - name: disposition
-        expr: |
-          CASE 
-            WHEN UPPER(outcome.result) = 'SUCCESS' THEN 'Allowed' 
-            WHEN UPPER(outcome.result) IN ('FAILED', 'FAILURE') THEN 'Blocked'
-            ELSE COALESCE(NULLIF(outcome.result, ''), 'Unknown')  
-          END
+        expr: CAST(NULL AS STRING)
       - name: disposition_id
+        expr: CAST(NULL AS INT)
+
+      # actor STRUCT
+      - name: actor
         expr: |
-          CASE 
-            WHEN UPPER(outcome.result) = 'SUCCESS' THEN 1 
-            WHEN UPPER(outcome.result) IN ('FAILED', 'FAILURE') THEN 2 
-            WHEN NULLIF(outcome.result, '') IS NOT NULL THEN 99
-            ELSE 0
-          END
+          struct(
+            CAST(NULL AS STRING) AS app_name,
+            CAST(NULL AS STRING) AS app_uid,
+            array(named_struct('decision', CAST(NULL AS STRING))) AS authorizations,
+            struct(
+              CAST(NULL AS STRING) AS domain,
+              CAST(NULL AS STRING) AS name,
+              CAST(NULL AS STRING) AS protocol_name,
+              CAST(NULL AS STRING) AS tenant_uid,
+              CAST(NULL AS STRING) AS uid
+            ) AS idp,
+            struct(
+              CAST(NULL AS STRING) AS cmd_line,
+              CAST(NULL AS STRING) AS cpid,
+              CAST(NULL AS STRING) AS name,
+              CAST(NULL AS INT)    AS pid,
+              struct(
+                CAST(NULL AS TIMESTAMP) AS created_time,
+                CAST(NULL AS STRING)    AS credential_uid,
+                CAST(NULL AS STRING)    AS expiration_reason,
+                CAST(NULL AS TIMESTAMP) AS expiration_time,
+                CAST(NULL AS BOOLEAN)   AS is_mfa,
+                CAST(NULL AS BOOLEAN)   AS is_remote,
+                CAST(NULL AS BOOLEAN)   AS is_vpn,
+                ocsf_actor.session.issuer AS issuer,
+                CAST(NULL AS STRING)    AS terminal,
+                ocsf_actor.session.uid  AS uid,
+                CAST(NULL AS STRING)    AS uid_alt,
+                CAST(NULL AS STRING)    AS uuid
+              ) AS session,
+              CAST(NULL AS STRING) AS uid,
+              -- DDL requires a single STRUCT here (not an array)
+              named_struct(
+                'has_mfa', CAST(NULL AS BOOLEAN),
+                'name',    CAST(NULL AS STRING),
+                'type',    CAST(NULL AS STRING),
+                'type_id', CAST(NULL AS INT),
+                'uid',     CAST(NULL AS STRING)
+              ) AS user
+            ) AS process,
+            -- Top-level user is also a single STRUCT in the DDL
+            named_struct(
+              'has_mfa', CAST(NULL AS BOOLEAN),
+              'name',    ocsf_actor.user.name,
+              'type',    ocsf_actor.user.type,
+              'type_id', CAST(ocsf_actor.user.type_id AS INT),
+              'uid',     ocsf_actor.user.uid
+            ) AS user
+          )
+          
+      - name: api
+        expr: |
+          struct(
+            CAST(NULL AS STRING) AS operation,
+            struct(
+              CAST(NULL AS VARIANT) AS data,
+              CAST(NULL AS STRING)  AS uid
+            ) AS request,
+            struct(
+              CAST(NULL AS INT)     AS code,
+              CAST(NULL AS VARIANT) AS data,
+              CAST(NULL AS STRING)  AS error,
+              CAST(NULL AS STRING)  AS message
+            ) AS response
+          )
 
+      - name: group
+        expr: |
+          struct(
+            CAST(NULL AS STRING) AS name,
+            CAST(NULL AS STRING) AS privileges,
+            CAST(NULL AS STRING) AS type,
+            CAST(NULL AS STRING) AS uid
+          )
 
+      - name: privileges
+        expr: CAST(array() AS ARRAY<STRING>)
+
+      - name: src_endpoint
+        expr: |
+          struct(
+            CAST(NULL AS STRING)           AS domain,
+            ocsf_src_endpoint.hostname     AS hostname,
+            CAST(NULL AS STRING)           AS instance_uid,
+            CAST(NULL AS STRING)           AS interface_name,
+            CAST(NULL AS STRING)           AS interface_uid,
+            ocsf_src_endpoint.ip           AS ip,
+            ocsf_src_endpoint.name         AS name,
+            CAST(NULL AS INT)              AS port,
+            CAST(NULL AS STRING)           AS svc_name,
+            ocsf_src_endpoint.type         AS type,
+            CAST(ocsf_src_endpoint.type_id AS INT) AS type_id,
+            ocsf_src_endpoint.uid          AS uid,
+            struct(
+              CAST(NULL AS STRING) AS city,
+              CAST(NULL AS STRING) AS continent,
+              CAST(NULL AS STRING) AS country,
+              CAST(NULL AS FLOAT)  AS lat,
+              CAST(NULL AS FLOAT)  AS long,
+              CAST(NULL AS STRING) AS postal_code
+            ) AS location,
+            CAST(NULL AS STRING) AS mac,
+            CAST(NULL AS STRING) AS vpc_uid,
+            CAST(NULL AS STRING) AS zone
+          )
+
+      - name: resource
+        expr: |
+          struct(
+            CAST(NULL AS STRING) AS hostname,
+            CAST(NULL AS STRING) AS ip,
+            CAST(NULL AS STRING) AS name,
+            CAST(NULL AS STRING) AS uid
+          )
+
+      - name: raw_data
+        expr: parse_json(to_json(struct(*)))
+      - name: unmapped
+        expr: CAST(NULL AS VARIANT)
 
   - name: api_activity
     input: okta_syslog_ocsf_staged
     filter: ocsf_class_uid = 6003
-    
     fields:
-      - name: category_uid
-        expr: CAST('6' AS INT)
-      - name: category_name
-        literal: Application
-      - name: type_uid
-        expr: (ocsf_class_uid * 100) + (`activity`.`6003`.`id`)
-      - name: class_uid
-        from: ocsf_class_uid
-      - name: class_name
-        from: ocsf_class_name
-      - name: activity_id
-        from: activity.6003.id
-      - name: activity_name
-        from: activity.6003.name
-      - name: action_id
-        from: action.6003.id
       - name: action
         from: action.6003.name
+      - name: action_id
+        from: action.6003.id
+      - name: activity_name
+        from: activity.6003.name
+      - name: activity_id
+        from: activity.6003.id
+
+      - name: category_name
+        literal: Application
+      - name: category_uid
+        expr: CAST(6 AS INT)
+
+      - name: class_name
+        from: ocsf_class_name
+      - name: class_uid
+        from: ocsf_class_uid
+
+      - name: type_uid
+        expr: CAST((ocsf_class_uid * 100) + (`activity`.`6003`.`id`) AS BIGINT)
+      - name: type_name
+        expr: |
+          CASE
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`6003`.`id`) = 600300) THEN 'API Activity: Unknown'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`6003`.`id`) = 600301) THEN 'API Activity: Create'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`6003`.`id`) = 600302) THEN 'API Activity: Read'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`6003`.`id`) = 600303) THEN 'API Activity: Update'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`6003`.`id`) = 600304) THEN 'API Activity: Delete'
+            WHEN ((ocsf_class_uid * 100) + (`activity`.`6003`.`id`) = 600399) THEN 'API Activity: Other'
+          END
+
       - name: metadata
         from: ocsf_metadata
-      - name: start_time
-        expr: TRY_TO_TIMESTAMP(published)
+
       - name: status
         from: ocsf_status
       - name: status_id
@@ -1694,134 +2304,187 @@ gold:
         from: ocsf_status_code
       - name: status_detail
         from: ocsf_status_detail
+
       - name: time
         from: ocsf_time
+      - name: timezone_offset
+        expr: CAST(0 AS INT)
+
       - name: message
         from: ocsf_message
+
       - name: severity
         from: ocsf_severity
       - name: severity_id
         from: ocsf_severity_id
-      - name: actor
-        from: ocsf_actor
-      - name: device
-        from: ocsf_device
-      - name: http_request
-        from: ocsf_http_request
-      - name: src_endpoint
-        from: ocsf_src_endpoint
-      - name: risk_details
-        expr: NULLIF(debugContext.debugData.risk, '')
-      - name: risk_level
-        expr: |
-          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
-            WHEN 'INFO' THEN 'Info' 
-            WHEN 'LOW' THEN 'Low' 
-            WHEN 'MEDIUM' THEN 'Medium' 
-            WHEN 'HIGH' THEN 'High' 
-            WHEN 'CRITICAL' THEN 'Critical' 
-            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
-          END
-      - name: risk_level_id
-        expr: |
-          CASE UPPER(regexp_extract(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
-            WHEN 'INFO' THEN 0 
-            WHEN 'LOW' THEN 1 
-            WHEN 'MEDIUM' THEN 2 
-            WHEN 'HIGH' THEN 3 
-            WHEN 'CRITICAL' THEN 4 
-            ELSE 99
-          END
 
-      # event specific fields
+      # actor STRUCT
+      - name: actor
+        expr: |
+          struct(
+            CAST(NULL AS STRING) AS app_name,
+            CAST(NULL AS STRING) AS app_uid,
+            array(named_struct('decision', CAST(NULL AS STRING))) AS authorizations,
+            struct(
+              CAST(NULL AS STRING) AS domain,
+              CAST(NULL AS STRING) AS name,
+              CAST(NULL AS STRING) AS protocol_name,
+              CAST(NULL AS STRING) AS tenant_uid,
+              CAST(NULL AS STRING) AS uid
+            ) AS idp,
+            struct(
+              CAST(NULL AS STRING) AS cmd_line,
+              CAST(NULL AS STRING) AS cpid,
+              CAST(NULL AS STRING) AS name,
+              CAST(NULL AS INT)    AS pid,
+              struct(
+                CAST(NULL AS TIMESTAMP) AS created_time,
+                CAST(NULL AS STRING)    AS credential_uid,
+                CAST(NULL AS STRING)    AS expiration_reason,
+                CAST(NULL AS TIMESTAMP) AS expiration_time,
+                CAST(NULL AS BOOLEAN)   AS is_mfa,
+                CAST(NULL AS BOOLEAN)   AS is_remote,
+                CAST(NULL AS BOOLEAN)   AS is_vpn,
+                ocsf_actor.session.issuer AS issuer,
+                CAST(NULL AS STRING)    AS terminal,
+                ocsf_actor.session.uid  AS uid,
+                CAST(NULL AS STRING)    AS uid_alt,
+                CAST(NULL AS STRING)    AS uuid
+              ) AS session,
+              CAST(NULL AS STRING) AS uid,
+              -- REQUIRED: single STRUCT (not array)
+              named_struct(
+                'has_mfa', CAST(NULL AS BOOLEAN),
+                'name',    CAST(NULL AS STRING),
+                'type',    CAST(NULL AS STRING),
+                'type_id', CAST(NULL AS INT),
+                'uid',     CAST(NULL AS STRING)
+              ) AS user
+            ) AS process,
+            -- REQUIRED: top-level user is also a single STRUCT
+            named_struct(
+              'has_mfa', CAST(NULL AS BOOLEAN),
+              'name',    ocsf_actor.user.name,
+              'type',    ocsf_actor.user.type,
+              'type_id', CAST(ocsf_actor.user.type_id AS INT),
+              'uid',     ocsf_actor.user.uid
+            ) AS user
+          )
+
+      # endpoints
+      - name: dst_endpoint
+        expr: |
+          struct(
+            CAST(NULL AS STRING) AS domain,
+            CAST(NULL AS STRING) AS hostname,
+            CAST(NULL AS STRING) AS instance_uid,
+            CAST(NULL AS STRING) AS interface_name,
+            CAST(NULL AS STRING) AS interface_uid,
+            CAST(NULL AS STRING) AS ip,
+            CAST(NULL AS STRING) AS name,
+            CAST(NULL AS INT)    AS port,
+            CAST(NULL AS STRING) AS svc_name,
+            CAST(NULL AS STRING) AS type,
+            CAST(NULL AS INT)    AS type_id,
+            CAST(NULL AS STRING) AS uid,
+            struct(
+              CAST(NULL AS STRING) AS city,
+              CAST(NULL AS STRING) AS continent,
+              CAST(NULL AS STRING) AS country,
+              CAST(NULL AS FLOAT)  AS lat,
+              CAST(NULL AS FLOAT)  AS long,
+              CAST(NULL AS STRING) AS postal_code
+            ) AS location,
+            CAST(NULL AS STRING) AS mac,
+            CAST(NULL AS STRING) AS vpc_uid,
+            CAST(NULL AS STRING) AS zone
+          )
+      - name: src_endpoint
+        expr: |
+          struct(
+            CAST(NULL AS STRING)           AS domain,
+            ocsf_src_endpoint.hostname     AS hostname,
+            CAST(NULL AS STRING)           AS instance_uid,
+            CAST(NULL AS STRING)           AS interface_name,
+            CAST(NULL AS STRING)           AS interface_uid,
+            ocsf_src_endpoint.ip           AS ip,
+            ocsf_src_endpoint.name         AS name,
+            CAST(NULL AS INT)              AS port,
+            CAST(NULL AS STRING)           AS svc_name,
+            ocsf_src_endpoint.type         AS type,
+            CAST(ocsf_src_endpoint.type_id AS INT) AS type_id,
+            ocsf_src_endpoint.uid          AS uid,
+            struct(
+              CAST(NULL AS STRING) AS city,
+              CAST(NULL AS STRING) AS continent,
+              CAST(NULL AS STRING) AS country,
+              CAST(NULL AS FLOAT)  AS lat,
+              CAST(NULL AS FLOAT)  AS long,
+              CAST(NULL AS STRING) AS postal_code
+            ) AS location,
+            CAST(NULL AS STRING) AS mac,
+            CAST(NULL AS STRING) AS vpc_uid,
+            CAST(NULL AS STRING) AS zone
+          )
+
+      # http_request / http_response match DDL (url STRING)
+      - name: http_request
+        expr: |
+          struct(
+            CAST(NULL AS STRING)  AS args,
+            CAST(NULL AS INT)     AS body_length,
+            CAST(array() AS ARRAY<STRUCT<name: STRING, value: STRING>>) AS http_headers,
+            CAST(NULL AS STRING)  AS http_method,
+            CAST(NULL AS INT)     AS length,
+            CAST(NULL AS STRING)  AS referrer,
+            CAST(NULL AS STRING)  AS url,
+            CAST(NULL AS STRING)  AS user_agent,
+            CAST(NULL AS STRING)  AS version
+          )
+      - name: http_response
+        expr: |
+          struct(
+            CAST(NULL AS INT)     AS body_length,
+            CAST(NULL AS INT)     AS code,
+            CAST(NULL AS STRING)  AS content_type,
+            CAST(array() AS ARRAY<STRUCT<name: STRING, value: STRING>>) AS http_headers,
+            CAST(NULL AS INT)     AS latency,
+            CAST(NULL AS INT)     AS length,
+            CAST(NULL AS STRING)  AS message,
+            CAST(NULL AS STRING)  AS status
+          )
+
+      - name: resources
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<hostname: STRING, ip: STRING, name: STRING, uid: STRING>>)
+
       - name: disposition
         expr: |
           CASE 
             WHEN UPPER(outcome.result) = 'SUCCESS' THEN 'Allowed' 
-            WHEN UPPER(outcome.result) IN ('FAILED', 'FAILURE') THEN 'Blocked'
-            ELSE COALESCE(NULLIF(outcome.result, ''), 'Unknown')  
+            WHEN UPPER(outcome.result) IN ('FAILED','FAILURE') THEN 'Blocked'
+            ELSE COALESCE(NULLIF(outcome.result,''),'Unknown')
           END
       - name: disposition_id
         expr: |
           CASE 
             WHEN UPPER(outcome.result) = 'SUCCESS' THEN 1 
-            WHEN UPPER(outcome.result) IN ('FAILED', 'FAILURE') THEN 2 
-            WHEN NULLIF(outcome.result, '') IS NOT NULL THEN 99
+            WHEN UPPER(outcome.result) IN ('FAILED','FAILURE') THEN 2 
+            WHEN NULLIF(outcome.result,'') IS NOT NULL THEN 99
             ELSE 0
           END
 
-  - name: application_error
-    input: okta_syslog_ocsf_staged
-    filter: ocsf_class_uid = 6008
-
-    fields:
-      - name: category_uid
-        expr: CAST('6' AS INT)
-      - name: category_name
-        literal: Application
-      - name: type_uid
-        expr: (ocsf_class_uid * 100) + (`activity`.`6008`.`id`)
-      - name: class_uid
-        from: ocsf_class_uid
-      - name: class_name
-        from: ocsf_class_name
-      - name: activity_id
-        from: activity.6008.id
-      - name: activity_name
-        from: activity.6008.name
-      - name: action_id
-        from: action.6008.id
-      - name: action
-        from: action.6008.name
-      - name: metadata
-        from: ocsf_metadata
       - name: start_time
-        expr: TRY_TO_TIMESTAMP(published)
-      - name: status
-        from: ocsf_status
-      - name: status_id
-        from: ocsf_status_id
-      - name: status_code
-        from: ocsf_status_code
-      - name: status_detail
-        from: ocsf_status_detail
-      - name: time
         from: ocsf_time
-      - name: message
-        from: ocsf_message
-      - name: severity
-        from: ocsf_severity
-      - name: severity_id
-        from: ocsf_severity_id
-      - name: actor
-        from: ocsf_actor
-      - name: device
-        from: ocsf_device
-      - name: risk_details
-        expr: NULLIF(debugContext.debugData.risk, '')
-      - name: risk_level
-        expr: |
-          CASE UPPER(REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
-            WHEN 'INFO' THEN 'Info' 
-            WHEN 'LOW' THEN 'Low' 
-            WHEN 'MEDIUM' THEN 'Medium' 
-            WHEN 'HIGH' THEN 'High' 
-            WHEN 'CRITICAL' THEN 'Critical' 
-            ELSE REGEXP_EXTRACT(debugContext.debugData.risk, 'level=([^,}]+)', 1)
-          END
-      - name: risk_level_id
-        expr: |
-          CASE UPPER(regexp_extract(debugContext.debugData.risk, 'level=([^,}]+)', 1)) 
-            WHEN 'INFO' THEN 0 
-            WHEN 'LOW' THEN 1 
-            WHEN 'MEDIUM' THEN 2 
-            WHEN 'HIGH' THEN 3 
-            WHEN 'CRITICAL' THEN 4 
-            ELSE 99
-          END
 
-      # event specific fields
-      - name: disposition
-        literal: Error
-      - name: disposition_id
-        expr: CAST('27' AS INT)
+      - name: enrichments
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<data: VARIANT, desc: STRING, name: STRING, value: STRING>>)
+      - name: observables
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<name: STRING, type: STRING, value: STRING>>)
+
+      - name: raw_data
+        expr: parse_json(to_json(struct(*)))
+      - name: unmapped
+        expr: CAST(NULL AS VARIANT)
