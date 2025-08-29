@@ -5,47 +5,63 @@ title: "AWS - CloudTrail IAM"
 iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/aws/cloudtrail_iam/icon.png"
 autoloader:
   format: json
-  cloudFiles:
-    schemaHints: |
-      Records ARRAY<STRUCT<
-        eventTime: STRING,
-        eventVersion: STRING,
-        userIdentity: STRING,
-        eventSource: STRING,
-        eventName: STRING,
-        awsRegion: STRING,
-        sourceIPAddress: STRING,
-        userAgent: STRING,
-        errorCode: STRING,
-        errorMessage: STRING,
-        requestParameters: STRING,
-        responseElements: STRING,
-        additionalEventData: STRING,
-        requestID: STRING,
-        eventID: STRING,
-        eventType: STRING,
-        apiVersion: STRING,
-        managementEvent: BOOLEAN,
-        readOnly: STRING,
-        resources: STRING,
-        recipientAccountId: STRING,
-        serviceEventDetails: STRING,
-        sharedEventID: STRING,
-        vpcEndpointId: STRING,
-        vpcEndpointAccountId: STRING,
-        eventCategory: STRING,
-        addendum: STRING,
-        sessionCredentialFromConsole: STRING,
-        edgeDeviceDetails: STRING,
-        tlsDetails: STRING
-      >>
+
+bronze:
+  loadAsSingleVariant: true
+  preTransform: [
+    [
+      "explode_outer(CAST(`data`:Records AS array<variant>)) AS data",
+    ],
+    [
+      "data",
+      "data:eventTime::TIMESTAMP AS time",
+      "CAST('aws' AS STRING) AS source", 
+      "CAST('cloudtrail_iam' AS STRING) AS sourcetype"
+    ]
+  ]
+
 
 silver:
   preTransform:
     - name: aws_cloudtrail
       fields:
+        - name: time
+          from: time
         - name: raw
-          expr: explode_outer(Records)
+          expr: |
+            STRUCT(
+              data:eventTime::STRING AS eventTime,
+              data:eventVersion::STRING AS eventVersion,
+              data:userIdentity::STRING AS userIdentity,
+              data:eventSource::STRING AS eventSource,
+              data:eventName::STRING AS eventName,
+              data:awsRegion::STRING AS awsRegion,
+              data:sourceIPAddress::STRING AS sourceIPAddress,
+              data:userAgent::STRING AS userAgent,
+              data:errorCode::STRING AS errorCode,
+              data:errorMessage::STRING AS errorMessage,
+              data:requestParameters::STRING AS requestParameters,
+              data:responseElements::STRING AS responseElements,
+              data:additionalEventData::STRING AS additionalEventData,
+              data:requestID::STRING AS requestID,
+              data:eventID::STRING AS eventID,
+              data:eventType::STRING AS eventType,
+              data:apiVersion::STRING AS apiVersion,
+              data:managementEvent::BOOLEAN AS managementEvent,
+              data:readOnly::STRING AS readOnly,
+              data:resources::STRING AS resources,
+              data:recipientAccountId::STRING AS recipientAccountId,
+              data:serviceEventDetails::STRING AS serviceEventDetails,
+              data:sharedEventID::STRING AS sharedEventID,
+              data:vpcEndpointId::STRING AS vpcEndpointId,
+              data:vpcEndpointAccountId::STRING AS vpcEndpointAccountId,
+              data:eventCategory::STRING AS eventCategory,
+              data:addendum::STRING AS addendum,
+              data:sessionCredentialFromConsole::STRING AS sessionCredentialFromConsole,
+              data:edgeDeviceDetails::STRING AS edgeDeviceDetails,
+              data:tlsDetails::STRING AS tlsDetails
+            )
+        
       postFilter: raw.eventSource = 'iam.amazonaws.com'
 
   transform:
@@ -69,6 +85,8 @@ silver:
             expr: "from_json(raw.resources, 'ARRAY<STRUCT<ARN: STRING, accountId: STRING, type: STRING>>')"
       fields:
         - name: time
+          from: time
+        - name: eventTime
           from: raw.eventTime
         - name: eventName
           from: raw.eventName
@@ -129,45 +147,45 @@ silver:
         - name: resources
           from: resources
         - name: target.accessKeyId
-          expr: get_json_object(requestParameters, '$.accessKeyId')
+          expr: get_json_object(raw.requestParameters, '$.accessKeyId')
         - name: target.clientId
-          expr: get_json_object(requestParameters, '$.clientId')
+          expr: get_json_object(raw.requestParameters, '$.clientId')
         - name: target.entityPath
-          expr: get_json_object(requestParameters, '$.entityPath')
+          expr: get_json_object(raw.requestParameters, '$.entityPath')
         - name: target.groupName
-          expr: get_json_object(requestParameters, '$.groupName')
+          expr: get_json_object(raw.requestParameters, '$.groupName')
         - name: target.instanceProfileName
-          expr: get_json_object(requestParameters, '$.instanceProfileName')
+          expr: get_json_object(raw.requestParameters, '$.instanceProfileName')
         - name: target.jobId
-          expr: get_json_object(requestParameters, '$.jobId')
+          expr: get_json_object(raw.requestParameters, '$.jobId')
         - name: target.name
-          expr: get_json_object(requestParameters, '$.name')
+          expr: get_json_object(raw.requestParameters, '$.name')
         - name: target.policyArn
-          expr: get_json_object(requestParameters, '$.policyArn')
+          expr: get_json_object(raw.requestParameters, '$.policyArn')
         - name: target.policyName
-          expr: get_json_object(requestParameters, '$.policyName')
+          expr: get_json_object(raw.requestParameters, '$.policyName')
         - name: target.roleName
-          expr: get_json_object(requestParameters, '$.roleName')
+          expr: get_json_object(raw.requestParameters, '$.roleName')
         - name: target.openIDConnectProviderArn
-          expr: get_json_object(requestParameters, '$.openIDConnectProviderArn')
+          expr: get_json_object(raw.requestParameters, '$.openIDConnectProviderArn')
         - name: target.organizationId
-          expr: get_json_object(requestParameters, '$.organizationId')
+          expr: get_json_object(raw.requestParameters, '$.organizationId')
         - name: target.policyDocument
-          expr: get_json_object(requestParameters, '$.policyDocument')
+          expr: get_json_object(raw.requestParameters, '$.policyDocument')
         - name: target.policySourceArn
-          expr: get_json_object(requestParameters, '$.policySourceArn')
+          expr: get_json_object(raw.requestParameters, '$.policySourceArn')
         - name: target.samlProviderArn
-          expr: get_json_object(requestParameters, '$.samlProviderArn')
+          expr: get_json_object(raw.requestParameters, '$.samlProviderArn')
         - name: target.serialNumber
-          expr: get_json_object(requestParameters, '$.serialNumber')
+          expr: get_json_object(raw.requestParameters, '$.serialNumber')
         - name: target.serverCertificateName
-          expr: get_json_object(requestParameters, '$.serverCertificateName')
+          expr: get_json_object(raw.requestParameters, '$.serverCertificateName')
         - name: target.sshPublicKeyId
-          expr: get_json_object(requestParameters, '$.sshPublicKeyId')
+          expr: get_json_object(raw.requestParameters, '$.sshPublicKeyId')
         - name: target.userName
-          expr: get_json_object(requestParameters, '$.userName')
+          expr: get_json_object(raw.requestParameters, '$.userName')
         - name: target.versionId
-          expr: get_json_object(requestParameters, '$.versionId')
+          expr: get_json_object(raw.requestParameters, '$.versionId')
 
           
     - name: aws_cloudtrail_entity_management
@@ -190,6 +208,8 @@ silver:
             expr: "from_json(raw.resources, 'ARRAY<STRUCT<ARN: STRING, accountId: STRING, type: STRING>>')"
       fields:
         - name: time
+          from: time
+        - name: eventTime
           from: raw.eventTime
         - name: eventName
           from: raw.eventName
@@ -250,45 +270,45 @@ silver:
         - name: resources
           from: resources
         - name: target.accessKeyId
-          expr: get_json_object(requestParameters, '$.accessKeyId')
+          expr: get_json_object(raw.requestParameters, '$.accessKeyId')
         - name: target.clientId
-          expr: get_json_object(requestParameters, '$.clientId')
+          expr: get_json_object(raw.requestParameters, '$.clientId')
         - name: target.entityPath
-          expr: get_json_object(requestParameters, '$.entityPath')
+          expr: get_json_object(raw.requestParameters, '$.entityPath')
         - name: target.groupName
-          expr: get_json_object(requestParameters, '$.groupName')
+          expr: get_json_object(raw.requestParameters, '$.groupName')
         - name: target.instanceProfileName
-          expr: get_json_object(requestParameters, '$.instanceProfileName')
+          expr: get_json_object(raw.requestParameters, '$.instanceProfileName')
         - name: target.jobId
-          expr: get_json_object(requestParameters, '$.jobId')
+          expr: get_json_object(raw.requestParameters, '$.jobId')
         - name: target.name
-          expr: get_json_object(requestParameters, '$.name')
+          expr: get_json_object(raw.requestParameters, '$.name')
         - name: target.policyArn
-          expr: get_json_object(requestParameters, '$.policyArn')
+          expr: get_json_object(raw.requestParameters, '$.policyArn')
         - name: target.policyName
-          expr: get_json_object(requestParameters, '$.policyName')
+          expr: get_json_object(raw.requestParameters, '$.policyName')
         - name: target.roleName
-          expr: get_json_object(requestParameters, '$.roleName')
+          expr: get_json_object(raw.requestParameters, '$.roleName')
         - name: target.openIDConnectProviderArn
-          expr: get_json_object(requestParameters, '$.openIDConnectProviderArn')
+          expr: get_json_object(raw.requestParameters, '$.openIDConnectProviderArn')
         - name: target.organizationId
-          expr: get_json_object(requestParameters, '$.organizationId')
+          expr: get_json_object(raw.requestParameters, '$.organizationId')
         - name: target.policyDocument
-          expr: get_json_object(requestParameters, '$.policyDocument')
+          expr: get_json_object(raw.requestParameters, '$.policyDocument')
         - name: target.policySourceArn
-          expr: get_json_object(requestParameters, '$.policySourceArn')
+          expr: get_json_object(raw.requestParameters, '$.policySourceArn')
         - name: target.samlProviderArn
-          expr: get_json_object(requestParameters, '$.samlProviderArn')
+          expr: get_json_object(raw.requestParameters, '$.samlProviderArn')
         - name: target.serialNumber
-          expr: get_json_object(requestParameters, '$.serialNumber')
+          expr: get_json_object(raw.requestParameters, '$.serialNumber')
         - name: target.serverCertificateName
-          expr: get_json_object(requestParameters, '$.serverCertificateName')
+          expr: get_json_object(raw.requestParameters, '$.serverCertificateName')
         - name: target.sshPublicKeyId
-          expr: get_json_object(requestParameters, '$.sshPublicKeyId')
+          expr: get_json_object(raw.requestParameters, '$.sshPublicKeyId')
         - name: target.userName
-          expr: get_json_object(requestParameters, '$.userName')
+          expr: get_json_object(raw.requestParameters, '$.userName')
         - name: target.versionId
-          expr: get_json_object(requestParameters, '$.versionId')
+          expr: get_json_object(raw.requestParameters, '$.versionId')
 
 
     - name: aws_cloudtrail_user_access
@@ -311,6 +331,8 @@ silver:
             expr: "from_json(raw.resources, 'ARRAY<STRUCT<ARN: STRING, accountId: STRING, type: STRING>>')"
       fields:
         - name: time
+          from: time
+        - name: eventTime
           from: raw.eventTime
         - name: eventName
           from: raw.eventName
@@ -371,15 +393,15 @@ silver:
         - name: resources
           from: resources
         - name: target.permissionsBoundary
-          expr: get_json_object(requestParameters, '$.permissionsBoundary')
+          expr: get_json_object(raw.requestParameters, '$.permissionsBoundary')
         - name: target.policyArn
-          expr: get_json_object(requestParameters, '$.policyArn')
+          expr: get_json_object(raw.requestParameters, '$.policyArn')
         - name: target.policyName
-          expr: get_json_object(requestParameters, '$.policyName')
+          expr: get_json_object(raw.requestParameters, '$.policyName')
         - name: target.policyDocument
-          expr: get_json_object(requestParameters, '$.policyDocument')
+          expr: get_json_object(raw.requestParameters, '$.policyDocument')
         - name: target.userName
-          expr: get_json_object(requestParameters, '$.userName')
+          expr: get_json_object(raw.requestParameters, '$.userName')
 
 
     - name: aws_cloudtrail_group_management
@@ -402,6 +424,8 @@ silver:
             expr: "from_json(raw.resources, 'ARRAY<STRUCT<ARN: STRING, accountId: STRING, type: STRING>>')"
       fields:
         - name: time
+          from: time
+        - name: eventTime
           from: raw.eventTime
         - name: eventName
           from: raw.eventName
@@ -462,21 +486,21 @@ silver:
         - name: resources
           from: resources
         - name: target.groupName
-          expr: get_json_object(requestParameters, '$.groupName')
+          expr: get_json_object(raw.requestParameters, '$.groupName')
         - name: target.newGroupName
-          expr: get_json_object(requestParameters, '$.newGroupName')
+          expr: get_json_object(raw.requestParameters, '$.newGroupName')
         - name: target.newPath
-          expr: get_json_object(requestParameters, '$.newPath')
+          expr: get_json_object(raw.requestParameters, '$.newPath')
         - name: target.path
-          expr: get_json_object(requestParameters, '$.path')
+          expr: get_json_object(raw.requestParameters, '$.path')
         - name: target.policyArn
-          expr: get_json_object(requestParameters, '$.policyArn')
+          expr: get_json_object(raw.requestParameters, '$.policyArn')
         - name: target.policyDocument
-          expr: get_json_object(requestParameters, '$.policyDocument')
+          expr: get_json_object(raw.requestParameters, '$.policyDocument')
         - name: target.policyName
-          expr: get_json_object(requestParameters, '$.policyName')
+          expr: get_json_object(raw.requestParameters, '$.policyName')
         - name: target.userName
-          expr: get_json_object(requestParameters, '$.userName')
+          expr: get_json_object(raw.requestParameters, '$.userName')
 
 
     - name: aws_cloudtrail_api_activity
@@ -499,6 +523,8 @@ silver:
             expr: "from_json(raw.resources, 'ARRAY<STRUCT<ARN: STRING, accountId: STRING, type: STRING>>')"
       fields:
         - name: time
+          from: time
+        - name: eventTime
           from: raw.eventTime
         - name: eventName
           from: raw.eventName
@@ -559,7 +585,7 @@ silver:
         - name: resources
           from: resources
         - name: target.userName
-          expr: get_json_object(requestParameters, '$.userName')
+          expr: get_json_object(raw.requestParameters, '$.userName')
 
 
 gold:
@@ -589,7 +615,7 @@ gold:
           CASE
             WHEN eventName IN ('CreateUser', 'CreateLoginProfile') THEN 1
             WHEN eventName IN ('DeleteUser', 'DeleteLoginProfile') THEN 6
-            WHEN eventName IN ('ChangePassword', 'UpdateLoginProfile') THEN 'Password Change'
+            WHEN eventName IN ('ChangePassword', 'UpdateLoginProfile') THEN 3
             WHEN eventName IN ('ResetServiceSpecificCredential') THEN 4
             WHEN eventName in ('AttachRolePolicy', 'PutRolePolicy', 'PutRolePermissionsBoundary')  THEN 7 
             WHEN eventName in ('DetachRolePolicy', 'DeleteRolePolicy', 'DeleteRolePermissionsBoundary')  THEN 8 
@@ -612,71 +638,6 @@ gold:
             WHEN eventName IN ('UpdateUser', 'CreateVirtualMFADevice', 'ResyncMFADevice', 'UpdateSSHPublicKey', 'UploadSSHPublicKey', 'DeleteSSHPublicKey', 'UploadSigningCertificate', 'DeleteSigningCertificate', 'UpdateSigningCertificate', 'CreateServiceSpecificCredential', 'DeleteServiceSpecificCredential', 'UpdateServiceSpecificCredential', 'CreateAccessKey', 'DeleteAccessKey', 'UpdateAccessKey', 'CreateAccountAlias', 'DeleteAccountAlias', 'UpdateAccountPasswordPolicy', 'DeleteAccountPasswordPolicy', 'TagUser', 'UntagUser', 'TagRole', 'UntagRole') THEN eventName
             ELSE 'Unknown'
           END
-      - name: actor.app_name
-        from: userIdentity.invokedBy
-      - name: actor.idp.issuer
-        from: userIdentity.sessionContext.webIdFederationData.federatedProvider
-      - name: actor.idp.name
-        expr: COALESCE(userIdentity.identityProvider, userIdentity.sessionContext.webIdFederationData.federatedProvider)
-      - name: actor.session.is_mfa
-        expr: |
-          CASE
-            WHEN lower(userIdentity.sessionContext.attributes.mfaAuthenticated) = 'true' THEN TRUE
-            WHEN lower(userIdentity.sessionContext.attributes.mfaAuthenticated) = 'false' THEN FALSE
-            ELSE NULL
-          END
-      - name: actor.session.credential_uid
-        from: userIdentity.accessKeyId
-      - name: actor.user.account.uid
-        from: userIdentity.accountId
-      - name: actor.user.credential_uid
-        from: userIdentity.accessKeyId
-      - name: actor.session.created_time_dt
-        from: userIdentity.sessionContext.attributes.creationDate
-      - name: actor.session.issuer
-        from: userIdentity.sessionContext.sessionIssuer.arn
-      - name: actor.user.uid
-        from: userIdentity.arn
-      - name: actor.user.uid_alt
-        from: userIdentity.principalId
-      - name: actor.user.has_mfa
-        expr: IF (lower(userIdentity.sessionContext.attributes.mfaAuthenticated) = 'true', TRUE, NULL)
-      - name: actor.user.name
-        expr: COALESCE(userIdentity.userName, userIdentity.sessionContext.sessionIssuer.userName)
-      - name: actor.user.type
-        expr: |
-          CASE
-            WHEN LOWER(userIdentity.type) = 'unknown' THEN 'Unknown'
-            WHEN LOWER(userIdentity.type) = 'iamuser' THEN 'User'
-            WHEN LOWER(userIdentity.type) = 'root' THEN 'Admin'
-            ELSE 'Other'
-          END
-      - name: actor.user.type_id
-        expr: |
-          CASE
-            WHEN LOWER(userIdentity.type) = 'unknown' THEN 0
-            WHEN LOWER(userIdentity.type) = 'iamuser' THEN 1
-            WHEN LOWER(userIdentity.type) = 'root' THEN 2 
-            ELSE 99
-          END
-      - name: api.operation
-        from: eventName
-      - name: api.request.data
-        expr: CAST(requestParameters AS VARIANT)
-      - name: api.request.uid
-        from: requestID
-      - name: api.response.data
-        expr: CAST(responseElements as VARIANT)
-      - name: api.response.error
-        from: errorCode
-      - name: api.response.error_message
-        from: errorMessage
-      - name: api.service.name
-        literal: Identity and Access Management
-      - name: api.service.version
-        from: apiVersion
-      - name: api.version
-        from: apiVersion
       - name: category_name
         literal: Identity & Access Management 
       - name: category_uid
@@ -685,40 +646,6 @@ gold:
         literal: Account Change
       - name: class_uid
         expr: CAST(3001 as INT)
-      - name: cloud.account.type
-        expr: |
-          CASE 
-            WHEN LOWER(userIdentity.type) = 'unknown' THEN 'Unknown'
-            WHEN LOWER(userIdentity.type) = 'iamuser' THEN 'AWS IAM User'
-            WHEN LOWER(userIdentity.type) IN ('assumedrole', 'role') THEN 'AWS IAM Role'
-            WHEN LOWER(userIdentity.type) IN ('awsaccount', 'root') THEN 'AWS Account'
-            ELSE LOWER(userIdentity.type)
-          END 
-      - name: cloud.account.type_id
-        expr: |
-          CASE 
-            WHEN LOWER(userIdentity.type) = 'unknown' THEN 0
-            WHEN LOWER(userIdentity.type) = 'iamuser' THEN 3
-            WHEN LOWER(userIdentity.type) IN ('assumedrole', 'role') THEN 4
-            WHEN LOWER(userIdentity.type) IN ('awsaccount', 'root') THEN 10
-            ELSE 99
-          END 
-      - name: cloud.account.uid
-        from: userIdentity.accountId
-      - name: cloud.cloud_partition
-        expr: | 
-          CASE 
-            WHEN awsRegion IN ('us-gov-east-1', 'us-gov-west-1') THEN 'aws-us-gov'
-            WHEN awsRegion IN ('cn-north-1', 'cn-northwest-1') THEN 'aws-cn'
-            WHEN awsRegion IN ('us-iso-east-1', 'us-iso-west-1') THEN 'aws-iso'
-            WHEN awsRegion IN ('us-isob-east-1') THEN 'aws-iso-b'
-            WHEN awsRegion IN ('us-east-1', 'us-east-2', 'us-west-1', 'us-west-2', 'af-south-1', 'ap-east-1', 'ap-south-1', 'ap-south-2', 'ap-southeast-1', 'ap-southeast-2', 'ap-southeast-3', 'ap-southeast-4', 'ap-southeast-5', 'ap-southeast-7', 'ap-northeast-1', 'ap-northeast-2', 'ap-northeast-3', 'ca-central-1', 'ca-west-1', 'eu-central-1', 'eu-central-2', 'eu-north-1', 'eu-south-1', 'eu-south-2', 'eu-west-1', 'eu-west-2', 'eu-west-3', 'il-central-1', 'mx-central-1', 'me-central-1', 'me-south-1', 'sa-east-1') THEN 'aws'
-            ELSE NULL
-          END
-      - name: cloud.provider
-        literal: AWS
-      - name: cloud.region
-        from: awsRegion
       - name: disposition
         expr: |
           CASE
@@ -750,34 +677,11 @@ gold:
       - name: metadata.processed_time
         expr: current_timestamp()
       - name: metadata.logged_time
-        from: eventTime
+        expr: eventTime::TIMESTAMP
       - name: metadata.log_level
         literal: Informational
-      - name: observables
-        expr: |
-          filter(
-            array(
-              IF(sourceIPAddress IS NOT NULL, named_struct('name', 'sourceIPAddress', 'type_id', 2, 'type', 'IP Address', 'value', sourceIPAddress), NULL),
-              IF(target.userName IS NOT NULL, named_struct('name', 'userName', 'type_id', 4, 'type', 'User Name', 'value', target.userName), NULL),
-              IF(userAgent IS NOT NULL, named_struct('name', 'userAgent', 'type_id', 16, 'type', 'HTTP User-Agent', 'value', userAgent), NULL),
-              IF(userIdentity.accessKeyId IS NOT NULL, named_struct('name', 'accessKeyId', 'type_id', 19, 'type', 'User Credential ID', 'value', userIdentity.accessKeyId), NULL),
-              IF(COALESCE(sourceIPAddress, vpcEndpointId) IS NOT NULL, named_struct('name', NULL, 'type_id', 20, 'type', 'Endpoint', 'value', NULL), NULL),
-              IF(target.userName IS NOT NULL, named_struct('name', NULL, 'type_id', 21, 'type', 'User', 'value', NULL), NULL),
-              IF(target.groupName IS NOT NULL, named_struct('name', 'groupName', 'type_id', 32, 'type', 'Group Object: name', 'value', target.groupName), NULL)
-            ),
-            x -> x IS NOT NULL
-          )
-      - name: policies
-        expr: |
-          filter(
-            array(
-              IF (target.policyName IS NOT NULL AND target.groupName IS NOT NULL, named_struct('name', target.policyName, 'group', named_struct('name', target.groupName)), NULL),
-              IF (target.policyName IS NOT NULL, named_struct('name', target.policyName, 'group', named_struct('name', NULL)), NULL)
-            ),
-            x -> x IS NOT NULL
-          )
       - name: raw_data
-        from: requestParameters
+        expr: parse_json(requestParameters)
       - name: src_endpoint.ip
         from: sourceIPAddress
       - name: src_endpoint.uid
@@ -801,16 +705,16 @@ gold:
       - name: type_uid
         expr: |
           CASE
-            WHEN eventName IN ('CreateUser', 'CreateLoginProfile') THEN 300101
-            WHEN eventName IN ('DeleteUser', 'DeleteLoginProfile') THEN 300106
-            WHEN eventName IN ('ChangePassword', 'UpdateLoginProfile') THEN 'Password Change'
-            WHEN eventName IN ('ResetServiceSpecificCredential') THEN 300104
-            WHEN eventName in ('AttachRolePolicy', 'PutRolePolicy', 'PutRolePermissionsBoundary')  THEN 300107 
-            WHEN eventName in ('DetachRolePolicy', 'DeleteRolePolicy', 'DeleteRolePermissionsBoundary')  THEN 300108 
-            WHEN eventName in ('EnableMFADevice') THEN 300110
-            WHEN eventName in ('DeactivateMFADevice', 'DeleteVirtualMFADevice') THEN 300111
-            WHEN eventName IN ('UpdateUser', 'CreateVirtualMFADevice', 'ResyncMFADevice', 'UpdateSSHPublicKey', 'UploadSSHPublicKey', 'DeleteSSHPublicKey', 'UploadSigningCertificate', 'DeleteSigningCertificate', 'UpdateSigningCertificate', 'CreateServiceSpecificCredential', 'DeleteServiceSpecificCredential', 'UpdateServiceSpecificCredential', 'CreateAccessKey', 'DeleteAccessKey', 'UpdateAccessKey', 'CreateAccountAlias', 'DeleteAccountAlias', 'UpdateAccountPasswordPolicy', 'DeleteAccountPasswordPolicy', 'TagUser', 'UntagUser', 'TagRole', 'UntagRole') THEN 300199
-            ELSE 300100
+            WHEN eventName IN ('CreateUser', 'CreateLoginProfile') THEN 300101::BIGINT
+            WHEN eventName IN ('DeleteUser', 'DeleteLoginProfile') THEN 300106::BIGINT
+            WHEN eventName IN ('ChangePassword', 'UpdateLoginProfile') THEN 300103::BIGINT
+            WHEN eventName IN ('ResetServiceSpecificCredential') THEN 300104::BIGINT
+            WHEN eventName in ('AttachRolePolicy', 'PutRolePolicy', 'PutRolePermissionsBoundary')  THEN 300107::BIGINT
+            WHEN eventName in ('DetachRolePolicy', 'DeleteRolePolicy', 'DeleteRolePermissionsBoundary')  THEN 300108::BIGINT
+            WHEN eventName in ('EnableMFADevice') THEN 300110::BIGINT
+            WHEN eventName in ('DeactivateMFADevice', 'DeleteVirtualMFADevice') THEN 300111::BIGINT
+            WHEN eventName IN ('UpdateUser', 'CreateVirtualMFADevice', 'ResyncMFADevice', 'UpdateSSHPublicKey', 'UploadSSHPublicKey', 'DeleteSSHPublicKey', 'UploadSigningCertificate', 'DeleteSigningCertificate', 'UpdateSigningCertificate', 'CreateServiceSpecificCredential', 'DeleteServiceSpecificCredential', 'UpdateServiceSpecificCredential', 'CreateAccessKey', 'DeleteAccessKey', 'UpdateAccessKey', 'CreateAccountAlias', 'DeleteAccountAlias', 'UpdateAccountPasswordPolicy', 'DeleteAccountPasswordPolicy', 'TagUser', 'UntagUser', 'TagRole', 'UntagRole') THEN 300199::BIGINT
+            ELSE 300100::BIGINT
           END
       - name: user.name
         expr: target.userName
@@ -893,71 +797,6 @@ gold:
             WHEN eventName IN ('DisableOrganizationsRootCredentialsManagement', 'DisableOrganizationsRootSessions') THEN 'Disable'
             ELSE 'Unknown'
           END
-      - name: actor.app_name
-        from: userIdentity.invokedBy
-      - name: actor.idp.issuer
-        from: userIdentity.sessionContext.webIdFederationData.federatedProvider
-      - name: actor.idp.name
-        expr: COALESCE(userIdentity.identityProvider, userIdentity.sessionContext.webIdFederationData.federatedProvider)
-      - name: actor.session.is_mfa
-        expr: |
-          CASE
-            WHEN lower(userIdentity.sessionContext.attributes.mfaAuthenticated) = 'true' THEN TRUE
-            WHEN lower(userIdentity.sessionContext.attributes.mfaAuthenticated) = 'false' THEN FALSE
-            ELSE NULL
-          END
-      - name: actor.session.credential_uid
-        from: userIdentity.accessKeyId
-      - name: actor.user.account.uid
-        from: userIdentity.accountId
-      - name: actor.user.credential_uid
-        from: userIdentity.accessKeyId
-      - name: actor.session.created_time_dt
-        from: userIdentity.sessionContext.attributes.creationDate
-      - name: actor.session.issuer
-        from: userIdentity.sessionContext.sessionIssuer.arn
-      - name: actor.user.uid
-        from: userIdentity.arn
-      - name: actor.user.uid_alt
-        from: userIdentity.principalId
-      - name: actor.user.has_mfa
-        expr: IF (lower(userIdentity.sessionContext.attributes.mfaAuthenticated) = 'true', TRUE, NULL)
-      - name: actor.user.name
-        expr: COALESCE(userIdentity.userName, userIdentity.sessionContext.sessionIssuer.userName)
-      - name: actor.user.type
-        expr: |
-          CASE
-            WHEN LOWER(userIdentity.type) = 'unknown' THEN 'Unknown'
-            WHEN LOWER(userIdentity.type) = 'iamuser' THEN 'User'
-            WHEN LOWER(userIdentity.type) = 'root' THEN 'Admin'
-            ELSE 'Other'
-          END
-      - name: actor.user.type_id
-        expr: |
-          CASE
-            WHEN LOWER(userIdentity.type) = 'unknown' THEN 0
-            WHEN LOWER(userIdentity.type) = 'iamuser' THEN 1
-            WHEN LOWER(userIdentity.type) = 'root' THEN 2 
-            ELSE 99
-          END
-      - name: api.operation
-        from: eventName
-      - name: api.request.data
-        expr: CAST(requestParameters AS VARIANT)
-      - name: api.request.uid
-        from: requestID
-      - name: api.response.data
-        expr: CAST(responseElements as VARIANT)
-      - name: api.response.error
-        from: errorCode
-      - name: api.response.error_message
-        from: errorMessage
-      - name: api.service.name
-        literal: Identity and Access Management
-      - name: api.service.version
-        from: apiVersion
-      - name: api.version
-        from: apiVersion
       - name: category_name
         literal: Identity & Access Management 
       - name: category_uid
@@ -966,40 +805,6 @@ gold:
         literal: Entity Management
       - name: class_uid
         expr: CAST(3004 as INT)
-      - name: cloud.account.type
-        expr: |
-          CASE 
-            WHEN LOWER(userIdentity.type) = 'unknown' THEN 'Unknown'
-            WHEN LOWER(userIdentity.type) = 'iamuser' THEN 'AWS IAM User'
-            WHEN LOWER(userIdentity.type) IN ('assumedrole', 'role') THEN 'AWS IAM Role'
-            WHEN LOWER(userIdentity.type) IN ('awsaccount', 'root') THEN 'AWS Account'
-            ELSE LOWER(userIdentity.type)
-          END 
-      - name: cloud.account.type_id
-        expr: |
-          CASE 
-            WHEN LOWER(userIdentity.type) = 'unknown' THEN 0
-            WHEN LOWER(userIdentity.type) = 'iamuser' THEN 3
-            WHEN LOWER(userIdentity.type) IN ('assumedrole', 'role') THEN 4
-            WHEN LOWER(userIdentity.type) IN ('awsaccount', 'root') THEN 10
-            ELSE 99
-          END 
-      - name: cloud.account.uid
-        from: userIdentity.accountId
-      - name: cloud.cloud_partition
-        expr: | 
-          CASE 
-            WHEN awsRegion IN ('us-gov-east-1', 'us-gov-west-1') THEN 'aws-us-gov'
-            WHEN awsRegion IN ('cn-north-1', 'cn-northwest-1') THEN 'aws-cn'
-            WHEN awsRegion IN ('us-iso-east-1', 'us-iso-west-1') THEN 'aws-iso'
-            WHEN awsRegion IN ('us-isob-east-1') THEN 'aws-iso-b'
-            WHEN awsRegion IN ('us-east-1', 'us-east-2', 'us-west-1', 'us-west-2', 'af-south-1', 'ap-east-1', 'ap-south-1', 'ap-south-2', 'ap-southeast-1', 'ap-southeast-2', 'ap-southeast-3', 'ap-southeast-4', 'ap-southeast-5', 'ap-southeast-7', 'ap-northeast-1', 'ap-northeast-2', 'ap-northeast-3', 'ca-central-1', 'ca-west-1', 'eu-central-1', 'eu-central-2', 'eu-north-1', 'eu-south-1', 'eu-south-2', 'eu-west-1', 'eu-west-2', 'eu-west-3', 'il-central-1', 'mx-central-1', 'me-central-1', 'me-south-1', 'sa-east-1') THEN 'aws'
-            ELSE NULL
-          END
-      - name: cloud.provider
-        literal: AWS
-      - name: cloud.region
-        from: awsRegion
       - name: disposition
         expr: |
           CASE
@@ -1019,140 +824,6 @@ gold:
             ELSE 1
           END
 
-      - name: entity.name
-        expr: |
-          CASE
-            WHEN eventName in ('CreateRole', 'DeleteRole', 'DeleteServiceLinkedRole', 'GetRole', 'ListAttachedRolePolicies', 'ListInstanceProfilesForRole', 'ListRolePolicies', 'ListRoleTags', 'UpdateAssumeRolePolicy', 'UpdateRole', 'UpdateRoleDescription', 'GetRolePolicy') THEN target.roleName
-
-            WHEN eventName in ('GetLoginProfile', 'GetUser', 'ListAccessKeys', 'ListAttachedUserPolicies', 'ListMFADevices', 'ListServiceSpecificCredentials', 'ListSigningCertificates', 'ListSSHPublicKeys', 'ListUserPolicies', 'ListUserTags', 'ListGroupsForUser', 'GetUserPolicy') THEN target.userName
-
-            WHEN eventName in ('GetGroup', 'ListAttachedGroupPolicies', 'ListGroupPolicies', 'GetGroupPolicy') THEN target.groupName
-
-            WHEN eventName in ('DeleteServerCertificate', 'GetServerCertificate', 'ListServerCertificateTags', 'TagServerCertificate', 'UntagServerCertificate', 'UploadServerCertificate', 'UpdateServerCertificate') THEN target.serverCertificateName
-
-            WHEN eventName in ('CreateInstanceProfile', 'DeleteInstanceProfile', 'ListInstanceProfileTags', 'TagInstanceProfile', 'UntagInstanceProfile', 'AddRoleToInstanceProfile', 'RemoveRoleFromInstanceProfile', 'GetInstanceProfile') THEN target.instanceProfileName
-          END
-
-      - name: entity.data
-        expr: |
-          CAST(CASE
-            WHEN eventName in ('CreateRole', 'DeleteRole', 'DeleteServiceLinkedRole', 'GetRole', 'ListAttachedRolePolicies', 'ListInstanceProfilesForRole', 'ListRolePolicies', 'ListRoleTags', 'UpdateAssumeRolePolicy', 'UpdateRole', 'UpdateRoleDescription', 'GetRolePolicy') THEN to_json(named_struct('name', target.roleName))
-
-            WHEN eventName in ('CreateServiceLinkedRole') THEN to_json(named_struct('awsServiceName', get_json_object(requestParameters, '$.awsServiceName')))
-
-            WHEN eventName in ('CreatePolicy', 'CreatePolicyVersion') THEN to_json(named_struct('policyDocument', target.policyDocument))
-
-            WHEN eventName in ('DeleteServerCertificate', 'GetServerCertificate', 'ListServerCertificateTags', 'TagServerCertificate', 'UntagServerCertificate', 'UploadServerCertificate', 'UpdateServerCertificate') THEN to_json(named_struct('serverCertificateName', target.serverCertificateName))
-
-            WHEN eventName in ('ListMFADeviceTags', 'TagMFADevice', 'UntagMFADevice', 'GetMFADevice', 'ListVirtualMFADevices') THEN to_json(named_struct('serialNumber', target.serialNumber))
-
-            WHEN eventName in ('CreateSAMLProvider') THEN to_json(named_struct('name', target.name))
-
-            WHEN eventName in ('DeleteSAMLProvider', 'GetSAMLProvider', 'ListSAMLProviderTags', 'TagSAMLProvider', 'UntagSAMLProvider', 'UpdateSAMLProvider') THEN to_json(named_struct('samlProviderArn', target.samlProviderArn))
-
-            WHEN eventName in ('DeleteOpenIDConnectProvider', 'GetOpenIDConnectProvider', 'ListOpenIDConnectProviderTags', 'TagOpenIDConnectProvider', 'UntagOpenIDConnectProvider', 'UpdateOpenIDConnectProviderThumbprint') THEN to_json(named_struct('openIdConnectProviderArn', target.openIdConnectProviderArn))
-
-            WHEN eventName in ('AddClientIDToOpenIDConnectProvider', 'RemoveClientIDFromOpenIDConnectProvider') THEN to_json(named_struct('openIdConnectProviderArn', target.openIdConnectProviderArn, 'clientId', target.clientId))
-
-            WHEN eventName in ('CreateInstanceProfile', 'DeleteInstanceProfile', 'ListInstanceProfileTags', 'TagInstanceProfile', 'UntagInstanceProfile', 'GetInstanceProfile') THEN to_json(named_struct('instanceProfileName', target.instanceProfileName))
-
-            WHEN eventName in ('AddRoleToInstanceProfile', 'RemoveRoleFromInstanceProfile') THEN to_json(named_struct('instanceProfileName', target.instanceProfileName, 'roleName', target.roleName))
-
-            ELSE to_json(NULL)
-          END AS VARIANT)
-
-      - name: entity.group
-        expr: |
-          CASE
-            WHEN eventName in ('GetGroup', 'ListAttachedGroupPolicies', 'ListGroupPolicies', 'GetGroupPolicy') THEN named_struct('name', target.groupName)
-          END
-
-      - name: entity.org
-        expr: |
-          CASE
-            WHEN eventName in ('DisableOrganizationsRootCredentialsManagement', 'DisableOrganizationsRootSessions', 'EnableOrganizationsRootCredentialsManagement', 'EnableOrganizationsRootSessions', 'ListOrganizationsFeatures') THEN named_struct('uid', target.organizationId)
-          END
-
-      - name: entity.policy
-        expr: |
-          CASE
-            WHEN eventName in ('GetRolePolicy') THEN named_struct('name', target.policyName, 'uid', CAST(NULL AS STRING), 'version', CAST(NULL AS STRING))
-            WHEN eventName in ('GetUserPolicy') THEN named_struct('name', target.policyName, 'uid', CAST(NULL AS STRING), 'version', CAST(NULL AS STRING))
-            WHEN eventName in ('GetGroupPolicy') THEN named_struct('name', target.policyName, 'uid', CAST(NULL AS STRING), 'version', CAST(NULL AS STRING))
-
-            WHEN eventName in ('DeletePolicy', 'GetPolicy', 'ListEntitiesForPolicy', 'ListPolicyTags', 'ListPolicyVersions', 'TagPolicy', 'UntagPolicy', 'CreatePolicyVersion') THEN named_struct('name', CAST(NULL AS STRING), 'uid', target.policyArn, 'version', CAST(NULL AS STRING))
-
-            WHEN eventName in ('DeletePolicyVersion', 'GetPolicyVersion', 'SetDefaultPolicyVersion') THEN named_struct('name', CAST(NULL AS STRING), 'uid', target.policyArn, 'version', target.versionId)
-
-            WHEN eventName in ('CreatePolicy') THEN named_struct('name', target.policyName, 'uid', CAST(NULL AS STRING), 'version', CAST(NULL AS STRING))
-          END
-
-      - name: entity.type
-        expr: |
-          CASE
-            WHEN eventName in ('CreateRole', 'CreateServiceLinkedRole', 'DeleteRole', 'DeleteServiceLinkedRole', 'GetRole', 'ListAttachedRolePolicies', 'ListInstanceProfilesForRole', 'ListRolePolicies', 'ListRoleTags', 'UpdateAssumeRolePolicy', 'UpdateRole', 'UpdateRoleDescription', 'GetRolePolicy') THEN 'AWS IAM Role'
-
-            WHEN eventName in ('GetLoginProfile', 'GetUser', 'ListAccessKeys', 'ListAttachedUserPolicies', 'ListMFADevices', 'ListServiceSpecificCredentials', 'ListSigningCertificates', 'ListSSHPublicKeys', 'ListUserPolicies', 'ListUserTags', 'ListGroupsForUser', 'GetUserPolicy') THEN 'user'
-
-            WHEN eventName in ('GetGroup', 'ListAttachedGroupPolicies', 'ListGroupPolicies', 'GetGroupPolicy') THEN 'group'
-
-            WHEN eventName in ('DisableOrganizationsRootCredentialsManagement', 'DisableOrganizationsRootSessions', 'EnableOrganizationsRootCredentialsManagement', 'EnableOrganizationsRootSessions', 'ListOrganizationsFeatures') THEN 'organization'
-
-            WHEN eventName in ('DeletePolicy', 'GetPolicy', 'ListEntitiesForPolicy', 'ListPolicyTags', 'ListPolicyVersions', 'TagPolicy', 'UntagPolicy', 'CreatePolicyVersion', 'DeletePolicyVersion', 'GetPolicyVersion', 'SetDefaultPolicyVersion', 'CreatePolicy', 'GetContextKeysForPrincipalPolicy') THEN 'policy'
-
-            WHEN eventName in ('DeleteServerCertificate', 'GetServerCertificate', 'ListServerCertificateTags', 'TagServerCertificate', 'UntagServerCertificate', 'UploadServerCertificate', 'UpdateServerCertificate') THEN 'Server Certificate'
-
-            WHEN eventName in ('ListMFADeviceTags', 'TagMFADevice', 'UntagMFADevice', 'GetMFADevice', 'ListVirtualMFADevices') THEN 'MFA Device'
-
-            WHEN eventName in ('CreateSAMLProvider', 'DeleteSAMLProvider', 'GetSAMLProvider', 'ListSAMLProviderTags', 'TagSAMLProvider', 'UntagSAMLProvider', 'UpdateSAMLProvider') THEN 'SAML Provider'
-
-            WHEN eventName in ('DeleteOpenIDConnectProvider', 'GetOpenIDConnectProvider', 'ListOpenIDConnectProviderTags', 'TagOpenIDConnectProvider', 'UntagOpenIDConnectProvider', 'AddClientIDToOpenIDConnectProvider', 'RemoveClientIDFromOpenIDConnectProvider', 'UpdateOpenIDConnectProviderThumbprint') THEN 'OpenID Provider'
-
-            WHEN eventName in ('CreateInstanceProfile', 'DeleteInstanceProfile', 'ListInstanceProfileTags', 'TagInstanceProfile', 'UntagInstanceProfile', 'AddRoleToInstanceProfile', 'RemoveRoleFromInstanceProfile', 'GetInstanceProfile') THEN 'Instance Profile'
-
-           END
-
-      - name: entity.type_id
-        expr: |
-          CASE
-            WHEN eventName in ('CreateRole', 'CreateServiceLinkedRole', 'DeleteRole', 'DeleteServiceLinkedRole', 'GetRole', 'ListAttachedRolePolicies', 'ListInstanceProfilesForRole', 'ListRolePolicies', 'ListRoleTags', 'UpdateAssumeRolePolicy', 'UpdateRole', 'UpdateRoleDescription', 'GetRolePolicy') THEN 99
-
-            WHEN eventName in ('GetLoginProfile', 'GetUser', 'ListAccessKeys', 'ListAttachedUserPolicies', 'ListMFADevices', 'ListServiceSpecificCredentials', 'ListSigningCertificates', 'ListSSHPublicKeys', 'ListUserPolicies', 'ListUserTags', 'ListGroupsForUser', 'GetUserPolicy') THEN 2 
-
-            WHEN eventName in ('GetGroup', 'ListAttachedGroupPolicies', 'ListGroupPolicies', 'GetGroupPolicy') THEN 3
-
-            WHEN eventName in ('DisableOrganizationsRootCredentialsManagement', 'DisableOrganizationsRootSessions', 'EnableOrganizationsRootCredentialsManagement', 'EnableOrganizationsRootSessions', 'ListOrganizationsFeatures') THEN 4
-
-            WHEN eventName in ('DeletePolicy', 'GetPolicy', 'ListEntitiesForPolicy', 'ListPolicyTags', 'ListPolicyVersions', 'TagPolicy', 'UntagPolicy', 'CreatePolicyVersion', 'DeletePolicyVersion', 'GetPolicyVersion', 'SetDefaultPolicyVersion', 'CreatePolicy', 'GetContextKeysForPrincipalPolicy') THEN 5 
-
-            WHEN eventName in ('DeleteServerCertificate', 'GetServerCertificate', 'ListServerCertificateTags', 'TagServerCertificate', 'UntagServerCertificate', 'UploadServerCertificate', 'UpdateServerCertificate') THEN 99
-
-            WHEN eventName in ('ListMFADeviceTags', 'TagMFADevice', 'UntagMFADevice', 'GetMFADevice', 'ListVirtualMFADevices') THEN 99
-
-            WHEN eventName in ('CreateSAMLProvider', 'DeleteSAMLProvider', 'GetSAMLProvider', 'ListSAMLProviderTags', 'TagSAMLProvider', 'UntagSAMLProvider', 'UpdateSAMLProvider') THEN 99
-
-            WHEN eventName in ('DeleteOpenIDConnectProvider', 'GetOpenIDConnectProvider', 'ListOpenIDConnectProviderTags', 'TagOpenIDConnectProvider', 'UntagOpenIDConnectProvider', 'AddClientIDToOpenIDConnectProvider', 'RemoveClientIDFromOpenIDConnectProvider', 'UpdateOpenIDConnectProviderThumbprint') THEN 99
-
-            WHEN eventName in ('CreateInstanceProfile', 'DeleteInstanceProfile', 'ListInstanceProfileTags', 'TagInstanceProfile', 'UntagInstanceProfile', 'AddRoleToInstanceProfile', 'RemoveRoleFromInstanceProfile', 'GetInstanceProfile') THEN 99
-
-          END
-
-      - name: entity.uid
-        expr: |
-          CASE
-            WHEN eventName in ('DeletePolicy', 'GetPolicy', 'ListEntitiesForPolicy', 'ListPolicyTags', 'ListPolicyVersions', 'TagPolicy', 'UntagPolicy', 'CreatePolicyVersion', 'DeletePolicyVersion', 'GetPolicyVersion', 'SetDefaultPolicyVersion') THEN target.policyArn
-          END
-
-      - name: entity.user
-        expr: |
-          CASE
-            WHEN eventName in ('GetLoginProfile', 'GetUser', 'ListAccessKeys', 'ListAttachedUserPolicies', 'ListMFADevices', 'ListServiceSpecificCredentials', 'ListSigningCertificates', 'ListSSHPublicKeys', 'ListUserPolicies', 'ListUserTags', 'ListGroupsForUser', 'GetUserPolicy') THEN named_struct('name', target.userName)
-
-            WHEN eventName in ('GetMFADevice', 'ListVirtualMFADevices') THEN named_struct('name', target.userName)
-          END
-
-      - name: http_request.user_agent
-        from: userAgent
       - name: metadata.uid
         from: eventID
       - name: metadata.event_code
@@ -1166,30 +837,11 @@ gold:
       - name: metadata.processed_time
         expr: current_timestamp()
       - name: metadata.logged_time
-        from: eventTime
+        expr: eventTime::TIMESTAMP
       - name: metadata.log_level
         literal: Informational
-      - name: observables
-        expr: |
-          filter(
-            array(
-              IF(sourceIPAddress IS NOT NULL, named_struct('name', 'sourceIPAddress', 'type_id', 2, 'type', 'IP Address', 'value', sourceIPAddress), NULL),
-              IF(target.userName IS NOT NULL, named_struct('name', 'userName', 'type_id', 4, 'type', 'User Name', 'value', target.userName), NULL),
-              IF(userAgent IS NOT NULL, named_struct('name', 'userAgent', 'type_id', 16, 'type', 'HTTP User-Agent', 'value', userAgent), NULL),
-              IF(userIdentity.accessKeyId IS NOT NULL, named_struct('name', 'accessKeyId', 'type_id', 19, 'type', 'User Credential ID', 'value', userIdentity.accessKeyId), NULL),
-              IF(COALESCE(sourceIPAddress, vpcEndpointId) IS NOT NULL, named_struct('name', NULL, 'type_id', 20, 'type', 'Endpoint', 'value', NULL), NULL),
-              IF(target.userName IS NOT NULL, named_struct('name', NULL, 'type_id', 21, 'type', 'User', 'value', NULL), NULL),
-              IF(target.groupName IS NOT NULL, named_struct('name', 'groupName', 'type_id', 32, 'type', 'Group Object: name', 'value', target.groupName), NULL)
-            ),
-            x -> x IS NOT NULL
-          )
-
       - name: raw_data
-        from: requestParameters
-      - name: src_endpoint.ip
-        from: sourceIPAddress
-      - name: src_endpoint.uid
-        from: vpcEndpointId
+        expr: parse_json(requestParameters)
       - name: status
         expr: | 
           CASE
@@ -1203,8 +855,6 @@ gold:
             ELSE 2
           END
       - name: time
-        from: time
-      - name: time_dt
         from: time
       - name: type_name
         expr: |
@@ -1224,17 +874,17 @@ gold:
       - name: type_uid
         expr: |
           CASE
-            WHEN eventName IN ('CreateInstanceProfile', 'CreateOpenIDConnectProvider', 'CreatePolicy', 'CreatePolicyVersion', 'CreateRole', 'CreateSAMLProvider', 'CreateServiceLinkedRole', 'UploadServerCertificate') THEN 300401
+            WHEN eventName IN ('CreateInstanceProfile', 'CreateOpenIDConnectProvider', 'CreatePolicy', 'CreatePolicyVersion', 'CreateRole', 'CreateSAMLProvider', 'CreateServiceLinkedRole', 'UploadServerCertificate') THEN 300401::BIGINT
 
-            WHEN eventName IN ('GetGroup', 'GetGroupPolicy', 'GetUser', 'GetUserPolicy', 'GetRole', 'GetRolePolicy', 'GetPolicy', 'GetPolicyVersion', 'GetInstanceProfile', 'GetLoginProfile', 'GetOpenIDConnectProvider', 'GetSAMLProvider', 'GetServerCertificate', 'ListUserTags', 'ListGroupsForUser', 'ListRoleTags', 'ListInstanceProfilesForRole', 'ListInstanceProfileTags', 'ListSAMLProviderTags', 'ListOpenIDConnectProviderTags', 'ListServerCertificateTags', 'ListMFADevices', 'ListMFADeviceTags', 'ListSigningCertificates', 'ListSSHPublicKeys', 'ListServiceSpecificCredentials', 'ListPolicyVersions', 'ListPolicyTags', 'ListEntitiesForPolicy', 'ListAttachedUserPolicies', 'ListAttachedGroupPolicies', 'ListAttachedRolePolicies', 'GetMFADevice', 'ListAccessKeys', 'ListGroupPolicies', 'ListOrganizationsFeatures', 'ListRolePolicies', 'ListUserPolicies', 'ListVirtualMFADevices') THEN 300402
+            WHEN eventName IN ('GetGroup', 'GetGroupPolicy', 'GetUser', 'GetUserPolicy', 'GetRole', 'GetRolePolicy', 'GetPolicy', 'GetPolicyVersion', 'GetInstanceProfile', 'GetLoginProfile', 'GetOpenIDConnectProvider', 'GetSAMLProvider', 'GetServerCertificate', 'ListUserTags', 'ListGroupsForUser', 'ListRoleTags', 'ListInstanceProfilesForRole', 'ListInstanceProfileTags', 'ListSAMLProviderTags', 'ListOpenIDConnectProviderTags', 'ListServerCertificateTags', 'ListMFADevices', 'ListMFADeviceTags', 'ListSigningCertificates', 'ListSSHPublicKeys', 'ListServiceSpecificCredentials', 'ListPolicyVersions', 'ListPolicyTags', 'ListEntitiesForPolicy', 'ListAttachedUserPolicies', 'ListAttachedGroupPolicies', 'ListAttachedRolePolicies', 'GetMFADevice', 'ListAccessKeys', 'ListGroupPolicies', 'ListOrganizationsFeatures', 'ListRolePolicies', 'ListUserPolicies', 'ListVirtualMFADevices') THEN 300402::BIGINT
 
-            WHEN eventName IN ('TagMFADevice', 'UntagMFADevice', 'TagOpenIDConnectProvider', 'UntagOpenIDConnectProvider', 'TagSAMLProvider', 'UntagSAMLProvider', 'TagServerCertificate', 'UntagServerCertificate', 'SetDefaultPolicyVersion', 'TagPolicy', 'UntagPolicy', 'TagInstanceProfile', 'UntagInstanceProfile', 'AddClientIDToOpenIDConnectProvider', 'AddRoleToInstanceProfile', 'RemoveClientIDFromOpenIDConnectProvider', 'RemoveRoleFromInstanceProfile', 'UpdateAssumeRolePolicy', 'UpdateOpenIDConnectProviderThumbprint', 'UpdateRole', 'UpdateRoleDescription', 'UpdateSAMLProvider', 'UpdateServerCertificate') THEN 300403
+            WHEN eventName IN ('TagMFADevice', 'UntagMFADevice', 'TagOpenIDConnectProvider', 'UntagOpenIDConnectProvider', 'TagSAMLProvider', 'UntagSAMLProvider', 'TagServerCertificate', 'UntagServerCertificate', 'SetDefaultPolicyVersion', 'TagPolicy', 'UntagPolicy', 'TagInstanceProfile', 'UntagInstanceProfile', 'AddClientIDToOpenIDConnectProvider', 'AddRoleToInstanceProfile', 'RemoveClientIDFromOpenIDConnectProvider', 'RemoveRoleFromInstanceProfile', 'UpdateAssumeRolePolicy', 'UpdateOpenIDConnectProviderThumbprint', 'UpdateRole', 'UpdateRoleDescription', 'UpdateSAMLProvider', 'UpdateServerCertificate') THEN 300403::BIGINT
 
-            WHEN eventName IN ('DeleteInstanceProfile', 'DeleteOpenIDConnectProvider', 'DeletePolicy', 'DeletePolicyVersion', 'DeleteRole', 'DeleteSAMLProvider', 'DeleteServerCertificate', 'DeleteServiceLinkedRole') THEN 300404
+            WHEN eventName IN ('DeleteInstanceProfile', 'DeleteOpenIDConnectProvider', 'DeletePolicy', 'DeletePolicyVersion', 'DeleteRole', 'DeleteSAMLProvider', 'DeleteServerCertificate', 'DeleteServiceLinkedRole') THEN 300404::BIGINT
 
-            WHEN eventName IN ('EnableOrganizationsRootCredentialsManagement', 'EnableOrganizationsRootSessions') THEN 300408
-            WHEN eventName IN ('DisableOrganizationsRootCredentialsManagement', 'DisableOrganizationsRootSessions') THEN 300409
-            ELSE 300400
+            WHEN eventName IN ('EnableOrganizationsRootCredentialsManagement', 'EnableOrganizationsRootSessions') THEN 300408::BIGINT
+            WHEN eventName IN ('DisableOrganizationsRootCredentialsManagement', 'DisableOrganizationsRootSessions') THEN 300409::BIGINT
+            ELSE 300400::BIGINT
           END
 
       - name: unmapped
@@ -1291,71 +941,6 @@ gold:
             WHEN eventName in ('DetachUserPolicy', 'DeleteUserPolicy', 'DeleteUserPermissionsBoundary')  THEN 'Revoke Privileges'
             ELSE 'Unknown'
           END
-      - name: actor.app_name
-        from: userIdentity.invokedBy
-      - name: actor.idp.issuer
-        from: userIdentity.sessionContext.webIdFederationData.federatedProvider
-      - name: actor.idp.name
-        expr: COALESCE(userIdentity.identityProvider, userIdentity.sessionContext.webIdFederationData.federatedProvider)
-      - name: actor.session.is_mfa
-        expr: |
-          CASE
-            WHEN lower(userIdentity.sessionContext.attributes.mfaAuthenticated) = 'true' THEN TRUE
-            WHEN lower(userIdentity.sessionContext.attributes.mfaAuthenticated) = 'false' THEN FALSE
-            ELSE NULL
-          END
-      - name: actor.session.credential_uid
-        from: userIdentity.accessKeyId
-      - name: actor.user.account.uid
-        from: userIdentity.accountId
-      - name: actor.user.credential_uid
-        from: userIdentity.accessKeyId
-      - name: actor.session.created_time_dt
-        from: userIdentity.sessionContext.attributes.creationDate
-      - name: actor.session.issuer
-        from: userIdentity.sessionContext.sessionIssuer.arn
-      - name: actor.user.uid
-        from: userIdentity.arn
-      - name: actor.user.uid_alt
-        from: userIdentity.principalId
-      - name: actor.user.has_mfa
-        expr: IF (lower(userIdentity.sessionContext.attributes.mfaAuthenticated) = 'true', TRUE, NULL)
-      - name: actor.user.name
-        expr: COALESCE(userIdentity.userName, userIdentity.sessionContext.sessionIssuer.userName)
-      - name: actor.user.type
-        expr: |
-          CASE
-            WHEN LOWER(userIdentity.type) = 'unknown' THEN 'Unknown'
-            WHEN LOWER(userIdentity.type) = 'iamuser' THEN 'User'
-            WHEN LOWER(userIdentity.type) = 'root' THEN 'Admin'
-            ELSE 'Other'
-          END
-      - name: actor.user.type_id
-        expr: |
-          CASE
-            WHEN LOWER(userIdentity.type) = 'unknown' THEN 0
-            WHEN LOWER(userIdentity.type) = 'iamuser' THEN 1
-            WHEN LOWER(userIdentity.type) = 'root' THEN 2 
-            ELSE 99
-          END
-      - name: api.operation
-        from: eventName
-      - name: api.request.data
-        expr: CAST(requestParameters AS VARIANT)
-      - name: api.request.uid
-        from: requestID
-      - name: api.response.data
-        expr: CAST(responseElements as VARIANT)
-      - name: api.response.error
-        from: errorCode
-      - name: api.response.message
-        from: errorMessage
-      - name: api.service.name
-        literal: Identity and Access Management
-      - name: api.service.version
-        from: apiVersion
-      - name: api.version
-        from: apiVersion
       - name: category_name
         literal: Identity & Access Management 
       - name: category_uid
@@ -1364,22 +949,6 @@ gold:
         literal: User Access Management
       - name: class_uid
         expr: CAST(3005 as INT)
-      - name: cloud.account.uid
-        from: userIdentity.accountId
-      - name: cloud.cloud_partition
-        expr: | 
-          CASE 
-            WHEN awsRegion IN ('us-gov-east-1', 'us-gov-west-1') THEN 'aws-us-gov'
-            WHEN awsRegion IN ('cn-north-1', 'cn-northwest-1') THEN 'aws-cn'
-            WHEN awsRegion IN ('us-iso-east-1', 'us-iso-west-1') THEN 'aws-iso'
-            WHEN awsRegion IN ('us-isob-east-1') THEN 'aws-iso-b'
-            WHEN awsRegion IN ('us-east-1', 'us-east-2', 'us-west-1', 'us-west-2', 'af-south-1', 'ap-east-1', 'ap-south-1', 'ap-south-2', 'ap-southeast-1', 'ap-southeast-2', 'ap-southeast-3', 'ap-southeast-4', 'ap-southeast-5', 'ap-southeast-7', 'ap-northeast-1', 'ap-northeast-2', 'ap-northeast-3', 'ca-central-1', 'ca-west-1', 'eu-central-1', 'eu-central-2', 'eu-north-1', 'eu-south-1', 'eu-south-2', 'eu-west-1', 'eu-west-2', 'eu-west-3', 'il-central-1', 'mx-central-1', 'me-central-1', 'me-south-1', 'sa-east-1') THEN 'aws'
-            ELSE NULL
-          END
-      - name: cloud.provider
-        literal: AWS
-      - name: cloud.region
-        from: awsRegion
       - name: disposition
         expr: |
           CASE
@@ -1412,22 +981,10 @@ gold:
       - name: metadata.processed_time
         expr: current_timestamp()
       - name: metadata.logged_time
-        from: eventTime
+        expr: eventTime::TIMESTAMP
       - name: metadata.log_level
         literal: Informational
-      - name: observables
-        expr: |
-          filter(
-            array(
-              IF(sourceIPAddress IS NOT NULL, named_struct('name', 'sourceIPAddress', 'type_id', 2, 'type', 'IP Address', 'value', sourceIPAddress), NULL),
-              IF(target.userName IS NOT NULL, named_struct('name', 'userName', 'type_id', 4, 'type', 'User Name', 'value', target.userName), NULL),
-              IF(userAgent IS NOT NULL, named_struct('name', 'userAgent', 'type_id', 16, 'type', 'HTTP User-Agent', 'value', userAgent), NULL),
-              IF(userIdentity.accessKeyId IS NOT NULL, named_struct('name', 'accessKeyId', 'type_id', 19, 'type', 'User Credential ID', 'value', userIdentity.accessKeyId), NULL),
-              IF(COALESCE(sourceIPAddress, vpcEndpointId) IS NOT NULL, named_struct('name', NULL, 'type_id', 20, 'type', 'Endpoint', 'value', NULL), NULL),
-              IF(target.userName IS NOT NULL, named_struct('name', NULL, 'type_id', 21, 'type', 'User', 'value', NULL), NULL)
-            ),
-            x -> x IS NOT NULL
-          )
+
       - name: privileges
         expr: | 
           CASE
@@ -1435,7 +992,7 @@ gold:
             ELSE array()
           END
       - name: raw_data
-        from: requestParameters
+        expr: parse_json(requestParameters)
       - name: resource.name
         from: target.userName
       - name: src_endpoint.ip
@@ -1466,8 +1023,8 @@ gold:
       - name: type_uid
         expr: |
           CASE
-            WHEN eventName in ('AttachUserPolicy', 'PutUserPolicy', 'PutUserPermissionsBoundary')  THEN 300501
-            WHEN eventName in ('DetachUserPolicy', 'DeleteUserPolicy', 'DeleteUserPermissionsBoundary')  THEN 300502
+            WHEN eventName in ('AttachUserPolicy', 'PutUserPolicy', 'PutUserPermissionsBoundary')  THEN 300501::BIGINT
+            WHEN eventName in ('DetachUserPolicy', 'DeleteUserPolicy', 'DeleteUserPermissionsBoundary')  THEN 300502::BIGINT
             ELSE 300500
           END
       - name: unmapped
@@ -1536,70 +1093,7 @@ gold:
             WHEN eventName in ('UpdateGroup') THEN 'Other'
             ELSE 'Unknown'
           END
-      - name: actor.app_name
-        from: userIdentity.invokedBy
-      - name: actor.idp.issuer
-        from: userIdentity.sessionContext.webIdFederationData.federatedProvider
-      - name: actor.idp.name
-        expr: COALESCE(userIdentity.identityProvider, userIdentity.sessionContext.webIdFederationData.federatedProvider)
-      - name: actor.session.is_mfa
-        expr: |
-          CASE
-            WHEN lower(userIdentity.sessionContext.attributes.mfaAuthenticated) = 'true' THEN TRUE
-            WHEN lower(userIdentity.sessionContext.attributes.mfaAuthenticated) = 'false' THEN FALSE
-            ELSE NULL
-          END
-      - name: actor.session.credential_uid
-        from: userIdentity.accessKeyId
-      - name: actor.user.account.uid
-        from: userIdentity.accountId
-      - name: actor.user.credential_uid
-        from: userIdentity.accessKeyId
-      - name: actor.session.created_time_dt
-        from: userIdentity.sessionContext.attributes.creationDate
-      - name: actor.session.issuer
-        from: userIdentity.sessionContext.sessionIssuer.arn
-      - name: actor.user.uid
-        from: userIdentity.arn
 
-      - name: actor.user.has_mfa
-        expr: IF (lower(userIdentity.sessionContext.attributes.mfaAuthenticated) = 'true', TRUE, NULL)
-      - name: actor.user.name
-        expr: COALESCE(userIdentity.userName, userIdentity.sessionContext.sessionIssuer.userName)
-      - name: actor.user.type
-        expr: |
-          CASE
-            WHEN LOWER(userIdentity.type) = 'unknown' THEN 'Unknown'
-            WHEN LOWER(userIdentity.type) = 'iamuser' THEN 'User'
-            WHEN LOWER(userIdentity.type) = 'root' THEN 'Admin'
-            ELSE 'Other'
-          END
-      - name: actor.user.type_id
-        expr: |
-          CASE
-            WHEN LOWER(userIdentity.type) = 'unknown' THEN 0
-            WHEN LOWER(userIdentity.type) = 'iamuser' THEN 1
-            WHEN LOWER(userIdentity.type) = 'root' THEN 2 
-            ELSE 99
-          END
-      - name: api.operation
-        from: eventName
-      - name: api.request.data
-        expr: CAST(requestParameters AS VARIANT)
-      - name: api.request.uid
-        from: requestID
-      - name: api.response.data
-        expr: CAST(responseElements as VARIANT)
-      - name: api.response.error
-        from: errorCode
-      - name: api.response.error_message
-        from: errorMessage
-      - name: api.service.name
-        literal: Identity and Access Management
-      - name: api.service.version
-        from: apiVersion
-      - name: api.version
-        from: apiVersion
       - name: category_name
         literal: Identity & Access Management 
       - name: category_uid
@@ -1642,20 +1136,6 @@ gold:
             WHEN errorCode IS NOT NULL THEN 27
             ELSE 1
           END
-      - name: group.name
-        from: target.groupName
-      - name: group.privileges
-        expr: |
-          filter(
-            array(
-              IF(target.policyArn IS NOT NULL, target.policyArn, NULL),
-              IF(target.policyDocument IS NOT NULL, target.policyDocument, NULL),
-              IF(target.policyName IS NOT NULL, target.policyName, NULL)
-            ),
-            x -> x IS NOT NULL
-          )
-      - name: group.type
-        literal: AWS IAM Group
       - name: metadata.uid
         from: eventID
       - name: metadata.event_code
@@ -1669,22 +1149,9 @@ gold:
       - name: metadata.processed_time
         expr: current_timestamp()
       - name: metadata.logged_time
-        from: eventTime
+        expr: eventTime::TIMESTAMP
       - name: metadata.log_level
         literal: Informational
-      
-      - name: observables
-        expr: |
-          filter(
-            array(
-              IF(sourceIPAddress IS NOT NULL, named_struct('name', 'sourceIPAddress', 'type_id', 2, 'type', 'IP Address', 'value', sourceIPAddress), NULL),
-              IF(target.groupName IS NOT NULL, named_struct('name', 'groupName', 'type_id', 32, 'type', 'User Name', 'value', target.groupName), NULL),
-              IF(userAgent IS NOT NULL, named_struct('name', 'userAgent', 'type_id', 16, 'type', 'HTTP User-Agent', 'value', userAgent), NULL),
-              IF(userIdentity.accessKeyId IS NOT NULL, named_struct('name', 'accessKeyId', 'type_id', 19, 'type', 'User Credential ID', 'value', userIdentity.accessKeyId), NULL),
-              IF(COALESCE(sourceIPAddress, vpcEndpointId) IS NOT NULL, named_struct('name', NULL, 'type_id', 20, 'type', 'Endpoint', 'value', NULL), NULL)
-            ),
-            x -> x IS NOT NULL
-          )
       - name: privileges
         expr: | 
           CASE
@@ -1692,7 +1159,7 @@ gold:
             ELSE array()
           END
       - name: raw_data
-        from: requestParameters
+        expr: parse_json(requestParameters)
       - name: resource.name
         from: target.userName
       - name: src_endpoint.ip
@@ -1728,14 +1195,14 @@ gold:
       - name: type_uid
         expr: |
           CASE
-            WHEN eventName in ('AttachGroupPolicy', 'PutGroupPolicy') THEN 300601
-            WHEN eventName in ('DetachGroupPolicy', 'DeleteGroupPolicy') THEN 300602 
-            WHEN eventName in ('AddUserToGroup') THEN 300603
-            WHEN eventName in ('RemoveUserFromGroup') THEN 300604
-            WHEN eventName in ('DeleteGroup') THEN 300605
-            WHEN eventName in ('CreateGroup') THEN 300606
-            WHEN eventName in ('UpdateGroup') THEN 300699
-            ELSE 300600
+            WHEN eventName in ('AttachGroupPolicy', 'PutGroupPolicy') THEN 300601::BIGINT
+            WHEN eventName in ('DetachGroupPolicy', 'DeleteGroupPolicy') THEN 300602::BIGINT
+            WHEN eventName in ('AddUserToGroup') THEN 300603::BIGINT
+            WHEN eventName in ('RemoveUserFromGroup') THEN 300604::BIGINT
+            WHEN eventName in ('DeleteGroup') THEN 300605::BIGINT
+            WHEN eventName in ('CreateGroup') THEN 300606::BIGINT
+            WHEN eventName in ('UpdateGroup') THEN 300699::BIGINT
+            ELSE 300600::BIGINT
           END
       - name: unmapped
         expr: | 
@@ -1802,69 +1269,7 @@ gold:
             WHEN eventName in ('SimulateCustomPolicy', 'SimulatePrincipalPolicy') THEN 'Simulate'
             ELSE 'Unknown'
           END
-      - name: actor.app_name
-        from: userIdentity.invokedBy
-      - name: actor.idp.issuer
-        from: userIdentity.sessionContext.webIdFederationData.federatedProvider
-      - name: actor.idp.name
-        expr: COALESCE(userIdentity.identityProvider, userIdentity.sessionContext.webIdFederationData.federatedProvider)
-      - name: actor.session.is_mfa
-        expr: |
-          CASE
-            WHEN lower(userIdentity.sessionContext.attributes.mfaAuthenticated) = 'true' THEN TRUE
-            WHEN lower(userIdentity.sessionContext.attributes.mfaAuthenticated) = 'false' THEN FALSE
-            ELSE NULL
-          END
-      - name: actor.session.credential_uid
-        from: userIdentity.accessKeyId
-      - name: actor.user.account.uid
-        from: userIdentity.accountId
-      - name: actor.user.credential_uid
-        from: userIdentity.accessKeyId
-      - name: actor.session.created_time_dt
-        from: userIdentity.sessionContext.attributes.creationDate
-      - name: actor.session.issuer
-        from: userIdentity.sessionContext.sessionIssuer.arn
-      - name: actor.user.uid
-        from: userIdentity.arn
-      - name: actor.user.has_mfa
-        expr: IF (lower(userIdentity.sessionContext.attributes.mfaAuthenticated) = 'true', TRUE, NULL)
-      - name: actor.user.name
-        expr: COALESCE(userIdentity.userName, userIdentity.sessionContext.sessionIssuer.userName)
-      - name: actor.user.type
-        expr: |
-          CASE
-            WHEN LOWER(userIdentity.type) = 'unknown' THEN 'Unknown'
-            WHEN LOWER(userIdentity.type) = 'iamuser' THEN 'User'
-            WHEN LOWER(userIdentity.type) = 'root' THEN 'Admin'
-            ELSE 'Other'
-          END
-      - name: actor.user.type_id
-        expr: |
-          CASE
-            WHEN LOWER(userIdentity.type) = 'unknown' THEN 0
-            WHEN LOWER(userIdentity.type) = 'iamuser' THEN 1
-            WHEN LOWER(userIdentity.type) = 'root' THEN 2 
-            ELSE 99
-          END
-      - name: api.operation
-        from: eventName
-      - name: api.request.data
-        expr: CAST(requestParameters AS VARIANT)
-      - name: api.request.uid
-        from: requestID
-      - name: api.response.data
-        expr: CAST(responseElements as VARIANT)
-      - name: api.response.error
-        from: errorCode
-      - name: api.response.message
-        from: errorMessage
-      - name: api.service.name
-        literal: Identity and Access Management
-      - name: api.service.version
-        from: apiVersion
-      - name: api.version
-        from: apiVersion
+      
       - name: category_name
         literal: Application Activity 
       - name: category_uid
@@ -1920,22 +1325,11 @@ gold:
       - name: metadata.processed_time
         expr: current_timestamp()
       - name: metadata.logged_time
-        from: eventTime
+        expr: eventTime::TIMESTAMP
       - name: metadata.log_level
         literal: Informational
-      - name: observables
-        expr: |
-          filter(
-            array(
-              IF(sourceIPAddress IS NOT NULL, named_struct('name', 'sourceIPAddress', 'type_id', 2, 'type', 'IP Address', 'value', sourceIPAddress), NULL),
-              IF(userAgent IS NOT NULL, named_struct('name', 'userAgent', 'type_id', 16, 'type', 'HTTP User-Agent', 'value', userAgent), NULL),
-              IF(userIdentity.accessKeyId IS NOT NULL, named_struct('name', 'accessKeyId', 'type_id', 19, 'type', 'User Credential ID', 'value', userIdentity.accessKeyId), NULL),
-              IF(COALESCE(sourceIPAddress, vpcEndpointId) IS NOT NULL, named_struct('name', NULL, 'type_id', 20, 'type', 'Endpoint', 'value', NULL), NULL)
-            ),
-            x -> x IS NOT NULL
-          )
       - name: raw_data
-        from: requestParameters
+        expr: parse_json(requestParameters)
       - name: src_endpoint.ip
         from: sourceIPAddress
       - name: src_endpoint.uid
@@ -1966,11 +1360,11 @@ gold:
       - name: type_uid
         expr: |
           CASE
-            WHEN eventName in ('GenerateCredentialReport', 'GenerateOrganizationsAccessReport', 'GenerateServiceLastAccessedDetails')  THEN 600301
-            WHEN eventName in ('GetCredentialReport', 'GetOrganizationsAccessReport', 'GetServiceLastAccessedDetails', 'GetServiceLastAccessedDetailsWithEntities', 'GetServiceLinkedRoleDeletionStatus', 'GetAccountAuthorizationDetails', 'GetAccountSummary', 'GetAccountPasswordPolicy', 'GetAccessKeyLastUsed', 'GetSSHPublicKey', 'GetContextKeysForCustomPolicy', 'GetContextKeysForPrincipalPolicy', 'ListUsers', 'ListGroups', 'ListRoles', 'ListInstanceProfiles', 'ListSAMLProviders', 'ListOpenIDConnectProviders', 'ListServerCertificates', 'ListPolicies', 'ListPoliciesGrantingServiceAccess', 'ListAccountAliases')  THEN 600302 
-            WHEN eventName in ('SetSecurityTokenServicePreferences') THEN 600303
-            WHEN eventName in ('SimulateCustomPolicy', 'SimulatePrincipalPolicy') THEN 600399
-            ELSE 600300
+            WHEN eventName in ('GenerateCredentialReport', 'GenerateOrganizationsAccessReport', 'GenerateServiceLastAccessedDetails')  THEN 600301::BIGINT
+            WHEN eventName in ('GetCredentialReport', 'GetOrganizationsAccessReport', 'GetServiceLastAccessedDetails', 'GetServiceLastAccessedDetailsWithEntities', 'GetServiceLinkedRoleDeletionStatus', 'GetAccountAuthorizationDetails', 'GetAccountSummary', 'GetAccountPasswordPolicy', 'GetAccessKeyLastUsed', 'GetSSHPublicKey', 'GetContextKeysForCustomPolicy', 'GetContextKeysForPrincipalPolicy', 'ListUsers', 'ListGroups', 'ListRoles', 'ListInstanceProfiles', 'ListSAMLProviders', 'ListOpenIDConnectProviders', 'ListServerCertificates', 'ListPolicies', 'ListPoliciesGrantingServiceAccess', 'ListAccountAliases')  THEN 600302::BIGINT
+            WHEN eventName in ('SetSecurityTokenServicePreferences') THEN 600303::BIGINT
+            WHEN eventName in ('SimulateCustomPolicy', 'SimulatePrincipalPolicy') THEN 600399::BIGINT
+            ELSE 600300::BIGINT
           END
       - name: unmapped
         expr: | 
