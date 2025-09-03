@@ -1,7 +1,0 @@
-versions:
-  - versionNumber: 1
-    changes: Initial commit of AWS CloudTrail IAM Events
-    commit: 1bc670f135901c802877d274918a7de83c3fb7f1
-  - versionNumber: 2
-    changes: Updated preset to new OCSF-Lite schema.
-    commit: 72d7a4951eb664c72d913219dcda4648feb2a259

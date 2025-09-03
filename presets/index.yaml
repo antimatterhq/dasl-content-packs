@@ -23,5 +23,3 @@ presets:
     sourceType: "httpreq"
   - source: "okta"
     sourceType: "syslog"
-  - source: "aws"
-    sourceType: "cloudtrail_iam"
