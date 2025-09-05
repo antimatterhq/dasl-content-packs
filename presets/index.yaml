@@ -17,8 +17,6 @@ presets:
     sourceType: "vpc_flow"
   - source: "aws_sec_lake"
     sourceType: "waf"
-  - source: "azure"
-    sourceType: "waf"
   - source: "cloudflare"
     sourceType: "httpreq"
   - source: "okta"

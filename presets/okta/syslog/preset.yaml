@@ -11,52 +11,8 @@ bronze:
    - ["data", "CAST(data:published AS TIMESTAMP) AS time", "CAST('okta' AS STRING) as source", "CAST('syslog' AS STRING) AS sourcetype"]
 
 silver:
-  preTransform:
-    - name: unbox_cribl
-      fields:
-        - name: time
-          from: time
-        - name: _time
-          expr: CAST(data:_time AS BIGINT)
-        - name: actor
-          expr: CAST(data:actor AS struct<`alternateId`:string,`detailEntry`:string,`displayName`:string,`id`:string,`type`:string>)
-        - name: authenticationContext
-          expr: CAST(data:authenticationContext AS struct<`authenticationProvider`:string,`authenticationStep`:bigint,`authenticatorContext`:struct<`applicationVersion`:string,`binaryIdentifier`:string,`binaryPath`:string,`bindingMethod`:string,`requestOrigin`:string,`signerDistinguishedName`:string,`signerKeyIdentifier`:string,`userConsent`:string,`validationStatus`:string>,`credentialProvider`:string,`credentialType`:string,`externalSessionId`:string,`interface`:string,`issuer`:struct<`id`:string>,`rootSessionId`:string>)
-        - name: client
-          expr: CAST(data:client AS struct<`device`:string,`geographicalContext`:struct<`city`:string,`country`:string,`geolocation`:struct<`lat`:double,`lon`:double>,`postalCode`:string,`state`:string>,`id`:string,`ipAddress`:string,`userAgent`:struct<`browser`:string,`os`:string,`rawUserAgent`:string>,`zone`:string>)
-        - name: debugContext
-          expr: CAST(data:debugContext AS struct<`debugData`:struct<`aaguid`:string,`addedObjects`:string,`appContextName`:string,`appname`:string,`audience`:string,`authCode`:string,`authMethodFirstEnrollment`:string,`authMethodFirstType`:string,`authMethodFirstVerificationTime`:string,`authMethodSecondEnrollment`:string,`authMethodSecondType`:string,`authMethodSecondVerificationTime`:string,`authTime`:string,`authenticationClassRef`:string,`authenticatorMethodChallengeTime`:string,`authnRequestId`:string,`backupEligible`:string,`behaviors`:string,`category`:string,`challengeAuthenticatorsList`:string,`changedAttributes`:string,`clientAuthType`:string,`clientId`:string,`clientSecret`:string,`clientType`:string,`deletedObjects`:string,`detailedmessage`:string,`device`:string,`deviceCategory`:string,`deviceFingerprint`:string,`devicePlatform`:string,`deviceTokenHash`:string,`dtHash`:string,`emailProvider`:string,`emailRequestId`:string,`enrollmentMethodChallengeTime`:string,`expiryTime`:string,`factor`:string,`factorIntent`:string,`grantType`:string,`grantedScopes`:string,`idpType`:string,`importLastToken`:string,`importTrigger`:string,`importType`:string,`initiationType`:string,`ip`:string,`issuedAt`:string,`issuer`:string,`jobId`:string,`jti`:string,`keyTypeUsedForAuthentication`:string,`logOnlySecurityData`:string,`loginResult`:string,`matchedAuthenticatorGroups`:string,`oktaUserAgentExtended`:string,`operationRateLimitScopeType`:string,`operationRateLimitSecondsToReset`:string,`operationRateLimitSubtype`:string,`operationRateLimitThreshold`:string,`operationRateLimitTimeSpan`:string,`operationRateLimitTimeUnit`:string,`operationRateLimitType`:string,`orgId`:string,`origin`:string,`pushOnlyResponseType`:string,`pushWithNumberChallengeResponseType`:string,`redirectUri`:string,`requestId`:string,`requestUri`:string,`requestedScopes`:string,`responseMode`:string,`responseTime`:string,`responseType`:string,`risk`:string,`signOnMode`:string,`state`:string,`subject`:string,`targetEventHookIds`:string,`threatSuspected`:string,`threshold`:string,`timeSpan`:string,`timeUnit`:string,`totalObjects`:string,`totalTime`:string,`traceId`:string,`tunnels`:string,`unchangedObjects`:string,`updatedObjects`:string,`url`:string,`userId`:string>>)
-        - name: device
-          expr: CAST(data:device AS struct<`device_integrator`:string,`disk_encryption_type`:string,`id`:string,`jailbreak`:boolean,`managed`:boolean,`name`:string,`os_platform`:string,`os_version`:string,`registered`:boolean,`screen_lock_type`:string,`secure_hardware_present`:boolean>)
-        - name: displayMessage
-          expr: CAST(data:displayMessage AS string)
-        - name: eventType
-          expr: CAST(data:eventType AS string)
-        - name: host
-          expr: CAST(data:host AS string)
-        - name: legacyEventType
-          expr: CAST(data:legacyEventType AS string)
-        - name: outcome
-          expr: CAST(data:outcome AS struct<`reason`:string,`result`:string>)
-        - name: published
-          expr: CAST(data:published AS timestamp)
-        - name: request
-          expr: CAST(data:request AS struct<`ipChain`:array<struct<`geographicalContext`:struct<`city`:string,`country`:string,`geolocation`:struct<`lat`:double,`lon`:double>,`postalCode`:string,`state`:string>,`ip`:string,`source`:string,`version`:string>>>)
-        - name: securityContext
-          expr: CAST(data:securityContext AS struct<`asNumber`:bigint,`asOrg`:string,`domain`:string,`isProxy`:boolean,`isp`:string>)
-        - name: severity
-          expr: CAST(data:severity AS string)
-        - name: target
-          expr: CAST(data:target AS array<struct<`alternateId`:string,`detailEntry`:struct<`appInstanceId`:string,`appUserId`:string,`appUsername`:string,`audience`:string,`authenticatorKey`:string,`authenticatorMethodVerificationTime`:string,`certName`:string,`certStatus`:string,`completedAt`:string,`deviceIntegrator`:string,`deviceStatus`:string,`expires`:string,`hash`:string,`identifyingAttribute`:string,`initiatedAt`:string,`initiatedBy`:string,`managed`:string,`methodTypeUsed`:string,`methodUsedVerifiedProperties`:string,`notAfter`:string,`notBefore`:string,`oktaDeviceId`:string,`osPlatform`:string,`osVersion`:string,`policyName`:string,`policyRuleFactorMode`:string,`policyType`:string,`refreshtokentype`:string,`resolution`:string,`serialNumber`:string,`signOnModeEvaluationResult`:string,`signOnModeType`:string,`subject`:string,`tpmPresent`:string,`udid`:string,`userId`:string>,`displayName`:string,`id`:string,`type`:string>>)
-        - name: transaction
-          expr: CAST(data:transaction AS struct<`detail`:struct<`requestApiTokenClientId`:string,`requestApiTokenId`:string,`rootApiTokenId`:string>,`id`:string,`type`:string>)
-        - name: uuid
-          expr: CAST(data:uuid AS string)
-        - name: version
-          expr: CAST(data:version AS string)
 
   transform:
-
     - name: okta_syslog
       utils:
         unreferencedColumns:
@@ -66,10 +22,9 @@ silver:
 
     - name: okta_syslog_ocsf_staged
       fields:
-
         - name: eventType
           from: eventType
-        
+
         - name: time
           from: time
 
@@ -339,7 +294,7 @@ silver:
           from: debugContext.debugData.url
         - name: ocsf_http_request.http_headers
           expr: ARRAY(NAMED_STRUCT('name', 'User-Agent', 'value', client.userAgent.rawUserAgent), NAMED_STRUCT('name', 'X-Forwarded-For', 'value', get(request.ipChain, 0).ip))
-              
+
 
         - name: ocsf_src_endpoint.hostname
           from: host
@@ -419,7 +374,7 @@ silver:
                   ) THEN named_struct('id', 3, 'name', 'Observed')
                   ELSE named_struct('id', 0, 'name', 'Unknown')
                 END
-          
+
         - name: activity.1006
           expr: |
               CASE 
@@ -748,6 +703,10 @@ silver:
           from: uuid
         - name: ocsf_metadata.version
           literal: 1.0.0
+        - name: debugContext
+          from: debugContext
+        - name: outcome
+          from: outcome
 
 
       utils:
@@ -792,7 +751,44 @@ silver:
                   WHEN (LOWER(device.os_platform) LIKE 'ios%' OR LOWER(client.userAgent.os) LIKE 'ios%') THEN 'ios'
                   ELSE 'unknown'
                 END
-
+          - name: _time
+            expr: CAST(data:_time AS BIGINT)
+          - name: actor
+            expr: CAST(data:actor AS struct<`alternateId`:string,`detailEntry`:string,`displayName`:string,`id`:string,`type`:string>)
+          - name: authenticationContext
+            expr: CAST(data:authenticationContext AS struct<`authenticationProvider`:string,`authenticationStep`:bigint,`authenticatorContext`:struct<`applicationVersion`:string,`binaryIdentifier`:string,`binaryPath`:string,`bindingMethod`:string,`requestOrigin`:string,`signerDistinguishedName`:string,`signerKeyIdentifier`:string,`userConsent`:string,`validationStatus`:string>,`credentialProvider`:string,`credentialType`:string,`externalSessionId`:string,`interface`:string,`issuer`:struct<`id`:string>,`rootSessionId`:string>)
+          - name: client
+            expr: CAST(data:client AS struct<`device`:string,`geographicalContext`:struct<`city`:string,`country`:string,`geolocation`:struct<`lat`:double,`lon`:double>,`postalCode`:string,`state`:string>,`id`:string,`ipAddress`:string,`userAgent`:struct<`browser`:string,`os`:string,`rawUserAgent`:string>,`zone`:string>)
+          - name: debugContext
+            expr: CAST(data:debugContext AS struct<`debugData`:struct<`aaguid`:string,`addedObjects`:string,`appContextName`:string,`appname`:string,`audience`:string,`authCode`:string,`authMethodFirstEnrollment`:string,`authMethodFirstType`:string,`authMethodFirstVerificationTime`:string,`authMethodSecondEnrollment`:string,`authMethodSecondType`:string,`authMethodSecondVerificationTime`:string,`authTime`:string,`authenticationClassRef`:string,`authenticatorMethodChallengeTime`:string,`authnRequestId`:string,`backupEligible`:string,`behaviors`:string,`category`:string,`challengeAuthenticatorsList`:string,`changedAttributes`:string,`clientAuthType`:string,`clientId`:string,`clientSecret`:string,`clientType`:string,`deletedObjects`:string,`detailedmessage`:string,`device`:string,`deviceCategory`:string,`deviceFingerprint`:string,`devicePlatform`:string,`deviceTokenHash`:string,`dtHash`:string,`emailProvider`:string,`emailRequestId`:string,`enrollmentMethodChallengeTime`:string,`expiryTime`:string,`factor`:string,`factorIntent`:string,`grantType`:string,`grantedScopes`:string,`idpType`:string,`importLastToken`:string,`importTrigger`:string,`importType`:string,`initiationType`:string,`ip`:string,`issuedAt`:string,`issuer`:string,`jobId`:string,`jti`:string,`keyTypeUsedForAuthentication`:string,`logOnlySecurityData`:string,`loginResult`:string,`matchedAuthenticatorGroups`:string,`oktaUserAgentExtended`:string,`operationRateLimitScopeType`:string,`operationRateLimitSecondsToReset`:string,`operationRateLimitSubtype`:string,`operationRateLimitThreshold`:string,`operationRateLimitTimeSpan`:string,`operationRateLimitTimeUnit`:string,`operationRateLimitType`:string,`orgId`:string,`origin`:string,`pushOnlyResponseType`:string,`pushWithNumberChallengeResponseType`:string,`redirectUri`:string,`requestId`:string,`requestUri`:string,`requestedScopes`:string,`responseMode`:string,`responseTime`:string,`responseType`:string,`risk`:string,`signOnMode`:string,`state`:string,`subject`:string,`targetEventHookIds`:string,`threatSuspected`:string,`threshold`:string,`timeSpan`:string,`timeUnit`:string,`totalObjects`:string,`totalTime`:string,`traceId`:string,`tunnels`:string,`unchangedObjects`:string,`updatedObjects`:string,`url`:string,`userId`:string>>)
+          - name: device
+            expr: CAST(data:device AS struct<`device_integrator`:string,`disk_encryption_type`:string,`id`:string,`jailbreak`:boolean,`managed`:boolean,`name`:string,`os_platform`:string,`os_version`:string,`registered`:boolean,`screen_lock_type`:string,`secure_hardware_present`:boolean>)
+          - name: displayMessage
+            expr: CAST(data:displayMessage AS string)
+          - name: eventType
+            expr: CAST(data:eventType AS string)
+          - name: host
+            expr: CAST(data:host AS string)
+          - name: legacyEventType
+            expr: CAST(data:legacyEventType AS string)
+          - name: outcome
+            expr: CAST(data:outcome AS struct<`reason`:string,`result`:string>)
+          - name: published
+            expr: CAST(data:published AS timestamp)
+          - name: request
+            expr: CAST(data:request AS struct<`ipChain`:array<struct<`geographicalContext`:struct<`city`:string,`country`:string,`geolocation`:struct<`lat`:double,`lon`:double>,`postalCode`:string,`state`:string>,`ip`:string,`source`:string,`version`:string>>>)
+          - name: securityContext
+            expr: CAST(data:securityContext AS struct<`asNumber`:bigint,`asOrg`:string,`domain`:string,`isProxy`:boolean,`isp`:string>)
+          - name: severity
+            expr: CAST(data:severity AS string)
+          - name: target
+            expr: CAST(data:target AS array<struct<`alternateId`:string,`detailEntry`:struct<`appInstanceId`:string,`appUserId`:string,`appUsername`:string,`audience`:string,`authenticatorKey`:string,`authenticatorMethodVerificationTime`:string,`certName`:string,`certStatus`:string,`completedAt`:string,`deviceIntegrator`:string,`deviceStatus`:string,`expires`:string,`hash`:string,`identifyingAttribute`:string,`initiatedAt`:string,`initiatedBy`:string,`managed`:string,`methodTypeUsed`:string,`methodUsedVerifiedProperties`:string,`notAfter`:string,`notBefore`:string,`oktaDeviceId`:string,`osPlatform`:string,`osVersion`:string,`policyName`:string,`policyRuleFactorMode`:string,`policyType`:string,`refreshtokentype`:string,`resolution`:string,`serialNumber`:string,`signOnModeEvaluationResult`:string,`signOnModeType`:string,`subject`:string,`tpmPresent`:string,`udid`:string,`userId`:string>,`displayName`:string,`id`:string,`type`:string>>)
+          - name: transaction
+            expr: CAST(data:transaction AS struct<`detail`:struct<`requestApiTokenClientId`:string,`requestApiTokenId`:string,`rootApiTokenId`:string>,`id`:string,`type`:string>)
+          - name: uuid
+            expr: CAST(data:uuid AS string)
+          - name: version
+            expr: CAST(data:version AS string)
 
 gold:
   - name: scheduled_job_activity
@@ -1039,7 +1035,7 @@ gold:
       - name: class_uid
         from: ocsf_class_uid
 
-      
+
 
       # event specifics
       - name: direction
@@ -2103,7 +2099,7 @@ gold:
       - name: observables
         expr: |
           CAST(array() AS ARRAY<STRUCT<name: STRING, type: STRING, value: STRING>>)
-          
+
       - name: metadata
         from: ocsf_metadata
 
@@ -2186,7 +2182,7 @@ gold:
               'uid',     ocsf_actor.user.uid
             ) AS user
           )
-          
+
       - name: api
         expr: |
           struct(
