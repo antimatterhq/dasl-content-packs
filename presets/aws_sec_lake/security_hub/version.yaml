@@ -4,4 +4,4 @@ versions:
     commit: df5cd227f8e31d20ace59be0051618bd4e41838d
   - versionNumber: 2
     changes: Updated preset to new OCSF-Lite schema.
-    commit: 7906b63699e5c0a196efbe0e391ee74516108f8e
+    commit: 64b380ccf7972e2dde399ed3f3b411cefad75425
