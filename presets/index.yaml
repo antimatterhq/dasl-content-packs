@@ -5,3 +5,5 @@ presets:
     sourceType: "httpreq"
   - source: "okta"
     sourceType: "syslog"
+  - source: "aws_sec_lake"
+    sourceType: "route53"
