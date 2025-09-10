@@ -33,7 +33,7 @@ silver:
         - name: ocsf_class_name
           literal: HTTP Activity
         - name: ocsf_severity_id
-          expr: "CAST('0' AS INT)"
+          expr: "CAST('4' AS INT)"
         - name: ocsf_severity
           literal: Unknown
         - name: ocsf_type_uid
@@ -575,8 +575,8 @@ silver:
           from: category
         - name: ocsf_metadata.tags
           expr: "array(
-                  named_struct('name', 'IsTlsInspected', 'value', CAST(properties.IsTlsInspected AS STRING))
-                )"
+            named_struct('name', 'IsTlsInspected', 'value', CAST(properties.IsTlsInspected AS STRING))
+            )"
         - name: action
           expr: CASE WHEN properties.Action = 'Deny' THEN 'Denied' WHEN properties.Action = 'Allow' THEN 'Allowed' ELSE 'Unknown' END
         - name: action_id
@@ -589,7 +589,7 @@ silver:
           from: properties.ThreatDescription
         - name: ocsf_finding.supporting_data
           expr: "CAST(to_json(
-              named_struct('SourceIp', properties.SourceIp, 'SourcePort', properties.SourcePort, 'Fqdn', properties.Fqdn, 'DestinationIp', properties.DestinationIp, 'DestinationPort', properties.DestinationPort, 'Protocol', properties.Protocol)) AS VARIANT)"
+            named_struct('SourceIp', properties.SourceIp, 'SourcePort', properties.SourcePort, 'Fqdn', properties.Fqdn, 'DestinationIp', properties.DestinationIp, 'DestinationPort', properties.DestinationPort, 'Protocol', properties.Protocol)) AS VARIANT)"
         - name: ocsf_osint.type
           expr: CASE WHEN properties.Url IS NOT NULL THEN 'URL' ELSE 'Unknown' END
         - name: ocsf_osint.type_id
@@ -680,8 +680,10 @@ gold:
         from: message
       - name: metadata
         from: ocsf_metadata
-      - name: raw_data
-        from: raw_data
+      - name: http_request
+        from: ocsf_http_request
+      - name: http_response
+        from: ocsf_http_response
       - name: src_endpoint
         from: ocsf_src_endpoint
       - name: dst_endpoint
@@ -743,43 +745,6 @@ gold:
         from: ocsf_firewall_rule
       - name: raw_data
         from: raw_data
-  - name: network_activity
-    input: azure_waf_az_fw_nat_rule
-    fields:
-      - name: activity_id
-        from: ocsf_activity_id
-      - name: activity_name
-        from: ocsf_activity_name
-      - name: category_uid
-        from: ocsf_category_uid
-      - name: category_name
-        from: ocsf_category_name
-      - name: class_uid
-        from: ocsf_class_uid
-      - name: class_name
-        from: ocsf_class_name
-      - name: severity_id
-        from: ocsf_severity_id
-      - name: severity
-        from: ocsf_severity
-      - name: type_uid
-        from: ocsf_type_uid
-      - name: type_name
-        from: ocsf_type_name
-      - name: time
-        from: time
-      - name: metadata
-        from: ocsf_metadata
-      - name: connection_info
-        from: ocsf_connection_info
-      - name: src_endpoint
-        from: ocsf_src_endpoint
-      - name: dst_endpoint
-        from: ocsf_dst_endpoint
-      - name: policy
-        from: ocsf_policy
-      - name: unmapped
-        expr: CAST(ocsf_unmapped AS VARIANT)
   - name: http_activity
     input: azure_waf_az_fw_application_rule
     fields:
@@ -923,3 +888,20 @@ gold:
         from: ocsf_policy
       - name: unmapped
         expr: CAST(ocsf_unmapped AS VARIANT)
+  - name: network_activity
+    input: azure_waf_az_fw_application_rule
+    fields:
+      - name: activity_id
+        from: ocsf_activity_id
+      - name: activity_name
+        from: ocsf_activity_name
+      - name: category_uid
+        from: ocsf_category_uid
+      - name: category_name
+        from: ocsf_category_name
+      - name: class_uid
+        from: ocsf_class_uid
+      - name: class_name
+        from: ocsf_class_name
+      - name: severity_id
+        from: ocsf_severity_id
