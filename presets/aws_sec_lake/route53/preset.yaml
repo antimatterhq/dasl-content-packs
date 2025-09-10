@@ -40,7 +40,7 @@ autoloader:
       observables array<struct<name:string,value:string,type:string,type_id:int>>,
       eventDay int,
       _rescued_data string,
-      actor 
+      actor string
 silver:
   transform:
     - name: aws_sec_lake_route53
