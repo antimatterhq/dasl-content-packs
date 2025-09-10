@@ -5,3 +5,6 @@ versions:
   - versionNumber: 2
     changes: Add a missing title
     commit: 4464adeceff0c5fe9b288764bb12de39b6d8481c
+  - versionNumber: 3
+    changes: Migrate to OCSF light
+    commit: 0a3b9d2db45659d902ee8d106764272db50f623b
