@@ -1,7 +1,8 @@
 name: aws_sec_lake_route53
 author: Antimatter
-title: "AWS Route53"
 description: "AWS Route53 Resolver query log data collected with AWS Security Lake"
+title: "AWS SecLake - Route53"
+iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/aws_sec_lake/route53/icon.png"
 autoloader:
   format: parquet
   multiline: true
@@ -89,8 +90,6 @@ gold:
         from: activity_id
       - name: activity_name
         from: activity_name
-      - name: actor
-        from: actor
       - name: category_uid
         from: category_uid
       - name: category_name
@@ -99,30 +98,22 @@ gold:
         from: class_uid
       - name: class_name
         from: class_name
-      - name: metadata
-        from: metadata
       - name: severity_id
         from: severity_id
       - name: severity
         from: severity
       - name: time
         from: time
-      - name: time_dt
-        from: time_dt
       - name: type_uid
         from: type_uid
       - name: type_name
         from: type_name
-      - name: observables
-        from: observables
       - name: action
         from: action
       - name: action_id
         from: action_id
       - name: disposition
         from: disposition
-      - name: firewall_rule
-        from: firewall_rule
       - name: connection_info
         from: connection_info
       - name: dst_endpoint
