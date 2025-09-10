@@ -5,3 +5,6 @@ versions:
   - versionNumber: 2
     changes: Updated preset to new OCSF-Lite schema.
     commit: 64b380ccf7972e2dde399ed3f3b411cefad75425
+  - versionNumber: 3
+    changes: Fake upgrade for testing..
+    commit: 92845aec989060cf7a3e1058a2db6752d7e2dd7e
