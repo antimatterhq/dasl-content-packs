@@ -1,6 +1,6 @@
 name: aws_sec_lake_eks_audit
 author: Antimatter
-description: "AWS EKS control plane data collected with AWS Security Lake"
+description: "AWS Security Lake EKS Audit Logs"
 title: "AWS SecLake - EKS"
 iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/aws_sec_lake/eks_audit/icon.png"
 autoloader:
