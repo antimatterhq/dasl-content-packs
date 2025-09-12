@@ -1,6 +1,6 @@
 name: aws_sec_lake_lambda_execution
 author: Antimatter
-description: "AWS Lambda Execution data collected with AWS Security Lake"
+description: "AWS Security Lake Lambda Execution Logs"
 title: "AWS SecLake - Lambda"
 iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/aws_sec_lake/lambda_execution/icon.png"
 autoloader:

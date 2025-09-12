@@ -1,6 +1,6 @@
 name: aws_sec_lake_cloudtrail_management
 author: Antimatter
-description: "AWS CloudTrail Management Event collected with AWS Security Lake"
+description: "AWS Security Lake CloudTrail Management Logs"
 title: "AWS SecLake - CloudTrail"
 iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/aws_sec_lake/cloudtrail_management/icon.png"
 autoloader:

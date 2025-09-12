@@ -1,6 +1,6 @@
 name: okta_syslog
 author: Antimatter
-description: "OKTA Syslog data wrapped by Cribl"
+description: "Okta Syslog Events"
 title: "OKTA - Syslog"
 iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/okta/syslog/icon.png"
 autoloader:

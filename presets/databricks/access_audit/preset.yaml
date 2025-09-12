@@ -1,6 +1,6 @@
 name: databricks_access_audit
 author: Antimatter
-description: "Datasource processing for Databricks access audit logs"
+description: "Databricks Access Audit Logs"
 title: "Databricks - Audit Table"
 iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/databricks/access_audit/icon.png"
 bronze:

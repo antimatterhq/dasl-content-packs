@@ -1,6 +1,6 @@
 name: aws_sec_lake_waf
 author: Antimatter
-description: "AWS WAF activity logs collected with AWS Security Lake"
+description: "AWS Security Lake WAF Activity Logs"
 title: "AWS SecLake - WAF"
 iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/aws_sec_lake/waf/icon.png"
 autoloader:

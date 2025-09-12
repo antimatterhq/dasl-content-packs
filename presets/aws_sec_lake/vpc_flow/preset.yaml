@@ -1,6 +1,6 @@
 name: aws_sec_lake_vpc_flow
 author: Antimatter
-description: "AWS VPC network flows logs collected with AWS Security Lake"
+description: "AWS Security Lake VPC Flow Logs"
 title: "AWS SecLake - VPC"
 iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/aws_sec_lake/vpc_flow/icon.png"
 autoloader:
