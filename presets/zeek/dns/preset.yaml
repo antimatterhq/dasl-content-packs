@@ -1,0 +1,158 @@
+name: zeek_dns
+description: "Zeek DNS logs"
+title: "Zeek DNS"
+iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/zeek/dns/icon.png"
+author: "Antimattter"
+autoloader:
+  format: json
+  
+bronze:
+  loadAsSingleVariant: true
+  preTransform:
+    -
+      - "data"
+      - cast(data:ts as timestamp) as time
+      - cast('zeek' as STRING) as source
+      - cast('dns' as STRING) as sourcetype 
+silver:
+  transform:
+    - name: zeek_dns
+      fields:
+        - name: id_origin_host
+          expr: try_cast(data:['id.orig_h'] as STRING)
+        - name: id_origin_port
+          expr: try_cast(data:['id.orig_p'] as INT)
+        - name: id_response_host
+          expr: try_cast(data:['id.resp_h'] as STRING)
+        - name: id_response_port
+          expr: try_cast(data:['id.resp_p'] as INT)
+        - name: answers
+          expr: TRY_CAST(try_variant_get(data, '$.answers') AS ARRAY<STRING>)
+        - name: TTLs
+          expr: TRY_CAST(try_variant_get(data, '$.TTLs') AS ARRAY<INT>)
+      utils:
+        unreferencedColumns:
+          preserve: true
+          omitColumns:
+            - data:['id.resp_h']
+            - data:['id.orig_h']
+            - data:ts
+            - data:['id.resp_p']
+            - data:['id.orig_p']
+gold:
+  - name: dns_activity
+    input: zeek_dns
+    fields:
+      - name: activity_id
+        expr: |
+          CAST(CASE 
+            WHEN answers IS NOT NULL AND size(answers) > 0 THEN 2  -- Response
+            WHEN data:rtt IS NOT NULL THEN 2  -- Response (has round trip time)
+            ELSE 1  -- Query
+          END as INT)
+      - name: activity_name
+        expr: |
+          CASE 
+            WHEN activity_id = 1 THEN 'Query'
+            WHEN activity_id = 2 THEN 'Response'
+            ELSE 'Unknown'
+          END
+      - name: category_uid
+        expr: CAST('4' AS INT)
+      - name: category_name
+        literal: Network Activity
+      - name: class_uid
+        expr: CAST('4003' AS INT)
+      - name: class_name
+        literal: DNS Activity
+      - name: severity_id
+        expr: CAST('1' AS INT)
+      - name: severity
+        literal: Informational
+      - name: type_uid
+        expr: cast(class_uid*100 + activity_id as long)
+      - name: type_name
+        expr: "concat('DNS Activity: ', activity_name)"
+      - name: time
+        from: time
+      - name: metadata.product.name
+        literal: Zeek DNS
+      - name: metadata.product.vendor_name
+        literal: Zeek
+      - name: metadata.uid
+        expr: data:uid::STRING
+      - name: metadata.processed_time
+        expr: current_timestamp()
+      - name: metadata.logged_time
+        from: time
+      - name: metadata.log_name
+        literal: dns
+      - name: metadata.log_provider
+        literal: zeek
+      - name: src_endpoint.ip
+        from: id_origin_host
+      - name: dst_endpoint.ip
+        from: id_response_host
+      - name: src_endpoint.port
+        from: id_origin_port
+      - name: dst_endpoint.port
+        from: id_response_port
+      - name: connection_info.protocol_name
+        expr: lower(data:proto::STRING)
+      - name: connection_info.protocol_num
+        expr: CAST((CASE WHEN LOWER(data:proto::STRING) = 'udp' THEN 17 WHEN LOWER(data:proto::STRING) = 'tcp' THEN 6 ELSE 255 END) AS INT)
+      - name: query.hostname
+        expr: data:query::STRING
+      - name: query.class
+        expr: |
+          CASE 
+            WHEN data:qclass::INT = 1 THEN 'IN'
+            WHEN data:qclass::INT = 3 THEN 'CH'
+            WHEN data:qclass::INT = 4 THEN 'HS'
+            ELSE 'UNKNOWN'
+          END
+      - name: query.type
+        expr: data:qtype_name::STRING
+      - name: rcode_id
+        expr: cast(data:rcode as int)
+      - name: rcode
+        expr: data:rcode_name::STRING
+      - name: status_id
+        expr: CAST('1' AS INT)
+      - name: status
+        literal: Success
+      - name: raw_data
+        from: data
+      - name: answers
+        expr: |
+          (CASE WHEN answers IS NOT NULL AND size(answers) > 0 THEN
+            transform(
+              arrays_zip(answers, TTLs),
+              x -> named_struct(
+                'rdata', x.answers,
+                'ttl', try_cast(x.TTLs as int),
+                'flags', 
+                  array_remove(
+                    array(
+                      CASE WHEN data:AA::BOOLEAN THEN 'Authoritative Answer' END,
+                      CASE WHEN data:TC::BOOLEAN THEN 'Truncated Response' END,
+                      CASE WHEN data:RD::BOOLEAN THEN 'Recursion Desired' END,
+                      CASE WHEN data:RA::BOOLEAN THEN 'Recursion Available' END,
+                      CASE WHEN data:Z::INT != 0 THEN 'Other' END
+                    ), 
+                    null
+                  ),
+                'flag_ids',
+                  array_remove(
+                    array(
+                      CASE WHEN data:AA::BOOLEAN THEN 1 END,
+                      CASE WHEN data:TC::BOOLEAN THEN 2 END,
+                      CASE WHEN data:RD::BOOLEAN THEN 3 END,
+                      CASE WHEN data:RA::BOOLEAN THEN 4 END,
+                      CASE WHEN data:Z::INT != 0 THEN 99 END
+                    ),
+                    null
+                  )
+              )
+            )
+          END)

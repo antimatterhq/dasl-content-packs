@@ -1,0 +1,248 @@
+name: zeek_conn
+description: "Zeek Conn logs"
+title: "Zeek Conn"
+iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/zeek/conn/icon.png"
+author: "Antimatter"
+autoloader:
+  format: json
+
+bronze:
+  loadAsSingleVariant: true
+  preTransform:
+    -
+      - "data"
+      - cast(data:ts as timestamp) as time
+      - cast('zeek' AS STRING) AS source
+      - cast('conn' AS STRING) AS sourcetype
+silver:
+  transform:
+    - name: zeek_conn
+      fields:
+        - name: id_origin_host
+          expr: try_cast(data:['id.orig_h'] as STRING)
+        - name: id_origin_port
+          expr: try_cast(data:['id.orig_p'] as INT)
+        - name: id_response_host
+          expr: try_cast(data:['id.resp_h'] as STRING)
+        - name: id_response_port
+          expr: try_cast(data:['id.resp_p'] as INT)
+        - name: conn_state
+          expr: try_cast(data:['conn_state'] as STRING)
+      utils:
+        unreferencedColumns:
+          preserve: true
+          omitColumns:
+            - data:['id.resp_h']
+            - data:['id.orig_h']
+            - data:ts
+            - data:['id.resp_p']
+            - data:['id.orig_p']
+gold:
+  - name: network_activity
+    input: zeek_conn
+    fields:
+      - name: activity_id
+        expr: |
+          cast(
+            CASE
+              WHEN conn_state IN ('SF', 'RSTO', 'RSTR', 'RSTRH', 'SH', 'SHR') THEN 2
+              WHEN conn_state = 'S0' THEN 4
+              WHEN conn_state = 'REJ' THEN 5
+              ELSE 6
+            END
+          as int)
+      - name: activity_name
+        expr: |
+          CASE
+              WHEN conn_state IN ('SF', 'RSTO', 'RSTR', 'RSTRH', 'SH', 'SHR') THEN 'Close'
+              WHEN conn_state = 'S0' THEN 'Fail'
+              WHEN conn_state = 'REJ' THEN 'Refuse'
+              ELSE 'Traffic'
+          END
+      - name: category_uid
+        expr: CAST('4' AS INT)
+      - name: category_name
+        literal: Network Activity
+      - name: class_uid
+        expr: CAST('4001' AS INT)
+      - name: class_name
+        literal: Network Activity
+      - name: severity_id
+        expr: CAST('1' AS INT)
+      - name: severity
+        literal: Informational
+      - name: type_uid
+        expr: CAST(class_uid * 100 + activity_id AS BIGINT)
+      - name: type_name
+        expr: "concat('Network Activity: ', activity_name)"
+      - name: time
+        from: time
+      - name: start_time
+        from: time
+      - name: metadata.product.name
+        literal: Zeek Conn
+      - name: metadata.product.vendor_name
+        literal: Zeek
+      - name: metadata.uid
+        expr: data:uid::STRING
+      - name: metadata.processed_time
+        expr: current_timestamp()
+      - name: metadata.logged_time
+        from: time
+      - name: metadata.log_name
+        literal: conn
+      - name: metadata.log_provider
+        literal: zeek
+      - name: src_endpoint.ip
+        from: id_origin_host
+      - name: dst_endpoint.ip
+        from: id_response_host
+      - name: src_endpoint.port
+        from: id_origin_port
+      - name: dst_endpoint.port
+        from: id_response_port
+      - name: connection_info.uid
+        expr: data:uid::STRING
+      - name: connection_info.protocol_name
+        expr: lower(data:proto::STRING)
+      - name: connection_info.flag_history
+        expr: data:history::STRING
+      - name: connection_info.protocol_num
+        expr: |
+          CAST((
+            CASE WHEN LOWER(data:proto::STRING) = 'icmp' THEN 1
+            WHEN LOWER(data:proto::STRING) = 'tcp' THEN 6
+            WHEN LOWER(data:proto::STRING) = 'udp' THEN 17
+            ELSE NULL END)
+          AS INT)
+      - name: connection_info.direction_id
+        expr: |
+          CASE
+            WHEN
+              (
+                id_origin_host RLIKE '^10\\.'
+                OR id_origin_host RLIKE '^192\\.168\\.'
+                OR id_origin_host RLIKE '^172\\.(1[6-9]|2[0-9]|3[0-1])\\.'
+              )
+              AND
+              (
+                id_response_host RLIKE '^10\\.'
+                OR id_response_host RLIKE '^192\\.168\\.'
+                OR id_response_host RLIKE '^172\\.(1[6-9]|2[0-9]|3[0-1])\\.'
+              )
+            THEN 3
+
+            WHEN
+              (
+                id_origin_host RLIKE '^10\\.'
+                OR id_origin_host RLIKE '^192\\.168\\.'
+                OR id_origin_host RLIKE '^172\\.(1[6-9]|2[0-9]|3[0-1])\\.'
+              )
+              AND NOT
+              (
+                id_response_host RLIKE '^10\\.'
+                OR id_response_host RLIKE '^192\\.168\\.'
+                OR id_response_host RLIKE '^172\\.(1[6-9]|2[0-9]|3[0-1])\\.'
+              )
+            THEN 2
+
+            WHEN
+              NOT
+              (
+                id_origin_host RLIKE '^10\\.'
+                OR id_origin_host RLIKE '^192\\.168\\.'
+                OR id_origin_host RLIKE '^172\\.(1[6-9]|2[0-9]|3[0-1])\\.'
+              )
+              AND
+              (
+                id_response_host RLIKE '^10\\.'
+                OR id_response_host RLIKE '^192\\.168\\.'
+                OR id_response_host RLIKE '^172\\.(1[6-9]|2[0-9]|3[0-1])\\.'
+              )
+            THEN 1
+
+            ELSE 0
+          END
+      - name: connection_info.direction
+        expr: |
+          CASE
+            WHEN
+              (
+                id_origin_host RLIKE '^10\\.'
+                OR id_origin_host RLIKE '^192\\.168\\.'
+                OR id_origin_host RLIKE '^172\\.(1[6-9]|2[0-9]|3[0-1])\\.'
+              )
+              AND
+              (
+                id_response_host RLIKE '^10\\.'
+                OR id_response_host RLIKE '^192\\.168\\.'
+                OR id_response_host RLIKE '^172\\.(1[6-9]|2[0-9]|3[0-1])\\.'
+              )
+            THEN 'Lateral'
+
+            WHEN
+              (
+                id_origin_host RLIKE '^10\\.'
+                OR id_origin_host RLIKE '^192\\.168\\.'
+                OR id_origin_host RLIKE '^172\\.(1[6-9]|2[0-9]|3[0-1])\\.'
+              )
+              AND NOT
+              (
+                id_response_host RLIKE '^10\\.'
+                OR id_response_host RLIKE '^192\\.168\\.'
+                OR id_response_host RLIKE '^172\\.(1[6-9]|2[0-9]|3[0-1])\\.'
+              )
+            THEN 'Outbound'
+
+            WHEN
+              NOT
+              (
+                id_origin_host RLIKE '^10\\.'
+                OR id_origin_host RLIKE '^192\\.168\\.'
+                OR id_origin_host RLIKE '^172\\.(1[6-9]|2[0-9]|3[0-1])\\.'
+              )
+              AND
+              (
+                id_response_host RLIKE '^10\\.'
+                OR id_response_host RLIKE '^192\\.168\\.'
+                OR id_response_host RLIKE '^172\\.(1[6-9]|2[0-9]|3[0-1])\\.'
+              )
+            THEN 'Inbound'
+
+            ELSE 'Unknown'
+          END
+
+      - name: status
+        expr: |
+          CASE
+            WHEN activity_id IN ('4', '5') THEN 'Failure'
+            WHEN activity_id = '0' THEN 'Unknown'
+            WHEN activity_id = '99' THEN 'Other'
+            ELSE 'Success'
+          END
+      - name: status_id
+        expr: |
+          CASE
+            WHEN activity_id IN ('4', '5') THEN 2
+            WHEN activity_id = '0' THEN 0
+            WHEN activity_id = '99' THEN 99
+            ELSE 1
+          END
+      - name: traffic.bytes_in
+        expr: data:resp_bytes::BIGINT
+      - name: traffic.bytes_out
+        expr: data:orig_bytes::BIGINT
+      - name: traffic.bytes
+        expr: data:resp_bytes::BIGINT + data:orig_bytes::BIGINT
+      - name: traffic.packets_in
+        expr: data:resp_pkts::BIGINT
+      - name: traffic.packets_out
+        expr: data:orig_pkts::BIGINT
+      - name: traffic.packets
+        expr: data:orig_pkts::BIGINT + data:resp_pkts::BIGINT
+      - name: src_endpoint.mac
+        expr: data:orig_l2_addr::STRING
+      - name: dst_endpoint.mac
+        expr: data:resp_l2_addr::STRING
+      - name: raw_data
+        from: data
