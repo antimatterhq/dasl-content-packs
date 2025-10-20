@@ -1,0 +1,4 @@
+versions:
+  - versionNumber: 1
+    changes: Initial commit of e2e (test) CloudTrail IAM Events
+    commit: 6d3d22ede73d7c6bd53573f208485582c45f085b
