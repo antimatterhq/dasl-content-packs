@@ -225,16 +225,24 @@ gold:
         from: DstIP
       - name: dst_endpoint.port
         from: DstPort
-      - name: metadata.product.name
-        literal: Gateway DNS
+      - name: dst_endpoint.location.continent
+        expr: ResolvedIPContinentCodes[0] # or via element_at(array, index)
+      - name: dst_endpoint.location.country
+        expr: ResolvedIPCountryCodes[0] # or via element_at(array, index)
+      - name: metadata.version # ocsf schema version for preset yaml
+        literal: 1.0.0
       - name: metadata.product.vendor_name
         literal: Cloudflare
+      - name: metadata.product.name
+        literal: Gateway DNS
       - name: query.hostname
         from: QueryName
       - name: query.type
         from: QueryTypeName
       - name: query.class
         literal: IN
+      - name: query.packet_uid
+        from: QueryID
       - name: query_time
         from: time
       - name: rcode # string rcode
@@ -277,6 +285,10 @@ gold:
         from: SrcIP
       - name: src_endpoint.port
         from: SrcPort
+      - name: src_endpoint.location.continent
+        from: SrcIPContinentCode
+      - name: src_endpoint.location.country
+        from: SrcIPCountryCode
       - name: status # string status (event result)
         expr: |
           CASE
