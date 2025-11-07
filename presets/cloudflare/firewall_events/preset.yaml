@@ -98,6 +98,8 @@ gold:
         expr: ClientRequestProtocol
       - name: message
         from: Description
+      - name: metadata.version # ocsf schema version for preset yaml
+        literal: 1.0.0
       - name: metadata.product.vendor_name
         literal: Cloudflare
       - name: metadata.product.name
@@ -128,7 +130,7 @@ gold:
         from: ClientRequestUserAgent
       - name: src_endpoint.domain
         from: ClientRequestHost
-      - name: src_endpoint.location
+      - name: src_endpoint.location.country
         from: ClientCountry
       - name: src_endpoint.zone
         expr: COALESCE(Metadata['zone_name'], 'Unknown') as zone -- key:value pair from map<string,string>
