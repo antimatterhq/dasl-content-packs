@@ -1,0 +1,448 @@
+name: cisco_ios
+title: "Cisco - IOS"
+author: Garrett R Peternel <garrett.peternel@databricks.com>
+description: "A preset for Cisco datasets - IOS"
+iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/cisco/ios/icon.png"
+# read stream schema inf
+autoloader:
+  format: text
+  cloudFiles:
+    schemaHints: "value STRING"
+# ingest
+bronze:
+  preTransform:
+    -
+      - "*"
+      - TO_TIMESTAMP(REGEXP_EXTRACT(value, '(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+)', 1), 'MMM d yyyy HH:mm:ss') as time
+      - CAST('cisco' AS STRING) AS source
+      - CAST('ios' AS STRING) AS sourcetype
+# parse
+silver:
+  transform:
+    - name: cisco_ios_iam_authentication
+      postFilter: (facility IN ('AAA', 'SEC_LOGIN') AND mnemonic LIKE 'LOGIN%') OR (facility = 'SYS' AND mnemonic = 'LOGOUT')
+      fields:
+        - name: seq_no
+          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 1)
+        - name: timestamp
+          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 2)
+        - name: facility
+          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 3)
+        - name: severity
+          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 4)
+        - name: mnemonic
+          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 5)
+        - name: description
+          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 6)
+      utils:
+        unreferencedColumns:
+          preserve: true
+          omitColumns:
+            - value
+    - name: cisco_ios_iam_authorize_session
+      postFilter: mnemonic IN ('EXEC_FAILED', 'CLI_DENIED', 'ACCESS_DENIED')
+      fields:
+        - name: seq_no
+          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 1)
+        - name: timestamp
+          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 2)
+        - name: facility
+          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 3)
+        - name: severity
+          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 4)
+        - name: mnemonic
+          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 5)
+        - name: description
+          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 6)
+      utils:
+        unreferencedColumns:
+          preserve: true
+          omitColumns:
+            - value
+    - name: cisco_ios_process
+      postFilter: facility IN ('SYS', 'CPU', 'MEM', 'ENV')
+      fields:
+        - name: seq_no
+          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 1)
+        - name: timestamp
+          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 2)
+        - name: facility
+          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 3)
+        - name: severity
+          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 4)
+        - name: mnemonic
+          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 5)
+        - name: description
+          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 6)
+      utils:
+        unreferencedColumns:
+          preserve: true
+          omitColumns:
+            - value
+    - name: cisco_ios_network
+      postFilter: facility IN ('LINK', 'LINEPROTO', 'ETHCNTR', 'IFMON', 'DEBUG')
+      fields:
+        - name: seq_no
+          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 1)
+        - name: timestamp
+          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 2)
+        - name: facility
+          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 3)
+        - name: severity
+          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 4)
+        - name: mnemonic
+          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 5)
+        - name: description
+          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 6)
+      utils:
+        unreferencedColumns:
+          preserve: true
+          omitColumns:
+            - value
+# normalize
+gold:
+  - name: authentication
+    input: cisco_ios_iam_authentication
+    fields:
+      - name: category_uid
+        expr: CAST('3' AS INT)
+      - name: category_name
+        literal: Identity & Access Management
+      - name: class_uid
+        expr: CAST('3002' AS INT)
+      - name: class_name
+        literal: Authentication
+      - name: type_uid
+        expr: |
+          CASE 
+            WHEN mnemonic = 'LOGOUT' THEN CAST('300202' AS BIGINT)
+            WHEN UPPER(mnemonic) LIKE '%SUCCESS%' OR severity = '5' THEN CAST('300201' AS BIGINT)
+            WHEN UPPER(mnemonic) LIKE '%FAIL%' OR severity = '4' THEN CAST('300202' AS BIGINT)
+            ELSE CAST('300200' AS BIGINT)
+          END
+      - name: activity_id
+        expr: |
+          CASE 
+            WHEN mnemonic = 'LOGOUT' THEN CAST('2' AS INT)
+            WHEN UPPER(mnemonic) LIKE '%SUCCESS%' OR severity = '5' THEN CAST('1' AS INT)
+            WHEN UPPER(mnemonic) LIKE '%FAIL%' OR severity = '4' THEN CAST('2' AS INT)
+            ELSE CAST('0' AS INT)
+          END
+      - name: activity_name
+        expr: |
+          CASE 
+            WHEN mnemonic = 'LOGOUT' THEN 'Logoff'
+            WHEN UPPER(mnemonic) LIKE '%SUCCESS%' OR severity = '5' THEN 'Logon'
+            WHEN UPPER(mnemonic) LIKE '%FAIL%' OR severity = '4' THEN 'Logoff'
+            ELSE 'Unknown'
+          END
+      - name: status_id
+        expr: |
+          CASE 
+            WHEN UPPER(mnemonic) LIKE '%SUCCESS%' OR severity = '5' OR mnemonic = 'LOGOUT' THEN CAST('1' AS INT)
+            WHEN UPPER(mnemonic) LIKE '%FAIL%' OR severity = '4' THEN CAST('2' AS INT)
+            ELSE CAST('99' AS INT)
+          END
+      - name: status
+        expr: |
+          CASE 
+            WHEN UPPER(mnemonic) LIKE '%SUCCESS%' OR severity = '5' OR mnemonic = 'LOGOUT' THEN 'Success'
+            WHEN UPPER(mnemonic) LIKE '%FAIL%' OR severity = '4' THEN 'Failure'
+            ELSE 'Other'
+          END
+      - name: severity_id
+        expr: |
+          CASE 
+            WHEN CAST(severity AS INT) = 0 THEN CAST('6' AS INT)
+            WHEN CAST(severity AS INT) = 1 THEN CAST('5' AS INT)
+            WHEN CAST(severity AS INT) = 2 THEN CAST('5' AS INT)
+            WHEN CAST(severity AS INT) = 3 THEN CAST('4' AS INT)
+            WHEN CAST(severity AS INT) = 4 THEN CAST('3' AS INT)
+            WHEN CAST(severity AS INT) = 5 THEN CAST('2' AS INT)
+            WHEN CAST(severity AS INT) = 6 THEN CAST('1' AS INT)
+            WHEN CAST(severity AS INT) = 7 THEN CAST('1' AS INT)
+            ELSE CAST('99' AS INT)
+          END
+      - name: severity
+        expr: |
+          CASE 
+            WHEN CAST(severity AS INT) = 0 THEN 'Fatal'
+            WHEN CAST(severity AS INT) = 1 THEN 'Critical'
+            WHEN CAST(severity AS INT) = 2 THEN 'Critical'
+            WHEN CAST(severity AS INT) = 3 THEN 'High'
+            WHEN CAST(severity AS INT) = 4 THEN 'Medium'
+            WHEN CAST(severity AS INT) = 5 THEN 'Low'
+            WHEN CAST(severity AS INT) = 6 THEN 'Informational'
+            WHEN CAST(severity AS INT) = 7 THEN 'Informational'
+            ELSE 'Other'
+          END
+      - name: time
+        from: time
+      - name: message
+        from: description
+      - name: metadata.product.name
+        literal: IOS
+      - name: metadata.product.vendor_name
+        literal: Cisco
+      - name: metadata.log_provider
+        literal: Cisco IOS
+      - name: metadata.logged_time
+        from: time
+      - name: metadata.processed_time
+        expr: CURRENT_TIMESTAMP()
+      - name: metadata.event_code
+        from: mnemonic
+      - name: metadata.uid
+        from: seq_no
+      - name: user.name
+        expr: |
+          CASE
+            WHEN mnemonic = 'LOGOUT' THEN REGEXP_EXTRACT(description, 'User\s+(\w+)', 1)
+            ELSE REGEXP_EXTRACT(description, 'user:\s*(\w+)', 1)
+          END
+      - name: src_endpoint.ip
+        expr: |
+          CASE
+            WHEN mnemonic = 'LOGOUT' THEN REGEXP_EXTRACT(description, '\((\d+\.\d+\.\d+\.\d+)\)', 1)
+            ELSE REGEXP_EXTRACT(description, 'Source:\s*(\d+\.\d+\.\d+\.\d+)', 1)
+          END
+      - name: src_endpoint.port
+        expr: TRY_CAST(REGEXP_EXTRACT(description, 'localport:\s*(\d+)', 1) AS INT)
+  - name: authorize_session
+    input: cisco_ios_iam_authorize_session
+    fields:
+      - name: category_uid
+        expr: CAST('3' AS INT)
+      - name: category_name
+        literal: Identity & Access Management
+      - name: class_uid
+        expr: CAST('3003' AS INT)
+      - name: class_name
+        literal: Authorize Session
+      - name: type_uid
+        expr: CAST('300399' AS BIGINT)
+      - name: activity_id
+        expr: CAST('99' AS INT)
+      - name: activity_name
+        literal: Other
+      - name: status_id
+        expr: CAST('2' AS INT)
+      - name: status
+        literal: Failure
+      - name: severity_id
+        expr: |
+          CASE 
+            WHEN CAST(severity AS INT) = 0 THEN CAST('6' AS INT)
+            WHEN CAST(severity AS INT) = 1 THEN CAST('5' AS INT)
+            WHEN CAST(severity AS INT) = 2 THEN CAST('5' AS INT)
+            WHEN CAST(severity AS INT) = 3 THEN CAST('4' AS INT)
+            WHEN CAST(severity AS INT) = 4 THEN CAST('3' AS INT)
+            WHEN CAST(severity AS INT) = 5 THEN CAST('2' AS INT)
+            WHEN CAST(severity AS INT) = 6 THEN CAST('1' AS INT)
+            WHEN CAST(severity AS INT) = 7 THEN CAST('1' AS INT)
+            ELSE CAST('99' AS INT)
+          END
+      - name: severity
+        expr: |
+          CASE 
+            WHEN CAST(severity AS INT) = 0 THEN 'Fatal'
+            WHEN CAST(severity AS INT) = 1 THEN 'Critical'
+            WHEN CAST(severity AS INT) = 2 THEN 'Critical'
+            WHEN CAST(severity AS INT) = 3 THEN 'High'
+            WHEN CAST(severity AS INT) = 4 THEN 'Medium'
+            WHEN CAST(severity AS INT) = 5 THEN 'Low'
+            WHEN CAST(severity AS INT) = 6 THEN 'Informational'
+            WHEN CAST(severity AS INT) = 7 THEN 'Informational'
+            ELSE 'Other'
+          END
+      - name: time
+        from: time
+      - name: message
+        from: description
+      - name: metadata.product.name
+        literal: IOS
+      - name: metadata.product.vendor_name
+        literal: Cisco
+      - name: metadata.log_provider
+        literal: Cisco IOS
+      - name: metadata.logged_time
+        from: time
+      - name: metadata.processed_time
+        expr: CURRENT_TIMESTAMP()
+      - name: metadata.event_code
+        from: mnemonic
+      - name: metadata.uid
+        from: seq_no
+      - name: user.name
+        expr: REGEXP_EXTRACT(description, 'User\s+(\w+)', 1)
+      - name: dst_endpoint.svc_name
+        expr: REGEXP_EXTRACT(description, 'attempted to\s+(\w+)', 1)
+  - name: network_activity
+    input: cisco_ios_network
+    fields:
+      - name: category_uid
+        expr: CAST('4' AS INT)
+      - name: category_name
+        literal: Network Activity
+      - name: class_uid
+        expr: CAST('4001' AS INT)
+      - name: class_name
+        literal: Network Activity
+      - name: type_uid
+        expr: |
+          CASE 
+            WHEN mnemonic = 'UPDOWN' AND UPPER(description) LIKE '%UP%' THEN CAST('400101' AS BIGINT)
+            WHEN mnemonic = 'UPDOWN' AND UPPER(description) LIKE '%DOWN%' THEN CAST('400102' AS BIGINT)
+            ELSE CAST('400199' AS BIGINT)
+          END
+      - name: activity_id
+        expr: |
+          CASE 
+            WHEN mnemonic = 'UPDOWN' AND UPPER(description) LIKE '%UP%' THEN CAST('1' AS INT)
+            WHEN mnemonic = 'UPDOWN' AND UPPER(description) LIKE '%DOWN%' THEN CAST('2' AS INT)
+            ELSE CAST('99' AS INT)
+          END
+      - name: activity_name
+        expr: |
+          CASE 
+            WHEN mnemonic = 'UPDOWN' AND UPPER(description) LIKE '%UP%' THEN 'Open'
+            WHEN mnemonic = 'UPDOWN' AND UPPER(description) LIKE '%DOWN%' THEN 'Close'
+            ELSE 'Other'
+          END
+      - name: status_id
+        expr: CAST('99' AS INT)
+      - name: status
+        literal: Other
+      - name: severity_id
+        expr: |
+          CASE 
+            WHEN CAST(severity AS INT) = 0 THEN CAST('6' AS INT)
+            WHEN CAST(severity AS INT) = 1 THEN CAST('5' AS INT)
+            WHEN CAST(severity AS INT) = 2 THEN CAST('5' AS INT)
+            WHEN CAST(severity AS INT) = 3 THEN CAST('4' AS INT)
+            WHEN CAST(severity AS INT) = 4 THEN CAST('3' AS INT)
+            WHEN CAST(severity AS INT) = 5 THEN CAST('2' AS INT)
+            WHEN CAST(severity AS INT) = 6 THEN CAST('1' AS INT)
+            WHEN CAST(severity AS INT) = 7 THEN CAST('1' AS INT)
+            ELSE CAST('99' AS INT)
+          END
+      - name: severity
+        expr: |
+          CASE 
+            WHEN CAST(severity AS INT) = 0 THEN 'Fatal'
+            WHEN CAST(severity AS INT) = 1 THEN 'Critical'
+            WHEN CAST(severity AS INT) = 2 THEN 'Critical'
+            WHEN CAST(severity AS INT) = 3 THEN 'High'
+            WHEN CAST(severity AS INT) = 4 THEN 'Medium'
+            WHEN CAST(severity AS INT) = 5 THEN 'Low'
+            WHEN CAST(severity AS INT) = 6 THEN 'Informational'
+            WHEN CAST(severity AS INT) = 7 THEN 'Informational'
+            ELSE 'Other'
+          END
+      - name: time
+        from: time
+      - name: message
+        from: description
+      - name: metadata.product.name
+        literal: IOS
+      - name: metadata.product.vendor_name
+        literal: Cisco
+      - name: metadata.log_provider
+        literal: Cisco IOS
+      - name: metadata.logged_time
+        from: time
+      - name: metadata.processed_time
+        expr: CURRENT_TIMESTAMP()
+      - name: metadata.event_code
+        from: mnemonic
+      - name: metadata.uid
+        from: seq_no
+      - name: connection_info.protocol_name
+        from: facility
+      - name: dst_endpoint.interface_name
+        expr: REGEXP_EXTRACT(description, 'Interface\s+([^,]+)', 1)
+  - name: process_activity
+    input: cisco_ios_process
+    fields:
+      - name: category_uid
+        expr: CAST('1' AS INT)
+      - name: category_name
+        literal: System Activity
+      - name: class_uid
+        expr: CAST('1007' AS INT)
+      - name: class_name
+        literal: Process Activity
+      - name: type_uid
+        expr: |
+          CASE 
+            WHEN mnemonic = 'RELOAD' THEN CAST('100799' AS BIGINT)
+            WHEN mnemonic LIKE '%FAILURE%' THEN CAST('100799' AS BIGINT)
+            ELSE CAST('100799' AS BIGINT)
+          END
+      - name: activity_id
+        expr: CAST('99' AS INT)
+      - name: activity_name
+        literal: Other
+      - name: status_id
+        expr: |
+          CASE 
+            WHEN mnemonic LIKE '%FAILURE%' THEN CAST('2' AS INT)
+            ELSE CAST('1' AS INT)
+          END
+      - name: status
+        expr: |
+          CASE 
+            WHEN mnemonic LIKE '%FAILURE%' THEN 'Failure'
+            ELSE 'Success'
+          END
+      - name: severity_id
+        expr: |
+          CASE 
+            WHEN CAST(severity AS INT) = 0 THEN CAST('6' AS INT)
+            WHEN CAST(severity AS INT) = 1 THEN CAST('5' AS INT)
+            WHEN CAST(severity AS INT) = 2 THEN CAST('5' AS INT)
+            WHEN CAST(severity AS INT) = 3 THEN CAST('4' AS INT)
+            WHEN CAST(severity AS INT) = 4 THEN CAST('3' AS INT)
+            WHEN CAST(severity AS INT) = 5 THEN CAST('2' AS INT)
+            WHEN CAST(severity AS INT) = 6 THEN CAST('1' AS INT)
+            WHEN CAST(severity AS INT) = 7 THEN CAST('1' AS INT)
+            ELSE CAST('99' AS INT)
+          END
+      - name: severity
+        expr: |
+          CASE 
+            WHEN CAST(severity AS INT) = 0 THEN 'Fatal'
+            WHEN CAST(severity AS INT) = 1 THEN 'Critical'
+            WHEN CAST(severity AS INT) = 2 THEN 'Critical'
+            WHEN CAST(severity AS INT) = 3 THEN 'High'
+            WHEN CAST(severity AS INT) = 4 THEN 'Medium'
+            WHEN CAST(severity AS INT) = 5 THEN 'Low'
+            WHEN CAST(severity AS INT) = 6 THEN 'Informational'
+            WHEN CAST(severity AS INT) = 7 THEN 'Informational'
+            ELSE 'Other'
+          END
+      - name: time
+        from: time
+      - name: message
+        from: description
+      - name: metadata.product.name
+        literal: IOS
+      - name: metadata.product.vendor_name
+        literal: Cisco
+      - name: metadata.log_provider
+        literal: Cisco IOS
+      - name: metadata.logged_time
+        from: time
+      - name: metadata.processed_time
+        expr: CURRENT_TIMESTAMP()
+      - name: metadata.event_code
+        from: mnemonic
+      - name: metadata.uid
+        from: seq_no
+      - name: actor.user.name
+        expr: |
+          CASE
+            WHEN mnemonic = 'RELOAD' THEN REGEXP_EXTRACT(description, 'requested by user\s+(\w+)', 1)
+            WHEN mnemonic = 'CONFIG_I' THEN REGEXP_EXTRACT(description, 'by\s+(\w+)\s+on', 1)
+            ELSE NULL
+          END
