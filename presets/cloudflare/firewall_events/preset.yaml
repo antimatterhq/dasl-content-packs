@@ -14,7 +14,9 @@ bronze:
   preTransform:
     -
       - "*"
-      - CAST(Datetime as timestamp) as time
+      - CAST(Datetime as TIMESTAMP) as time
+      - CAST('cloudflare' AS STRING) AS data_source # duplicate col <Source> in log; rename to data_source
+      - CAST('firewall_events' AS STRING) AS data_sourcetype
 # parse
 silver:
   transform:
@@ -51,6 +53,16 @@ gold:
   - name: network_activity
     input: cloudflare_firewall_events
     fields:
+      - name: action
+        from: Action
+      - name: action_id
+        expr: |
+          CASE
+            WHEN LOWER(Action) IN ('allow', 'bypass') THEN 1
+            WHEN LOWER(Action) = 'block' THEN 2
+            WHEN LOWER(Action) IN ('challenge', 'jschallenge', 'managedchallenge') THEN 3
+            ELSE 99
+          END
       - name: activity_id
         expr: |
           CASE
@@ -96,14 +108,33 @@ gold:
         expr: CAST('4001' AS INT)
       - name: connection_info.protocol_name
         expr: ClientRequestProtocol
+      - name: disposition
+        expr: |
+          CASE
+            WHEN LOWER(Action) IN ('allow', 'bypass', 'log') THEN 'Allowed'
+            WHEN LOWER(Action) IN ('block', 'connectionclose') THEN 'Blocked'
+            WHEN LOWER(Action) IN ('challenge', 'jschallenge', 'managedchallenge') THEN 'Quarantined'
+            ELSE 'Unknown'
+          END
+      - name: disposition_id
+        expr: |
+          CASE
+            WHEN disposition = 'Allowed' THEN 1
+            WHEN disposition = 'Blocked' THEN 2
+            WHEN disposition = 'Quarantined' THEN 3
+            WHEN disposition = 'Unknown' THEN 0
+            ELSE 99
+          END
       - name: message
         from: Description
-      - name: metadata.version # ocsf schema version for preset yaml
+      - name: metadata.version
         literal: 1.0.0
       - name: metadata.product.vendor_name
         literal: Cloudflare
       - name: metadata.product.name
         literal: Firewall Events
+      - name: metadata.log_provider
+        literal: Cloudflare Firewall Events
       - name: severity
         expr: |
           CASE
@@ -126,15 +157,13 @@ gold:
           END
       - name: src_endpoint.ip
         from: ClientIP
-      - name: src_endpoint.agent_list
-        from: ClientRequestUserAgent
       - name: src_endpoint.domain
         from: ClientRequestHost
       - name: src_endpoint.location.country
         from: ClientCountry
       - name: src_endpoint.zone
-        expr: COALESCE(Metadata['zone_name'], 'Unknown') as zone -- key:value pair from map<string,string>
-      - name: status # string status (event result)
+        expr: COALESCE(Metadata['zone_name'], 'Unknown')
+      - name: status
         expr: |
           CASE
             WHEN LOWER(Action) IN ('allow', 'bypass', 'log') THEN 'Success'
@@ -152,7 +181,7 @@ gold:
             '; RuleID: ', COALESCE(CAST(RuleID AS STRING), 'N/A'),
             '; Source: ', COALESCE(Source, 'N/A')
             )
-      - name: status_id # numeric status
+      - name: status_id
         expr: |
           CASE
             WHEN status = 'Success' THEN 1
@@ -174,9 +203,122 @@ gold:
         from: ClientRequestPath
       - name: url.query_string
         from: ClientRequestQuery
-      - name: unmapped.RuleID
-        from: RuleID
-      - name: unmapped.Source
-        from: Source
-      - name: unmapped.ClientRequestMethod
-        from: ClientRequestMethod
+      - name: url.url_string
+        expr: |
+          CONCAT(
+            COALESCE(ClientRequestScheme, ''), '://',
+            COALESCE(ClientRequestHost, ''),
+            COALESCE(ClientRequestPath, ''),
+            CASE WHEN ClientRequestQuery IS NOT NULL AND ClientRequestQuery != '' 
+              THEN CONCAT('?', ClientRequestQuery) 
+              ELSE '' 
+            END
+          )
+      - name: metadata.correlation_uid
+        from: RayID
+      - name: metadata.uid
+        from: RayID
+      - name: observables
+        expr: |
+          ARRAY(
+            STRUCT(
+              'Client IP' AS name,
+              'IP Address' AS type,
+              ClientIP AS value
+            ),
+            STRUCT(
+              'Request Host' AS name,
+              'Hostname' AS type,
+              ClientRequestHost AS value
+            ),
+            STRUCT(
+              'Ray ID' AS name,
+              'Resource UID' AS type,
+              RayID AS value
+            ),
+            STRUCT(
+              'Rule ID' AS name,
+              'Resource UID' AS type,
+              CAST(RuleID AS STRING) AS value
+            )
+          )
+      - name: enrichments
+        expr: |
+          FILTER(
+            ARRAY(
+              CASE 
+                WHEN ContentScanObjResults IS NOT NULL AND SIZE(ContentScanObjResults) > 0 THEN
+                  STRUCT(
+                    'Content Scan Results' AS name,
+                    'Content scanning detected objects' AS desc,
+                    CAST(NULL AS VARIANT) AS data,
+                    ARRAY_JOIN(ContentScanObjResults, ', ') AS value
+                  )
+                ELSE NULL
+              END,
+              CASE 
+                WHEN LeakedCredentialCheckResult IS NOT NULL THEN
+                  STRUCT(
+                    'Leaked Credential Check' AS name,
+                    'Credential leak detection result' AS desc,
+                    CAST(NULL AS VARIANT) AS data,
+                    LeakedCredentialCheckResult AS value
+                  )
+                ELSE NULL
+              END,
+              CASE 
+                WHEN ClientIPClass IS NOT NULL THEN
+                  STRUCT(
+                    'Client IP Classification' AS name,
+                    'IP address classification' AS desc,
+                    CAST(NULL AS VARIANT) AS data,
+                    ClientIPClass AS value
+                  )
+                ELSE NULL
+              END,
+              CASE 
+                WHEN ClientASN IS NOT NULL THEN
+                  STRUCT(
+                    'Client ASN' AS name,
+                    'Autonomous System Number' AS desc,
+                    CAST(NULL AS VARIANT) AS data,
+                    CONCAT('AS', CAST(ClientASN AS STRING), ' - ', COALESCE(ClientASNDescription, 'N/A')) AS value
+                  )
+                ELSE NULL
+              END
+            ),
+            x -> x IS NOT NULL
+          )
+      - name: unmapped
+        expr: |
+          CAST(
+            to_json(
+              named_struct(
+                'EdgeColoCode', EdgeColoCode,
+                'EdgeResponseStatus', EdgeResponseStatus,
+                'OriginResponseStatus', OriginResponseStatus,
+                'OriginatorRayID', OriginatorRayID,
+                'ClientASN', ClientASN,
+                'ClientASNDescription', ClientASNDescription,
+                'ClientIPClass', ClientIPClass,
+                'ClientRequestMethod', ClientRequestMethod,
+                'ClientRequestProtocol', ClientRequestProtocol,
+                'ClientRequestUserAgent', ClientRequestUserAgent,
+                'ClientRefererHost', ClientRefererHost,
+                'ClientRefererPath', ClientRefererPath,
+                'ClientRefererQuery', ClientRefererQuery,
+                'ClientRefererScheme', ClientRefererScheme,
+                'LeakedCredentialCheckResult', LeakedCredentialCheckResult,
+                'ContentScanObjResults', ContentScanObjResults,
+                'ContentScanObjSizes', ContentScanObjSizes,
+                'ContentScanObjTypes', ContentScanObjTypes,
+                'Kind', Kind,
+                'MatchIndex', MatchIndex,
+                'Metadata', Metadata,
+                'RuleID', RuleID,
+                'Ref', Ref,
+                'Source', Source,
+                'Description', Description
+              )
+            ) AS VARIANT
+          )
