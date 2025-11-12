@@ -180,6 +180,8 @@ gold:
         from: time
       - name: message
         from: description
+      - name: metadata.version
+        literal: 1.0.0
       - name: metadata.product.name
         literal: IOS
       - name: metadata.product.vendor_name
@@ -345,6 +347,8 @@ gold:
         from: time
       - name: message
         from: description
+      - name: metadata.version
+        literal: 1.0.0
       - name: metadata.product.name
         literal: IOS
       - name: metadata.product.vendor_name
@@ -427,6 +431,8 @@ gold:
         from: time
       - name: message
         from: description
+      - name: metadata.version
+        literal: 1.0.0
       - name: metadata.product.name
         literal: IOS
       - name: metadata.product.vendor_name
