@@ -14,7 +14,9 @@ bronze:
   preTransform:
     -
       - "*"
-      - CAST(Datetime as timestamp) as time
+      - CAST(Datetime as TIMESTAMP) as time
+      - CAST('cloudflare' AS STRING) AS source
+      - CAST('gateway_dns' AS STRING) AS sourcetype
 # parse
 silver:
   transform:
@@ -229,12 +231,14 @@ gold:
         expr: ResolvedIPContinentCodes[0] # or via element_at(array, index)
       - name: dst_endpoint.location.country
         expr: ResolvedIPCountryCodes[0] # or via element_at(array, index)
-      - name: metadata.version # ocsf schema version for preset yaml
+      - name: metadata.version
         literal: 1.0.0
       - name: metadata.product.vendor_name
         literal: Cloudflare
       - name: metadata.product.name
         literal: Gateway DNS
+      - name: metadata.log_provider
+        literal: Cloudflare Gateway DNS
       - name: query.hostname
         from: QueryName
       - name: query.type
@@ -245,7 +249,7 @@ gold:
         from: QueryID
       - name: query_time
         from: time
-      - name: rcode # string rcode
+      - name: rcode
         expr: |
           CASE
             WHEN RCode = 0 THEN 'NoError'
@@ -275,7 +279,7 @@ gold:
             WHEN RCode = 65535 THEN 'Reserved'
             ELSE 'Other'
           END
-      - name: rcode_id # numeric rcode
+      - name: rcode_id
         from: RCode
       - name: severity
         literal: Informational
@@ -289,16 +293,16 @@ gold:
         from: SrcIPContinentCode
       - name: src_endpoint.location.country
         from: SrcIPCountryCode
-      - name: status # string status (event result)
+      - name: status
         expr: |
           CASE
             WHEN RCode = 0 THEN 'Success'
             WHEN RCode BETWEEN 1 AND 65534 THEN 'Failure'
             ELSE 'Unknown'
           END
-      - name: status_code # string status (numeric rcode)
+      - name: status_code
         expr: CAST(RCode AS STRING)
-      - name: status_detail # human-readable rcode desc
+      - name: status_detail
         expr: |
           CASE
             WHEN RCode = 0 THEN 'No Error'
@@ -328,7 +332,7 @@ gold:
             WHEN RCode = 65535 THEN 'Reserved'
             ELSE 'Other'
           END
-      - name: status_id # numeric status (numeric rcode)
+      - name: status_id
         from: RCode
       - name: time
         from: time
@@ -336,5 +340,187 @@ gold:
         expr: "CONCAT('DNS Activity: ', activity_name, ' [', QueryTypeName, ']')"
       - name: type_uid
         expr: CAST(class_uid*100 + activity_id as long)
-      - name: unmapped.QueryType
-        from: QueryType
+      - name: action
+        expr: |
+          CASE
+            WHEN LOWER(ResolverDecision) = 'allow' THEN 'Allowed'
+            WHEN LOWER(ResolverDecision) = 'block' THEN 'Denied'
+            WHEN LOWER(ResolverDecision) = 'challenge' THEN 'Challenged'
+            ELSE 'Other'
+          END
+      - name: action_id
+        expr: |
+          CAST(CASE
+            WHEN LOWER(ResolverDecision) = 'allow' THEN 1
+            WHEN LOWER(ResolverDecision) = 'block' THEN 2
+            WHEN LOWER(ResolverDecision) = 'challenge' THEN 3
+            ELSE 99
+          END AS INT)
+      - name: device.name
+        from: DeviceName
+      - name: device.uid
+        from: DeviceID
+      - name: disposition
+        expr: |
+          CASE
+            WHEN LOWER(ResolverDecision) = 'allow' THEN 'Allowed'
+            WHEN LOWER(ResolverDecision) = 'block' THEN 'Blocked'
+            WHEN LOWER(ResolverDecision) = 'challenge' THEN 'Other'
+            ELSE 'Unknown'
+          END
+      - name: disposition_id
+        expr: |
+          CAST(CASE
+            WHEN LOWER(ResolverDecision) = 'allow' THEN 1
+            WHEN LOWER(ResolverDecision) = 'block' THEN 2
+            WHEN LOWER(ResolverDecision) = 'challenge' THEN 99
+            ELSE 0
+          END AS INT)
+      - name: dst_endpoint.location.city
+        from: Location
+      - name: dst_endpoint.uid
+        from: LocationID
+      - name: enrichments
+        expr: |
+          CASE
+            WHEN (MatchedCategoryNames IS NOT NULL AND size(MatchedCategoryNames) > 0) OR 
+                 (MatchedIndicatorFeedNames IS NOT NULL AND size(MatchedIndicatorFeedNames) > 0)
+            THEN concat(
+              COALESCE(
+                TRANSFORM(
+                  FILTER(MatchedCategoryNames, x -> x IS NOT NULL),
+                  x -> NAMED_STRUCT(
+                    'name', 'Matched Category', 
+                    'value', x, 
+                    'data', CAST(NULL AS VARIANT), 
+                    'desc', CAST(NULL AS STRING)
+                  )
+                ),
+                ARRAY()
+              ),
+              COALESCE(
+                TRANSFORM(
+                  FILTER(MatchedIndicatorFeedNames, x -> x IS NOT NULL),
+                  x -> NAMED_STRUCT(
+                    'name', 'Matched Threat Feed', 
+                    'value', x, 
+                    'data', CAST(NULL AS VARIANT), 
+                    'desc', CAST(NULL AS STRING)
+                  )
+                ),
+                ARRAY()
+              )
+            )
+            ELSE NULL
+          END
+      - name: message
+        expr: |
+          CONCAT(
+            'DNS ',
+            activity_name,
+            ' for ',
+            QueryName,
+            ' (',
+            QueryTypeName,
+            ') - ',
+            COALESCE(rcode, 'Unknown'),
+            COALESCE(
+              CASE 
+                WHEN ResolverDecision IS NOT NULL THEN CONCAT(' - Decision: ', ResolverDecision)
+                ELSE ''
+              END,
+              ''
+            )
+          )
+      - name: metadata.correlation_uid
+        from: QueryID
+      - name: metadata.logged_time
+        from: time
+      - name: metadata.processed_time
+        expr: CURRENT_TIMESTAMP()
+      - name: metadata.uid
+        from: QueryID
+      - name: observables
+        expr: |
+          concat(
+            ARRAY(
+              NAMED_STRUCT('name', 'query_hostname', 'type', 'Hostname', 'value', QueryName)
+            ),
+            COALESCE(
+              TRANSFORM(
+                FILTER(ResolvedIPs, x -> x IS NOT NULL),
+                x -> NAMED_STRUCT('name', 'resolved_ip', 'type', 'IP Address', 'value', x)
+              ),
+              ARRAY()
+            )
+          )
+      - name: policy.name
+        from: PolicyName
+      - name: policy.uid
+        from: PolicyID
+      - name: policy.is_applied
+        expr: CAST(CASE WHEN PolicyID IS NOT NULL THEN TRUE ELSE FALSE END AS BOOLEAN)
+      - name: src_endpoint.name
+        from: DeviceName
+      - name: src_endpoint.uid
+        from: UserID
+      - name: traffic.bytes_in
+        expr: CAST(QuerySize AS BIGINT)
+      - name: unmapped
+        expr: |
+          CAST(
+            to_json(
+              named_struct(
+                'AccountID', AccountID,
+                'ApplicationID', ApplicationID,
+                'AuthoritativeNameServerIPs', AuthoritativeNameServerIPs,
+                'CNAMECategoryIDs', CNAMECategoryIDs,
+                'CNAMECategoryNames', CNAMECategoryNames,
+                'CNAMEs', CNAMEs,
+                'CNAMEsReversed', CNAMEsReversed,
+                'ColoCode', ColoCode,
+                'ColoID', ColoID,
+                'CustomResolveDurationMs', CustomResolveDurationMs,
+                'CustomResolverAddress', CustomResolverAddress,
+                'CustomResolverPolicyID', CustomResolverPolicyID,
+                'CustomResolverPolicyName', CustomResolverPolicyName,
+                'CustomResolverResponse', CustomResolverResponse,
+                'DoHSubdomain', DoHSubdomain,
+                'DoTSubdomain', DoTSubdomain,
+                'EDEErrors', EDEErrors,
+                'Email', Email,
+                'InitialCategoryIDs', InitialCategoryIDs,
+                'InitialCategoryNames', InitialCategoryNames,
+                'InitialResolvedIPs', InitialResolvedIPs,
+                'InternalDNSFallbackStrategy', InternalDNSFallbackStrategy,
+                'InternalDNSRCode', InternalDNSRCode,
+                'InternalDNSViewID', InternalDNSViewID,
+                'InternalDNSZoneID', InternalDNSZoneID,
+                'IsResponseCached', IsResponseCached,
+                'MatchedCategoryIDs', MatchedCategoryIDs,
+                'MatchedIndicatorFeedIDs', MatchedIndicatorFeedIDs,
+                'QueryApplicationIDs', QueryApplicationIDs,
+                'QueryApplicationNames', QueryApplicationNames,
+                'QueryCategoryIDs', QueryCategoryIDs,
+                'QueryCategoryNames', QueryCategoryNames,
+                'QueryID', QueryID,
+                'QueryIndicatorFeedIDs', QueryIndicatorFeedIDs,
+                'QueryIndicatorFeedNames', QueryIndicatorFeedNames,
+                'QueryNameReversed', QueryNameReversed,
+                'QueryType', QueryType,
+                'RData', RData,
+                'RedirectTargetURI', RedirectTargetURI,
+                'RegistrationID', RegistrationID,
+                'RequestContextCategoryIDs', RequestContextCategoryIDs,
+                'RequestContextCategoryNames', RequestContextCategoryNames,
+                'ResolvedIPCategoryIDs', ResolvedIPCategoryIDs,
+                'ResolvedIPCategoryNames', ResolvedIPCategoryNames,
+                'ResolverDecision', ResolverDecision,
+                'ResolverPolicyID', ResolverPolicyID,
+                'ResolverPolicyName', ResolverPolicyName,
+                'ResourceRecords', ResourceRecords,
+                'TimeZone', TimeZone,
+                'TimeZoneInferredMethod', TimeZoneInferredMethod
+              )
+            )
+          AS VARIANT)
