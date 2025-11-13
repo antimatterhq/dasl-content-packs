@@ -6,6 +6,7 @@
 .idea_modules
 /.worksheet/
 *.iml
+*.
 
-# python
+.DS_Store
 .python-version
