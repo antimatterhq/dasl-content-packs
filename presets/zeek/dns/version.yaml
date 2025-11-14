@@ -1,4 +1,4 @@
 versions:
   - versionNumber: 1
     changes: Initial commit of Zeek preset
-    commit: 8d3d40e27de0e596c0a74e6765de4ad942c8a973
+    commit: efaa6610e0794d31d359c4673453a3ce27dc19b2
