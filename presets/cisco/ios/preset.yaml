@@ -1,14 +1,10 @@
 name: cisco_ios
-title: "Cisco - IOS"
-author: Garrett R Peternel <garrett.peternel@databricks.com>
-description: "A preset for Cisco datasets - IOS"
+title: "Cisco IOS"
+author: Antimatter
+description: "Cisco IOS logs"
 iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/cisco/ios/icon.png"
-# read stream schema inf
 autoloader:
   format: text
-  cloudFiles:
-    schemaHints: "value STRING"
-# ingest
 bronze:
   preTransform:
     -
@@ -16,7 +12,7 @@ bronze:
       - TO_TIMESTAMP(REGEXP_EXTRACT(value, '(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+)', 1), 'MMM d yyyy HH:mm:ss') as time
       - CAST('cisco' AS STRING) AS source
       - CAST('ios' AS STRING) AS sourcetype
-# parse
+      - CURRENT_TIMESTAMP() as processed_time
 silver:
   transform:
     - name: cisco_ios_iam_authentication
@@ -99,7 +95,6 @@ silver:
           preserve: true
           omitColumns:
             - value
-# normalize
 gold:
   - name: authentication
     input: cisco_ios_iam_authentication
