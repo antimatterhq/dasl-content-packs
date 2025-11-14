@@ -1,179 +1,178 @@
-# header tags
 name: cloudflare_gateway_dns
-title: "Cloudflare - DNS (Gateway)"
-author: Garrett R Peternel <garrett.peternel@databricks.com>
-description: "A preset for Account-scoped Cloudflare datasets - DNS (Gateway)"
+title: "Cloudflare Gateway DNS"
+author: Antimatter
+description: "Cloudflare Gateway DNS logs"
 iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/cloudflare/gateway_dns/icon.png"
-# read stream schema inf
 autoloader:
   format: jsonl # json <add multiline: True>
-  cloudFiles:
-    schemaHints: "AccountID STRING, ApplicationID STRING, ApplicationName STRING, AuthoritativeNameServerIPs STRING, CNAMECategoryIDs STRING, CNAMECategoryNames STRING, CNAMEs STRING, CNAMEsReversed STRING, ColoCode STRING, ColoID INT, CustomResolveDurationMs INT, CustomResolverAddress STRING, CustomResolverPolicyID STRING, CustomResolverPolicyName STRING, CustomResolverResponse STRING, Datetime STRING, DeviceID STRING, DeviceName STRING, DoHSubdomain STRING, DoTSubdomain STRING, DstIP STRING, DstPort INT, EDEErrors STRING, Email STRING, InitialCategoryIDs STRING, InitialCategoryNames STRING, InitialResolvedIPs STRING, InternalDNSFallbackStrategy STRING, InternalDNSRCode INT, InternalDNSViewID STRING, InternalDNSZoneID STRING, IsResponseCached BOOLEAN, Location STRING, LocationID STRING, MatchedCategoryIDs STRING, MatchedCategoryNames STRING, MatchedIndicatorFeedIDs STRING, MatchedIndicatorFeedNames STRING, Policy STRING, PolicyID STRING, PolicyName STRING, Protocol STRING, QueryApplicationIDs STRING, QueryApplicationNames STRING, QueryCategoryIDs STRING, QueryCategoryNames STRING, QueryID STRING, QueryIndicatorFeedIDs STRING, QueryIndicatorFeedNames STRING, QueryName STRING, QueryNameReversed STRING, QuerySize INT, QueryType INT, QueryTypeName STRING, RCode INT, RData STRING, RedirectTargetURI STRING, RegistrationID STRING, RequestContextCategoryIDs STRING, RequestContextCategoryNames STRING, ResolvedIPCategoryIDs STRING, ResolvedIPCategoryNames STRING, ResolvedIPContinentCodes STRING, ResolvedIPCountryCodes STRING, ResolvedIPs STRING, ResolverDecision STRING, ResolverPolicyID STRING, ResolverPolicyName STRING, ResourceRecords STRING, ResourceRecordsJSON STRING, SrcIP STRING, SrcIPContinentCode STRING, SrcIPCountryCode STRING, SrcPort INT, TimeZone STRING, TimeZoneInferredMethod STRING, UserID STRING"
-# ingest
 bronze:
+  loadAsSingleVariant: true
   preTransform:
     -
-      - "*"
-      - CAST(Datetime as TIMESTAMP) as time
-      - CAST('cloudflare' AS STRING) AS source
-      - CAST('gateway_dns' AS STRING) AS sourcetype
-# parse
+      - "data"
+      - CAST(try_variant_get(data, '$.Datetime', 'STRING') AS TIMESTAMP) as time
+      - CAST('cloudflare' AS STRING) as source
+      - CAST('gateway_dns' AS STRING) as sourcetype
+      - CURRENT_TIMESTAMP() as processed_time
 silver:
   transform:
     - name: cloudflare_gateway_dns
+      fields:
+        - name: AccountID
+          expr: try_variant_get(data, '$.AccountID', 'STRING')
+        - name: ApplicationID
+          expr: try_variant_get(data, '$.ApplicationID', 'STRING')
+        - name: ApplicationName
+          expr: try_variant_get(data, '$.ApplicationName', 'STRING')
+        - name: AuthoritativeNameServerIPs
+          expr: try_variant_get(data, '$.AuthoritativeNameServerIPs', 'ARRAY<STRING>')
+        - name: CNAMECategoryIDs
+          expr: try_variant_get(data, '$.CNAMECategoryIDs', 'ARRAY<INT>')
+        - name: CNAMECategoryNames
+          expr: try_variant_get(data, '$.CNAMECategoryNames', 'ARRAY<STRING>')
+        - name: CNAMEs
+          expr: try_variant_get(data, '$.CNAMEs', 'ARRAY<STRING>')
+        - name: CNAMEsReversed
+          expr: try_variant_get(data, '$.CNAMEsReversed', 'ARRAY<STRING>')
+        - name: ColoCode
+          expr: try_variant_get(data, '$.ColoCode', 'STRING')
+        - name: ColoID
+          expr: TRY_CAST(try_variant_get(data, '$.ColoID', 'STRING') AS INT)
+        - name: CustomResolveDurationMs
+          expr: TRY_CAST(try_variant_get(data, '$.CustomResolveDurationMs', 'STRING') AS INT)
+        - name: CustomResolverAddress
+          expr: try_variant_get(data, '$.CustomResolverAddress', 'STRING')
+        - name: CustomResolverPolicyID
+          expr: try_variant_get(data, '$.CustomResolverPolicyID', 'STRING')
+        - name: CustomResolverPolicyName
+          expr: try_variant_get(data, '$.CustomResolverPolicyName', 'STRING')
+        - name: CustomResolverResponse
+          expr: try_variant_get(data, '$.CustomResolverResponse', 'STRING')
+        - name: DeviceID
+          expr: try_variant_get(data, '$.DeviceID', 'STRING')
+        - name: DeviceName
+          expr: try_variant_get(data, '$.DeviceName', 'STRING')
+        - name: DoHSubdomain
+          expr: try_variant_get(data, '$.DoHSubdomain', 'STRING')
+        - name: DoTSubdomain
+          expr: try_variant_get(data, '$.DoTSubdomain', 'STRING')
+        - name: DstIP
+          expr: try_variant_get(data, '$.DstIP', 'STRING')
+        - name: DstPort
+          expr: TRY_CAST(try_variant_get(data, '$.DstPort', 'STRING') AS INT)
+        - name: EDEErrors
+          expr: try_variant_get(data, '$.EDEErrors', 'ARRAY<INT>')
+        - name: Email
+          expr: try_variant_get(data, '$.Email', 'STRING')
+        - name: InitialCategoryIDs
+          expr: try_variant_get(data, '$.InitialCategoryIDs', 'ARRAY<INT>')
+        - name: InitialCategoryNames
+          expr: try_variant_get(data, '$.InitialCategoryNames', 'ARRAY<STRING>')
+        - name: InitialResolvedIPs
+          expr: try_variant_get(data, '$.InitialResolvedIPs', 'ARRAY<STRING>')
+        - name: InternalDNSFallbackStrategy
+          expr: try_variant_get(data, '$.InternalDNSFallbackStrategy', 'STRING')
+        - name: InternalDNSRCode
+          expr: TRY_CAST(try_variant_get(data, '$.InternalDNSRCode', 'STRING') AS INT)
+        - name: InternalDNSViewID
+          expr: try_variant_get(data, '$.InternalDNSViewID', 'STRING')
+        - name: InternalDNSZoneID
+          expr: try_variant_get(data, '$.InternalDNSZoneID', 'STRING')
+        - name: IsResponseCached
+          expr: TRY_CAST(try_variant_get(data, '$.IsResponseCached', 'STRING') AS BOOLEAN)
+        - name: Location
+          expr: try_variant_get(data, '$.Location', 'STRING')
+        - name: LocationID
+          expr: try_variant_get(data, '$.LocationID', 'STRING')
+        - name: MatchedCategoryIDs
+          expr: try_variant_get(data, '$.MatchedCategoryIDs', 'ARRAY<INT>')
+        - name: MatchedCategoryNames
+          expr: try_variant_get(data, '$.MatchedCategoryNames', 'ARRAY<STRING>')
+        - name: MatchedIndicatorFeedIDs
+          expr: try_variant_get(data, '$.MatchedIndicatorFeedIDs', 'ARRAY<INT>')
+        - name: MatchedIndicatorFeedNames
+          expr: try_variant_get(data, '$.MatchedIndicatorFeedNames', 'ARRAY<STRING>')
+        - name: Policy
+          expr: try_variant_get(data, '$.Policy', 'STRING')
+        - name: PolicyID
+          expr: try_variant_get(data, '$.PolicyID', 'STRING')
+        - name: PolicyName
+          expr: try_variant_get(data, '$.PolicyName', 'STRING')
+        - name: Protocol
+          expr: try_variant_get(data, '$.Protocol', 'STRING')
+        - name: QueryApplicationIDs
+          expr: try_variant_get(data, '$.QueryApplicationIDs', 'ARRAY<INT>')
+        - name: QueryApplicationNames
+          expr: try_variant_get(data, '$.QueryApplicationNames', 'ARRAY<STRING>')
+        - name: QueryCategoryIDs
+          expr: try_variant_get(data, '$.QueryCategoryIDs', 'ARRAY<INT>')
+        - name: QueryCategoryNames
+          expr: try_variant_get(data, '$.QueryCategoryNames', 'ARRAY<STRING>')
+        - name: QueryID
+          expr: try_variant_get(data, '$.QueryID', 'STRING')
+        - name: QueryIndicatorFeedIDs
+          expr: try_variant_get(data, '$.QueryIndicatorFeedIDs', 'ARRAY<INT>')
+        - name: QueryIndicatorFeedNames
+          expr: try_variant_get(data, '$.QueryIndicatorFeedNames', 'ARRAY<STRING>')
+        - name: QueryName
+          expr: try_variant_get(data, '$.QueryName', 'STRING')
+        - name: QueryNameReversed
+          expr: try_variant_get(data, '$.QueryNameReversed', 'STRING')
+        - name: QuerySize
+          expr: TRY_CAST(try_variant_get(data, '$.QuerySize', 'STRING') AS INT)
+        - name: QueryType
+          expr: TRY_CAST(try_variant_get(data, '$.QueryType', 'STRING') AS INT)
+        - name: QueryTypeName
+          expr: try_variant_get(data, '$.QueryTypeName', 'STRING')
+        - name: RCode
+          expr: TRY_CAST(try_variant_get(data, '$.RCode', 'STRING') AS INT)
+        - name: RData
+          expr: from_json(try_variant_get(data, '$.RData', 'STRING'), 'ARRAY<MAP<STRING,STRING>>')
+        - name: RedirectTargetURI
+          expr: try_variant_get(data, '$.RedirectTargetURI', 'STRING')
+        - name: RegistrationID
+          expr: try_variant_get(data, '$.RegistrationID', 'STRING')
+        - name: RequestContextCategoryIDs
+          expr: try_variant_get(data, '$.RequestContextCategoryIDs', 'ARRAY<INT>')
+        - name: RequestContextCategoryNames
+          expr: try_variant_get(data, '$.RequestContextCategoryNames', 'ARRAY<STRING>')
+        - name: ResolvedIPCategoryIDs
+          expr: try_variant_get(data, '$.ResolvedIPCategoryIDs', 'ARRAY<INT>')
+        - name: ResolvedIPCategoryNames
+          expr: try_variant_get(data, '$.ResolvedIPCategoryNames', 'ARRAY<STRING>')
+        - name: ResolvedIPContinentCodes
+          expr: try_variant_get(data, '$.ResolvedIPContinentCodes', 'ARRAY<STRING>')
+        - name: ResolvedIPCountryCodes
+          expr: try_variant_get(data, '$.ResolvedIPCountryCodes', 'ARRAY<STRING>')
+        - name: ResolvedIPs
+          expr: try_variant_get(data, '$.ResolvedIPs', 'ARRAY<STRING>')
+        - name: ResolverDecision
+          expr: try_variant_get(data, '$.ResolverDecision', 'STRING')
+        - name: ResolverPolicyID
+          expr: try_variant_get(data, '$.ResolverPolicyID', 'STRING')
+        - name: ResolverPolicyName
+          expr: try_variant_get(data, '$.ResolverPolicyName', 'STRING')
+        - name: ResourceRecords
+          expr: from_json(try_variant_get(data, '$.ResourceRecords', 'STRING'), 'ARRAY<MAP<STRING,STRING>>')
+        - name: ResourceRecordsJSON
+          expr: from_json(try_variant_get(data, '$.ResourceRecordsJSON', 'STRING'), 'ARRAY<MAP<STRING,STRING>>')
+        - name: SrcIP
+          expr: try_variant_get(data, '$.SrcIP', 'STRING')
+        - name: SrcIPContinentCode
+          expr: try_variant_get(data, '$.SrcIPContinentCode', 'STRING')
+        - name: SrcIPCountryCode
+          expr: try_variant_get(data, '$.SrcIPCountryCode', 'STRING')
+        - name: SrcPort
+          expr: TRY_CAST(try_variant_get(data, '$.SrcPort', 'STRING') AS INT)
+        - name: TimeZone
+          expr: try_variant_get(data, '$.TimeZone', 'STRING')
+        - name: TimeZoneInferredMethod
+          expr: try_variant_get(data, '$.TimeZoneInferredMethod', 'STRING')
+        - name: UserID
+          expr: try_variant_get(data, '$.UserID', 'STRING')
       utils:
-        temporaryFields:
-          - name: AuthoritativeNameServerIPs_arrays
-            expr: from_json(AuthoritativeNameServerIPs, 'ARRAY<STRING>')
-          - name: CNAMECategoryIDs_arrays
-            expr: from_json(CNAMECategoryIDs, 'ARRAY<INT>')
-          - name: CNAMECategoryNames_arrays
-            expr: from_json(CNAMECategoryNames, 'ARRAY<STRING>')
-          - name: CNAMEs_arrays
-            expr: from_json(CNAMEs, 'ARRAY<STRING>')
-          - name: CNAMEsReversed_arrays
-            expr: from_json(CNAMEsReversed, 'ARRAY<STRING>')
-          - name: EDEErrors_arrays
-            expr: from_json(EDEErrors, 'ARRAY<INT>')
-          - name: InitialCategoryIDs_arrays
-            expr: from_json(InitialCategoryIDs, 'ARRAY<INT>')
-          - name: InitialCategoryNames_arrays
-            expr: from_json(InitialCategoryNames, 'ARRAY<STRING>')
-          - name: InitialResolvedIPs_arrays
-            expr: from_json(InitialResolvedIPs, 'ARRAY<STRING>')
-          - name: MatchedCategoryIDs_arrays
-            expr: from_json(MatchedCategoryIDs, 'ARRAY<INT>')
-          - name: MatchedCategoryNames_arrays
-            expr: from_json(MatchedCategoryNames, 'ARRAY<STRING>')
-          - name: MatchedIndicatorFeedIDs_arrays
-            expr: from_json(MatchedIndicatorFeedIDs, 'ARRAY<INT>')
-          - name: MatchedIndicatorFeedNames_arrays
-            expr: from_json(MatchedIndicatorFeedNames, 'ARRAY<STRING>')
-          - name: QueryApplicationIDs_arrays
-            expr: from_json(QueryApplicationIDs, 'ARRAY<INT>')
-          - name: QueryApplicationNames_arrays
-            expr: from_json(QueryApplicationNames, 'ARRAY<STRING>')
-          - name: QueryCategoryIDs_arrays
-            expr: from_json(QueryCategoryIDs, 'ARRAY<INT>')
-          - name: QueryCategoryNames_arrays
-            expr: from_json(QueryCategoryNames, 'ARRAY<STRING>')
-          - name: QueryIndicatorFeedIDs_arrays
-            expr: from_json(QueryIndicatorFeedIDs, 'ARRAY<INT>')
-          - name: QueryIndicatorFeedNames_arrays
-            expr: from_json(QueryIndicatorFeedNames, 'ARRAY<STRING>')
-          - name: RequestContextCategoryIDs_arrays
-            expr: from_json(RequestContextCategoryIDs, 'ARRAY<INT>')
-          - name: RequestContextCategoryNames_arrays
-            expr: from_json(RequestContextCategoryNames, 'ARRAY<STRING>')
-          - name: ResolvedIPCategoryIDs_arrays
-            expr: from_json(ResolvedIPCategoryIDs, 'ARRAY<INT>')
-          - name: ResolvedIPCategoryNames_arrays
-            expr: from_json(ResolvedIPCategoryNames, 'ARRAY<STRING>')
-          - name: ResolvedIPContinentCodes_arrays
-            expr: from_json(ResolvedIPContinentCodes, 'ARRAY<STRING>')
-          - name: ResolvedIPCountryCodes_arrays
-            expr: from_json(ResolvedIPCountryCodes, 'ARRAY<STRING>')
-          - name: ResolvedIPs_arrays
-            expr: from_json(ResolvedIPs, 'ARRAY<STRING>')
-          - name: RData_maps
-            expr: from_json(RData, 'ARRAY<MAP<STRING,STRING>>') 
-          - name: ResourceRecords_maps
-            expr: from_json(ResourceRecords, 'ARRAY<MAP<STRING,STRING>>')
-          - name: ResourceRecordsJSON_maps
-            expr: from_json(ResourceRecordsJSON, 'ARRAY<MAP<STRING,STRING>>')
         unreferencedColumns:
           preserve: true
-          omitColumns:
-            - Datetime
-            - AuthoritativeNameServerIPs
-            - CNAMECategoryIDs
-            - CNAMECategoryNames
-            - CNAMEs
-            - CNAMEsReversed
-            - EDEErrors
-            - InitialCategoryIDs
-            - InitialCategoryNames
-            - InitialResolvedIPs
-            - MatchedCategoryIDs
-            - MatchedCategoryNames
-            - MatchedIndicatorFeedIDs
-            - MatchedIndicatorFeedNames
-            - QueryApplicationIDs
-            - QueryApplicationNames
-            - QueryCategoryIDs
-            - QueryCategoryNames
-            - QueryIndicatorFeedIDs
-            - QueryIndicatorFeedNames
-            - RequestContextCategoryIDs
-            - RequestContextCategoryNames
-            - ResolvedIPCategoryIDs
-            - ResolvedIPCategoryNames
-            - ResolvedIPContinentCodes
-            - ResolvedIPCountryCodes
-            - ResolvedIPs
-            - RData
-            - ResourceRecords
-            - ResourceRecordsJSON
-      fields:
-        - name: AuthoritativeNameServerIPs
-          from: AuthoritativeNameServerIPs_arrays
-        - name: CNAMECategoryIDs
-          from: CNAMECategoryIDs_arrays
-        - name: CNAMECategoryNames
-          from: CNAMECategoryNames_arrays
-        - name: CNAMEs
-          from: CNAMEs_arrays
-        - name: CNAMEsReversed
-          from: CNAMEsReversed_arrays
-        - name: EDEErrors
-          from: EDEErrors_arrays
-        - name: InitialCategoryIDs
-          from: InitialCategoryIDs_arrays
-        - name: InitialCategoryNames
-          from: InitialCategoryNames_arrays
-        - name: InitialResolvedIPs
-          from: InitialResolvedIPs_arrays
-        - name: MatchedCategoryIDs
-          from: MatchedCategoryIDs_arrays
-        - name: MatchedCategoryNames
-          from: MatchedCategoryNames_arrays
-        - name: MatchedIndicatorFeedIDs
-          from: MatchedIndicatorFeedIDs_arrays
-        - name: MatchedIndicatorFeedNames
-          from: MatchedIndicatorFeedNames_arrays
-        - name: QueryApplicationIDs
-          from: QueryApplicationIDs_arrays
-        - name: QueryApplicationNames
-          from: QueryApplicationNames_arrays
-        - name: QueryCategoryIDs
-          from: QueryCategoryIDs_arrays
-        - name: QueryCategoryNames
-          from: QueryCategoryNames_arrays
-        - name: QueryIndicatorFeedIDs
-          from: QueryIndicatorFeedIDs_arrays
-        - name: QueryIndicatorFeedNames
-          from: QueryIndicatorFeedNames_arrays
-        - name: RequestContextCategoryIDs
-          from: RequestContextCategoryIDs_arrays
-        - name: RequestContextCategoryNames
-          from: RequestContextCategoryNames_arrays
-        - name: ResolvedIPCategoryIDs
-          from: ResolvedIPCategoryIDs_arrays
-        - name: ResolvedIPCategoryNames
-          from: ResolvedIPCategoryNames_arrays
-        - name: ResolvedIPContinentCodes
-          from: ResolvedIPContinentCodes_arrays
-        - name: ResolvedIPCountryCodes
-          from: ResolvedIPCountryCodes_arrays
-        - name: ResolvedIPs
-          from: ResolvedIPs_arrays
-        - name: RData
-          from: RData_maps
-        - name: ResourceRecords
-          from: ResourceRecords_maps
-        - name: ResourceRecordsJSON
-          from: ResourceRecordsJSON_maps
-# normalize
 gold:
   - name: dns_activity
     input: cloudflare_gateway_dns
