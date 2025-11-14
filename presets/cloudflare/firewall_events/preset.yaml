@@ -1,54 +1,92 @@
-# header tags
 name: cloudflare_firewall_events
-title: "Cloudflare - Firewall (Events)"
-author: Garrett R Peternel <garrett.peternel@databricks.com>
-description: "A preset for Zone-scoped Cloudflare datasets - Firewall (Events)"
+title: "Cloudflare Firewall Events"
+author: Antimatter
+description: "Cloudflare Firewall Events logs"
 iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/cloudflare/firewall_events/icon.png"
-# read stream schema inf
 autoloader:
   format: jsonl # json <add multiline: True>
-  cloudFiles:
-    schemaHints: "Action STRING, ClientASN INT, ClientASNDescription STRING, ClientCountry STRING, ClientIP STRING, ClientIPClass STRING, ClientRefererHost STRING, ClientRefererPath STRING, ClientRefererQuery STRING, ClientRefererScheme STRING, ClientRequestHost STRING, ClientRequestMethod STRING, ClientRequestPath STRING, ClientRequestProtocol STRING, ClientRequestQuery STRING, ClientRequestScheme STRING, ClientRequestUserAgent STRING, ContentScanObjResults STRING, ContentScanObjSizes STRING, ContentScanObjTypes STRING, Datetime STRING, Description STRING, EdgeColoCode STRING, EdgeResponseStatus INT, Kind STRING, LeakedCredentialCheckResult STRING, MatchIndex INT, Metadata STRING, OriginResponseStatus INT, OriginatorRayID STRING, RayID STRING, Ref STRING, RuleID STRING, Source STRING"
-# ingest
 bronze:
+  loadAsSingleVariant: true
   preTransform:
     -
-      - "*"
-      - CAST(Datetime as TIMESTAMP) as time
-      - CAST('cloudflare' AS STRING) AS data_source # duplicate col <Source> in log; rename to data_source
-      - CAST('firewall_events' AS STRING) AS data_sourcetype
-# parse
+      - "data"
+      - CAST(try_variant_get(data, '$.Datetime', 'STRING') as TIMESTAMP) as time
+      - CAST('cloudflare' AS STRING) AS source
+      - CAST('firewall_events' AS STRING) AS sourcetype
+      - CURRENT_TIMESTAMP() as processed_time
 silver:
   transform:
     - name: cloudflare_firewall_events
+      fields:
+        - name: Action
+          expr: try_variant_get(data, '$.Action', 'STRING')
+        - name: ClientASN
+          expr: TRY_CAST(try_variant_get(data, '$.ClientASN', 'STRING') AS INT)
+        - name: ClientASNDescription
+          expr: try_variant_get(data, '$.ClientASNDescription', 'STRING')
+        - name: ClientCountry
+          expr: try_variant_get(data, '$.ClientCountry', 'STRING')
+        - name: ClientIP
+          expr: try_variant_get(data, '$.ClientIP', 'STRING')
+        - name: ClientIPClass
+          expr: try_variant_get(data, '$.ClientIPClass', 'STRING')
+        - name: ClientRefererHost
+          expr: try_variant_get(data, '$.ClientRefererHost', 'STRING')
+        - name: ClientRefererPath
+          expr: try_variant_get(data, '$.ClientRefererPath', 'STRING')
+        - name: ClientRefererQuery
+          expr: try_variant_get(data, '$.ClientRefererQuery', 'STRING')
+        - name: ClientRefererScheme
+          expr: try_variant_get(data, '$.ClientRefererScheme', 'STRING')
+        - name: ClientRequestHost
+          expr: try_variant_get(data, '$.ClientRequestHost', 'STRING')
+        - name: ClientRequestMethod
+          expr: try_variant_get(data, '$.ClientRequestMethod', 'STRING')
+        - name: ClientRequestPath
+          expr: try_variant_get(data, '$.ClientRequestPath', 'STRING')
+        - name: ClientRequestProtocol
+          expr: try_variant_get(data, '$.ClientRequestProtocol', 'STRING')
+        - name: ClientRequestQuery
+          expr: try_variant_get(data, '$.ClientRequestQuery', 'STRING')
+        - name: ClientRequestScheme
+          expr: try_variant_get(data, '$.ClientRequestScheme', 'STRING')
+        - name: ClientRequestUserAgent
+          expr: try_variant_get(data, '$.ClientRequestUserAgent', 'STRING')
+        - name: Description
+          expr: try_variant_get(data, '$.Description', 'STRING')
+        - name: EdgeColoCode
+          expr: try_variant_get(data, '$.EdgeColoCode', 'STRING')
+        - name: EdgeResponseStatus
+          expr: TRY_CAST(try_variant_get(data, '$.EdgeResponseStatus', 'STRING') AS INT)
+        - name: Kind
+          expr: try_variant_get(data, '$.Kind', 'STRING')
+        - name: LeakedCredentialCheckResult
+          expr: try_variant_get(data, '$.LeakedCredentialCheckResult', 'STRING')
+        - name: MatchIndex
+          expr: TRY_CAST(try_variant_get(data, '$.MatchIndex', 'STRING') AS INT)
+        - name: OriginResponseStatus
+          expr: TRY_CAST(try_variant_get(data, '$.OriginResponseStatus', 'STRING') AS INT)
+        - name: OriginatorRayID
+          expr: try_variant_get(data, '$.OriginatorRayID', 'STRING')
+        - name: RayID
+          expr: try_variant_get(data, '$.RayID', 'STRING')
+        - name: Ref
+          expr: try_variant_get(data, '$.Ref', 'STRING')
+        - name: RuleID
+          expr: try_variant_get(data, '$.RuleID', 'STRING')
+        - name: Src # duplicate metadata field <source>; rename to <Src>
+          expr: try_variant_get(data, '$.Source', 'STRING')
+        - name: ContentScanObjResults
+          expr: try_variant_get(data, '$.ContentScanObjResults', 'ARRAY<STRING>')
+        - name: ContentScanObjSizes
+          expr: try_variant_get(data, '$.ContentScanObjSizes', 'ARRAY<INT>')
+        - name: ContentScanObjTypes
+          expr: try_variant_get(data, '$.ContentScanObjTypes', 'ARRAY<STRING>')
+        - name: Metadata
+          expr: try_variant_get(data, '$.Metadata', 'MAP<STRING,STRING>')
       utils:
-        temporaryFields:
-          - name: ContentScanObjResults_arrays
-            expr: from_json(ContentScanObjResults, 'ARRAY<STRING>')
-          - name: ContentScanObjSizes_arrays
-            expr: from_json(ContentScanObjSizes, 'ARRAY<INT>')
-          - name: ContentScanObjTypes_arrays
-            expr: from_json(ContentScanObjTypes, 'ARRAY<STRING>')
-          - name: Metadata_maps
-            expr: from_json(Metadata, 'MAP<STRING,STRING>')
         unreferencedColumns:
           preserve: true
-          omitColumns:
-            - Datetime
-            - ContentScanObjResults
-            - ContentScanObjSizes
-            - ContentScanObjTypes
-            - Metadata
-      fields:
-        - name: ContentScanObjResults
-          from: ContentScanObjResults_arrays
-        - name: ContentScanObjSizes
-          from: ContentScanObjSizes_arrays
-        - name: ContentScanObjTypes
-          from: ContentScanObjTypes_arrays
-        - name: Metadata
-          from: Metadata_maps
-# normalize
 gold:
   - name: network_activity
     input: cloudflare_firewall_events
@@ -138,7 +176,7 @@ gold:
       - name: severity
         expr: |
           CASE
-            WHEN LOWER(Action) = 'block' AND LOWER(Source) = 'waf' THEN 'Critical'
+            WHEN LOWER(Action) = 'block' AND LOWER(Src) = 'waf' THEN 'Critical'
             WHEN LOWER(Action) IN ('block', 'connectionclose') THEN 'High'
             WHEN LOWER(Action) IN ('challenge', 'jschallenge', 'managedchallenge') THEN 'Medium'
             WHEN LOWER(Action) IN ('challengesolved', 'jschallengesolved', 'challengebypassed', 'jschallengebypassed', 'managedchallengebypassed', 'managedchallengeinteractivesolved', 'managedchallengenoninteractivesolved') THEN 'Low'
@@ -148,7 +186,7 @@ gold:
       - name: severity_id 
         expr: |
           CASE
-            WHEN LOWER(Action) = 'block' AND LOWER(Source) = 'waf' THEN 5
+            WHEN LOWER(Action) = 'block' AND LOWER(Src) = 'waf' THEN 5
             WHEN LOWER(Action) IN ('block', 'connectionclose') THEN 4
             WHEN LOWER(Action) IN ('challenge', 'jschallenge', 'managedchallenge') THEN 3
             WHEN LOWER(Action) IN ('challengesolved', 'jschallengesolved', 'challengebypassed', 'jschallengebypassed', 'managedchallengebypassed', 'managedchallengeinteractivesolved', 'managedchallengenoninteractivesolved') THEN 2
@@ -173,13 +211,13 @@ gold:
           END
       - name: status_code
         expr: CAST(EdgeResponseStatus AS STRING)
-      - name: status_detail # string concatenation <action,desc,rule,source>
+      - name: status_detail
         expr: |
           CONCAT(
             'Action: ', Action,
             '; Description: ', Description,
             '; RuleID: ', COALESCE(CAST(RuleID AS STRING), 'N/A'),
-            '; Source: ', COALESCE(Source, 'N/A')
+            '; Src: ', COALESCE(Src, 'N/A')
             )
       - name: status_id
         expr: |
@@ -317,7 +355,7 @@ gold:
                 'Metadata', Metadata,
                 'RuleID', RuleID,
                 'Ref', Ref,
-                'Source', Source,
+                'Src', Src,
                 'Description', Description
               )
             ) AS VARIANT
