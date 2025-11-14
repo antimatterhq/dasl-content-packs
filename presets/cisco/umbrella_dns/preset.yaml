@@ -1,15 +1,10 @@
-# header tags
 name: cisco_umbrella_dns
-title: "Cisco - DNS (Umbrella)"
-author: Garrett R Peternel <garrett.peternel@databricks.com>
-description: "A preset for Cisco datasets - DNS (Umbrella)"
+title: "Cisco Umbrella DNS"
+author: Antimatter
+description: "Cisco Umbrella DNS logs"
 iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/cisco/umbrella_dns/icon.png"
-# read stream schema inf
 autoloader:
   format: text
-  cloudFiles:
-    schemaHints: "value STRING"
-# ingest
 bronze:
   preTransform:
     -
@@ -17,7 +12,7 @@ bronze:
       - TO_TIMESTAMP(REGEXP_EXTRACT(value, '(\d+-\d+-\d+\s+\d+:\d+:\d+)', 0), 'yyyy-MM-dd HH:mm:ss') as time
       - CAST('cisco' AS STRING) AS source
       - CAST('umbrella_dns' AS STRING) AS sourcetype
-# parse
+      - CURRENT_TIMESTAMP() as processed_time
 silver:
   transform:
     - name: cisco_umbrella_dns
@@ -49,7 +44,7 @@ silver:
                   'sep', ',',
                   'unescapedQuoteHandling', 'BACK_TO_DELIMITER'
                 )
-              ) -- maps comma-sep 'quoted' records to csv schema header
+              )
         unreferencedColumns:
           preserve: true
           omitColumns:
@@ -89,7 +84,6 @@ silver:
           expr: data.destination_countries
         - name: org_id
           expr: data.org_id
-# normalize
 gold:
   - name: dns_activity
     input: cisco_umbrella_dns
