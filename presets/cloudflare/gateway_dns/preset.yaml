@@ -227,9 +227,9 @@ gold:
       - name: dst_endpoint.port
         from: DstPort
       - name: dst_endpoint.location.continent
-        expr: ResolvedIPContinentCodes[0] # or via element_at(array, index)
+        expr: element_at(ResolvedIPContinentCodes, 1)
       - name: dst_endpoint.location.country
-        expr: ResolvedIPCountryCodes[0] # or via element_at(array, index)
+        expr: element_at(ResolvedIPCountryCodes, 1)
       - name: metadata.version
         literal: 1.0.0
       - name: metadata.product.vendor_name
