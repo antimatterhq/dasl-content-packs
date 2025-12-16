@@ -2,3 +2,7 @@ versions:
   - versionNumber: 1
     changes: Initial commit of Zeek preset
     commit: efaa6610e0794d31d359c4673453a3ce27dc19b2
+  - versionNumber: 2
+    changes: Move icon
+    commit: 9866224ca35fe21d5f8002d9913b65f8869f7938
+
