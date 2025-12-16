@@ -1,7 +1,7 @@
 name: zeek_dns
 description: "Zeek DNS logs"
 title: "Zeek DNS"
-iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/dasl-v1.0/presets/zeek/dns/icon.png"
+iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/zeek/dns/icon.png"
 author: "Antimattter"
 autoloader:
   format: json

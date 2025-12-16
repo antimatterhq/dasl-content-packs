@@ -1,7 +1,7 @@
 name: zeek_http
 description: "Zeek HTTP logs"
 title: "Zeek HTTP"
-iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/dasl-v1.0/presets/zeek/http/icon.png"
+iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/zeek/http/icon.png"
 author: "Antimatter"
 autoloader:
   format: json
