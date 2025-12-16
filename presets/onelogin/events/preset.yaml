@@ -1,0 +1,157 @@
+name: onelogin_events
+author: Antimatter
+description: Event data collected from the Onelogin Events API.
+title: "OneLogin - Events (Silver)"
+iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/onelogin/events/icon.png"
+autoloader:
+  cloudFiles:
+    schemaHints: since STRING, error_description STRING, otp_device_id STRING, directory_sync_run_id
+      STRING, policy_id STRING, resolution STRING, custom_message STRING, created_at
+      STRING, risk_cookie_id STRING, user_name STRING, app_name STRING, actor_user_id
+      STRING, event_type_id INT, resource_type_id STRING, value STRING, directory_id
+      STRING, app_id STRING, id BIGINT, until STRING, browser_fingerprint STRING,
+      role_id STRING, operation_name STRING, ipaddr STRING, assuming_acting_user_id
+      STRING, user_id BIGINT, notes STRING, group_id STRING, risk_score FLOAT, risk_reasons
+      STRING, proxy_ip STRING, policy_name STRING, group_name STRING, event_type_ids
+      STRING, client_id STRING, actor_system STRING, actor_user_name STRING, otp_device_name
+      STRING, account_id INT, assumed_by_superadmin_or_reseller BIGINT, certificate_id BIGINT,
+      mapping_id BIGINT, radius_config_id BIGINT, param STRING, adc_id BIGINT,
+      solved BOOLEAN, service_directory_id BIGINT, object_id BIGINT, user_field_id BIGINT,
+      policy_type STRING, resolved_at STRING, trusted_idp_id BIGINT, privilege_id BIGINT
+  format: json
+
+silver:
+  transform:
+    - name: onelogin_events
+      fields:
+        - name: id
+          expr: id::BIGINT
+          comment: The ID of the event.
+        - name: created_at
+          expr: CAST(created_at AS TIMESTAMP)
+        - name: account_id
+          expr: account_id::BIGINT
+          comment: Account that triggered the event.
+        - name: actor_system
+          expr: actor_system::STRING
+          comment: Acting system that triggered the event when the actor is not a user.
+        - name: actor_user_id
+          expr: actor_user_id::BIGINT
+          comment: ID of the user whose action triggered the event.
+        - name: actor_user_name
+          expr: actor_user_name::STRING
+          comment: First & last name (or email) of that acting user.
+        - name: app_id
+          expr: app_id::BIGINT
+          comment: ID of the app involved (if applicable).
+        - name: app_name
+          expr: app_name::STRING
+          comment: Name of the app involved (if applicable).
+        - name: assuming_acting_user_id
+          expr: assuming_acting_user_id::BIGINT
+          comment: ID of a user who assumed the role of the acting user (if applicable).
+        - name: client_id
+          expr: client_id::STRING
+          comment: Client ID used to generate the access token for the API call.
+        - name: custom_message
+          expr: custom_message::STRING
+          comment: Extra details about the event.
+        - name: directory_sync_run_id
+          expr: directory_sync_run_id::BIGINT
+          comment: ID of the related directory sync run.
+        - name: error_description
+          expr: error_description::STRING
+          comment: Provisioning error details (if any).
+        - name: event_type_id
+          expr: event_type_id::BIGINT
+          comment: Numeric ID indicating the type of event.
+        - name: group_id
+          expr: group_id::BIGINT
+          comment: ID of a group involved in the event.
+        - name: group_name
+          expr: group_name::STRING
+          comment: Name of a group involved.
+        - name: ipaddr
+          expr: ipaddr::STRING
+          comment: IP address of the machine from which the event originated.
+        - name: notes
+          expr: notes::STRING
+          comment: Additional notes or details.
+        - name: otp_device_id
+          expr: otp_device_id::BIGINT
+          comment: ID of an OTP device involved.
+        - name: otp_device_name
+          expr: otp_device_name::STRING
+          comment: Name of the OTP device.
+        - name: policy_id
+          expr: policy_id::BIGINT
+          comment: ID of an associated policy.
+        - name: policy_name
+          expr: policy_name::STRING
+          comment: Name of an associated policy.
+        - name: resource_type_id
+          expr: resource_type_id::BIGINT
+          comment: ID identifying the type of resource (user, role, etc.) associated with the event.
+        - name: role_id
+          expr: role_id::BIGINT
+          comment: ID of a role involved.
+        - name: role_name
+          expr: role_name::STRING
+          comment: Name of the role involved.
+        - name: user_id
+          expr: user_id::BIGINT
+          comment: ID of the user acted upon in the event.
+        - name: user_name
+          expr: user_name::STRING
+          comment: First & last name (or email) of the affected user.
+        - name: risk_cookie_id
+          expr: risk_cookie_id::STRING
+          comment: Identifier for risk-related analysis.
+        - name: assumed_by_superadmin_or_reseller
+          expr: assumed_by_superadmin_or_reseller::BIGINT
+        - name: certificate_id
+          expr: certificate_id::BIGINT
+        - name: mapping_id
+          expr: mapping_id::BIGINT
+        - name: radius_config_id
+          expr: radius_config_id::BIGINT
+        - name: risk_score
+          expr: risk_score::BIGINT
+          comment: Calculated risk score (if supported).
+        - name: param
+          expr: param::STRING
+          comment: Additional parameter (context varies).
+        - name: adc_id
+          expr: adc_id::BIGINT
+        - name: solved
+          expr: solved::BOOLEAN
+        - name: service_directory_id
+          expr: service_directory_id::BIGINT
+        - name: object_id
+          expr: object_id::BIGINT
+        - name: user_field_id
+          expr: user_field_id::BIGINT
+        - name: risk_reasons
+          expr: risk_reasons::STRING
+          comment: Human-readable reasons for risk score.
+        - name: policy_type
+          expr: policy_type::STRING
+          comment: Type/category of related policy.
+        - name: resolved_at
+          expr: resolved_at::STRING
+          comment: Timestamp when issue was resolved.
+        - name: trusted_idp_id
+          expr: trusted_idp_id::BIGINT
+          comment: ID of a trusted identity provider.
+        - name: privilege_id
+          expr: privilege_id::BIGINT
+          comment: ID of a privilege involved.
+        - name: proxy_ip
+          expr: proxy_ip::STRING
+          comment: IP address of any proxy used during the event.
+        - name: since
+          expr: since::STRING
+        - name: until
+          expr: until::STRING
+
+gold: []
