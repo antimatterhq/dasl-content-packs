@@ -1,0 +1,271 @@
+name: cisco_umbrella_dns
+title: "Cisco Umbrella DNS"
+author: Antimatter
+description: "Cisco Umbrella DNS logs"
+iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/cisco/umbrella_dns/icon.png"
+autoloader:
+  format: text
+bronze:
+  preTransform:
+    -
+      - "*"
+      - TO_TIMESTAMP(REGEXP_EXTRACT(value, '(\d+-\d+-\d+\s+\d+:\d+:\d+)', 0), 'yyyy-MM-dd HH:mm:ss') as time
+      - CAST('cisco' AS STRING) AS source
+      - CAST('umbrella_dns' AS STRING) AS sourcetype
+      - CURRENT_TIMESTAMP() as processed_time
+silver:
+  transform:
+    - name: cisco_umbrella_dns
+      utils:
+        temporaryFields:
+          - name: data
+            expr: |
+              from_csv(
+                value,
+                """STRUCT<
+                  raw_timestamp: STRING,
+                  most_granular_identity: STRING,
+                  identities: STRING,
+                  internal_ip: STRING,
+                  external_ip: STRING,
+                  action: STRING,
+                  query_type: STRING,
+                  response_code: STRING,
+                  domain: STRING,
+                  categories: STRING,
+                  most_granular_identity_type: STRING,
+                  identity_type: STRING,
+                  blocked_categories: STRING,
+                  rule_id: STRING,
+                  destination_countries: STRING,
+                  org_id: STRING
+                >""",
+                map(
+                  'sep', ',',
+                  'unescapedQuoteHandling', 'BACK_TO_DELIMITER'
+                )
+              )
+        unreferencedColumns:
+          preserve: true
+          omitColumns:
+            - value
+      fields:
+        - name: time
+          from: time
+        - name: raw_timestamp
+          expr: data.raw_timestamp
+        - name: most_granular_identity
+          expr: data.most_granular_identity
+        - name: identities
+          expr: data.identities
+        - name: internal_ip
+          expr: data.internal_ip
+        - name: external_ip
+          expr: data.external_ip
+        - name: action
+          expr: data.action
+        - name: query_type
+          expr: data.query_type
+        - name: response_code
+          expr: data.response_code
+        - name: domain
+          expr: data.domain
+        - name: categories
+          expr: data.categories
+        - name: most_granular_identity_type
+          expr: data.most_granular_identity_type
+        - name: identity_type
+          expr: data.identity_type
+        - name: blocked_categories
+          expr: data.blocked_categories
+        - name: rule_id
+          expr: data.rule_id
+        - name: destination_countries
+          expr: data.destination_countries
+        - name: org_id
+          expr: data.org_id
+gold:
+  - name: dns_activity
+    input: cisco_umbrella_dns
+    fields:
+      - name: action
+        expr: |
+          CASE
+            WHEN action = 'Blocked' THEN 'Denied'
+            WHEN action = 'Allowed' THEN 'Allowed'
+            ELSE 'Other'
+          END
+      - name: action_id
+        expr: |
+          CASE
+            WHEN action = 'Blocked' THEN 2
+            WHEN action = 'Allowed' THEN 1
+            ELSE 99
+          END
+      - name: activity_id
+        expr: CAST('1' AS INT)
+      - name: activity_name
+        literal: Query
+      - name: category_name
+        literal: Network Activity
+      - name: category_uid
+        expr: CAST('4' AS INT)
+      - name: class_name
+        literal: DNS Activity
+      - name: class_uid
+        expr: CAST('4003' AS INT)
+      - name: disposition
+        expr: |
+          CASE
+            WHEN action = 'Blocked' THEN 'Blocked'
+            WHEN action = 'Allowed' THEN 'Allowed'
+            ELSE 'Unknown'
+          END
+      - name: disposition_id
+        expr: |
+          CASE
+            WHEN action = 'Blocked' THEN 2
+            WHEN action = 'Allowed' THEN 1
+            ELSE 0
+          END
+      - name: dst_endpoint.ip
+        from: external_ip
+      - name: dst_endpoint.location.country
+        from: destination_countries
+      - name: message
+        expr: "CONCAT('DNS Query for ', domain, ' - Category: ', COALESCE(categories, 'N/A'), ', Action: ', action, CASE WHEN blocked_categories != '' THEN CONCAT(', Blocked Categories: ', blocked_categories) ELSE '' END)"
+      - name: metadata.version
+        literal: 1.0.0
+      - name: metadata.product.vendor_name
+        literal: Cisco
+      - name: metadata.product.name
+        literal: Umbrella DNS
+      - name: metadata.log_provider
+        literal: Cisco Umbrella DNS
+      - name: metadata.uid
+        from: org_id
+      - name: metadata.logged_time
+        from: time
+      - name: observables
+        expr: |
+          array(
+            named_struct('name', 'domain', 'type', 'Hostname', 'value', domain),
+            named_struct('name', 'src_ip', 'type', 'IP Address', 'value', internal_ip),
+            named_struct('name', 'dst_ip', 'type', 'IP Address', 'value', external_ip)
+          )
+      - name: query.hostname
+        from: domain
+      - name: query.type
+        expr: TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(query_type, '(', -1), ')', 1))
+      - name: query.class
+        literal: IN
+      - name: query_time
+        from: time
+      - name: rcode
+        from: response_code
+      - name: rcode_id
+        expr: |
+          CASE
+            WHEN UPPER(response_code) = 'NOERROR' THEN 0
+            WHEN UPPER(response_code) = 'FORMERROR' THEN 1
+            WHEN UPPER(response_code) = 'SERVERROR' THEN 2
+            WHEN UPPER(response_code) = 'NXDOMAIN' THEN 3
+            WHEN UPPER(response_code) = 'NOTIMP' THEN 4
+            WHEN UPPER(response_code) = 'REFUSED' THEN 5
+            WHEN UPPER(response_code) = 'YXDOMAIN' THEN 6
+            WHEN UPPER(response_code) = 'YXRRSET' THEN 7
+            WHEN UPPER(response_code) = 'NXRRSET' THEN 8
+            WHEN UPPER(response_code) = 'NOTAUTH' THEN 9
+            WHEN UPPER(response_code) = 'NOTZONE' THEN 10
+            WHEN UPPER(response_code) = 'DSOTYPENI' THEN 11
+            WHEN UPPER(response_code) = 'BADSIG_VERS' THEN 16
+            WHEN UPPER(response_code) = 'BADKEY' THEN 17
+            WHEN UPPER(response_code) = 'BADTIME' THEN 18
+            WHEN UPPER(response_code) = 'BADMODE' THEN 19
+            WHEN UPPER(response_code) = 'BADNAME' THEN 20
+            WHEN UPPER(response_code) = 'BADALG' THEN 21
+            WHEN UPPER(response_code) = 'BADTRUNC' THEN 22
+            WHEN UPPER(response_code) = 'BADCOOKIE' THEN 23
+            WHEN UPPER(response_code) = 'UNASSIGNED' THEN 24
+            WHEN UPPER(response_code) = 'RESERVED' THEN 25
+            ELSE 99
+          END
+      - name: severity
+        expr: |
+          CASE
+            WHEN action = 'Blocked' THEN 'High'
+            WHEN action = 'Allowed' THEN 'Informational'
+            ELSE 'Unknown'
+          END
+      - name: severity_id
+        expr: |
+          CASE
+            WHEN action = 'Blocked' THEN 4
+            WHEN action = 'Allowed' THEN 1
+            ELSE 0
+          END
+      - name: src_endpoint.ip
+        from: internal_ip
+      - name: status
+        expr: |
+          CASE
+            WHEN rcode_id = 0 THEN 'Success'
+            WHEN rcode_id BETWEEN 1 AND 65534 THEN 'Failure'
+            ELSE 'Unknown'
+          END
+      - name: status_code
+        expr: CAST(rcode_id AS STRING)
+      - name: status_detail
+        expr: |
+          CASE
+            WHEN rcode_id = 0 THEN 'No Error'
+            WHEN rcode_id = 1 THEN 'Format Error'
+            WHEN rcode_id = 2 THEN 'Server Failure'
+            WHEN rcode_id = 3 THEN 'Non-Existent Domain'
+            WHEN rcode_id = 4 THEN 'Not Implemented'
+            WHEN rcode_id = 5 THEN 'Query Refused'
+            WHEN rcode_id = 6 THEN 'Name Exists When It Should Not'
+            WHEN rcode_id = 7 THEN 'RR Set Exists When It Should Not'
+            WHEN rcode_id = 8 THEN 'RR Set That Should Exist Does Not'
+            WHEN rcode_id = 9 THEN 'Not Authorized or Server Not Authoritative For Zone'
+            WHEN rcode_id = 10 THEN 'Name Not Contained in Zone'
+            WHEN rcode_id = 11 THEN 'DSO-TYPE Not Implemented'
+            WHEN rcode_id = 16 THEN 'TSIG Signature Failure or Bad OPT Version'
+            WHEN rcode_id = 17 THEN 'Key Not Recognized'
+            WHEN rcode_id = 18 THEN 'Signature Out of Time Window'
+            WHEN rcode_id = 19 THEN 'Bad TKEY Mode'
+            WHEN rcode_id = 20 THEN 'Duplicate Key Name'
+            WHEN rcode_id = 21 THEN 'Algorithm Not Supported'
+            WHEN rcode_id = 22 THEN 'Bad Truncation'
+            WHEN rcode_id = 23 THEN 'Bad or Missing Server Cookie'
+            WHEN rcode_id BETWEEN 12 AND 15 THEN 'Unassigned'
+            WHEN rcode_id BETWEEN 24 AND 3840 THEN 'Unassigned'
+            WHEN rcode_id BETWEEN 3841 AND 4095 THEN 'Reserved'
+            WHEN rcode_id BETWEEN 4096 AND 65534 THEN 'Unassigned'
+            WHEN rcode_id = 65535 THEN 'Reserved'
+            ELSE 'Other'
+          END
+      - name: status_id
+        from: rcode_id
+      - name: time
+        from: time
+      - name: type_name
+        expr: "CONCAT('DNS Activity: ', activity_name)"
+      - name: type_uid
+        expr: CAST(class_uid*100 + activity_id as long)
+      - name: unmapped
+        expr: |
+          CAST(
+            to_json(
+              named_struct(
+                'rule_id', rule_id,
+                'categories', categories,
+                'blocked_categories', blocked_categories,
+                'most_granular_identity', most_granular_identity,
+                'identities', identities,
+                'most_granular_identity_type', most_granular_identity_type,
+                'identity_type', identity_type,
+                'raw_timestamp', raw_timestamp
+              )
+            ) AS VARIANT
+          )
