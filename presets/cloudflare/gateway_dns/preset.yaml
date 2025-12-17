@@ -1,0 +1,525 @@
+name: cloudflare_gateway_dns
+title: "Cloudflare Gateway DNS"
+author: Antimatter
+description: "Cloudflare Gateway DNS logs"
+iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/cloudflare/gateway_dns/icon.png"
+autoloader:
+  format: jsonl # json <add multiline: True>
+bronze:
+  loadAsSingleVariant: true
+  preTransform:
+    -
+      - "data"
+      - CAST(try_variant_get(data, '$.Datetime', 'STRING') AS TIMESTAMP) as time
+      - CAST('cloudflare' AS STRING) as source
+      - CAST('gateway_dns' AS STRING) as sourcetype
+      - CURRENT_TIMESTAMP() as processed_time
+silver:
+  transform:
+    - name: cloudflare_gateway_dns
+      fields:
+        - name: AccountID
+          expr: try_variant_get(data, '$.AccountID', 'STRING')
+        - name: ApplicationID
+          expr: try_variant_get(data, '$.ApplicationID', 'STRING')
+        - name: ApplicationName
+          expr: try_variant_get(data, '$.ApplicationName', 'STRING')
+        - name: AuthoritativeNameServerIPs
+          expr: try_variant_get(data, '$.AuthoritativeNameServerIPs', 'ARRAY<STRING>')
+        - name: CNAMECategoryIDs
+          expr: try_variant_get(data, '$.CNAMECategoryIDs', 'ARRAY<INT>')
+        - name: CNAMECategoryNames
+          expr: try_variant_get(data, '$.CNAMECategoryNames', 'ARRAY<STRING>')
+        - name: CNAMEs
+          expr: try_variant_get(data, '$.CNAMEs', 'ARRAY<STRING>')
+        - name: CNAMEsReversed
+          expr: try_variant_get(data, '$.CNAMEsReversed', 'ARRAY<STRING>')
+        - name: ColoCode
+          expr: try_variant_get(data, '$.ColoCode', 'STRING')
+        - name: ColoID
+          expr: TRY_CAST(try_variant_get(data, '$.ColoID', 'STRING') AS INT)
+        - name: CustomResolveDurationMs
+          expr: TRY_CAST(try_variant_get(data, '$.CustomResolveDurationMs', 'STRING') AS INT)
+        - name: CustomResolverAddress
+          expr: try_variant_get(data, '$.CustomResolverAddress', 'STRING')
+        - name: CustomResolverPolicyID
+          expr: try_variant_get(data, '$.CustomResolverPolicyID', 'STRING')
+        - name: CustomResolverPolicyName
+          expr: try_variant_get(data, '$.CustomResolverPolicyName', 'STRING')
+        - name: CustomResolverResponse
+          expr: try_variant_get(data, '$.CustomResolverResponse', 'STRING')
+        - name: DeviceID
+          expr: try_variant_get(data, '$.DeviceID', 'STRING')
+        - name: DeviceName
+          expr: try_variant_get(data, '$.DeviceName', 'STRING')
+        - name: DoHSubdomain
+          expr: try_variant_get(data, '$.DoHSubdomain', 'STRING')
+        - name: DoTSubdomain
+          expr: try_variant_get(data, '$.DoTSubdomain', 'STRING')
+        - name: DstIP
+          expr: try_variant_get(data, '$.DstIP', 'STRING')
+        - name: DstPort
+          expr: TRY_CAST(try_variant_get(data, '$.DstPort', 'STRING') AS INT)
+        - name: EDEErrors
+          expr: try_variant_get(data, '$.EDEErrors', 'ARRAY<INT>')
+        - name: Email
+          expr: try_variant_get(data, '$.Email', 'STRING')
+        - name: InitialCategoryIDs
+          expr: try_variant_get(data, '$.InitialCategoryIDs', 'ARRAY<INT>')
+        - name: InitialCategoryNames
+          expr: try_variant_get(data, '$.InitialCategoryNames', 'ARRAY<STRING>')
+        - name: InitialResolvedIPs
+          expr: try_variant_get(data, '$.InitialResolvedIPs', 'ARRAY<STRING>')
+        - name: InternalDNSFallbackStrategy
+          expr: try_variant_get(data, '$.InternalDNSFallbackStrategy', 'STRING')
+        - name: InternalDNSRCode
+          expr: TRY_CAST(try_variant_get(data, '$.InternalDNSRCode', 'STRING') AS INT)
+        - name: InternalDNSViewID
+          expr: try_variant_get(data, '$.InternalDNSViewID', 'STRING')
+        - name: InternalDNSZoneID
+          expr: try_variant_get(data, '$.InternalDNSZoneID', 'STRING')
+        - name: IsResponseCached
+          expr: TRY_CAST(try_variant_get(data, '$.IsResponseCached', 'STRING') AS BOOLEAN)
+        - name: Location
+          expr: try_variant_get(data, '$.Location', 'STRING')
+        - name: LocationID
+          expr: try_variant_get(data, '$.LocationID', 'STRING')
+        - name: MatchedCategoryIDs
+          expr: try_variant_get(data, '$.MatchedCategoryIDs', 'ARRAY<INT>')
+        - name: MatchedCategoryNames
+          expr: try_variant_get(data, '$.MatchedCategoryNames', 'ARRAY<STRING>')
+        - name: MatchedIndicatorFeedIDs
+          expr: try_variant_get(data, '$.MatchedIndicatorFeedIDs', 'ARRAY<INT>')
+        - name: MatchedIndicatorFeedNames
+          expr: try_variant_get(data, '$.MatchedIndicatorFeedNames', 'ARRAY<STRING>')
+        - name: Policy
+          expr: try_variant_get(data, '$.Policy', 'STRING')
+        - name: PolicyID
+          expr: try_variant_get(data, '$.PolicyID', 'STRING')
+        - name: PolicyName
+          expr: try_variant_get(data, '$.PolicyName', 'STRING')
+        - name: Protocol
+          expr: try_variant_get(data, '$.Protocol', 'STRING')
+        - name: QueryApplicationIDs
+          expr: try_variant_get(data, '$.QueryApplicationIDs', 'ARRAY<INT>')
+        - name: QueryApplicationNames
+          expr: try_variant_get(data, '$.QueryApplicationNames', 'ARRAY<STRING>')
+        - name: QueryCategoryIDs
+          expr: try_variant_get(data, '$.QueryCategoryIDs', 'ARRAY<INT>')
+        - name: QueryCategoryNames
+          expr: try_variant_get(data, '$.QueryCategoryNames', 'ARRAY<STRING>')
+        - name: QueryID
+          expr: try_variant_get(data, '$.QueryID', 'STRING')
+        - name: QueryIndicatorFeedIDs
+          expr: try_variant_get(data, '$.QueryIndicatorFeedIDs', 'ARRAY<INT>')
+        - name: QueryIndicatorFeedNames
+          expr: try_variant_get(data, '$.QueryIndicatorFeedNames', 'ARRAY<STRING>')
+        - name: QueryName
+          expr: try_variant_get(data, '$.QueryName', 'STRING')
+        - name: QueryNameReversed
+          expr: try_variant_get(data, '$.QueryNameReversed', 'STRING')
+        - name: QuerySize
+          expr: TRY_CAST(try_variant_get(data, '$.QuerySize', 'STRING') AS INT)
+        - name: QueryType
+          expr: TRY_CAST(try_variant_get(data, '$.QueryType', 'STRING') AS INT)
+        - name: QueryTypeName
+          expr: try_variant_get(data, '$.QueryTypeName', 'STRING')
+        - name: RCode
+          expr: TRY_CAST(try_variant_get(data, '$.RCode', 'STRING') AS INT)
+        - name: RData
+          expr: from_json(try_variant_get(data, '$.RData', 'STRING'), 'ARRAY<MAP<STRING,STRING>>')
+        - name: RedirectTargetURI
+          expr: try_variant_get(data, '$.RedirectTargetURI', 'STRING')
+        - name: RegistrationID
+          expr: try_variant_get(data, '$.RegistrationID', 'STRING')
+        - name: RequestContextCategoryIDs
+          expr: try_variant_get(data, '$.RequestContextCategoryIDs', 'ARRAY<INT>')
+        - name: RequestContextCategoryNames
+          expr: try_variant_get(data, '$.RequestContextCategoryNames', 'ARRAY<STRING>')
+        - name: ResolvedIPCategoryIDs
+          expr: try_variant_get(data, '$.ResolvedIPCategoryIDs', 'ARRAY<INT>')
+        - name: ResolvedIPCategoryNames
+          expr: try_variant_get(data, '$.ResolvedIPCategoryNames', 'ARRAY<STRING>')
+        - name: ResolvedIPContinentCodes
+          expr: try_variant_get(data, '$.ResolvedIPContinentCodes', 'ARRAY<STRING>')
+        - name: ResolvedIPCountryCodes
+          expr: try_variant_get(data, '$.ResolvedIPCountryCodes', 'ARRAY<STRING>')
+        - name: ResolvedIPs
+          expr: try_variant_get(data, '$.ResolvedIPs', 'ARRAY<STRING>')
+        - name: ResolverDecision
+          expr: try_variant_get(data, '$.ResolverDecision', 'STRING')
+        - name: ResolverPolicyID
+          expr: try_variant_get(data, '$.ResolverPolicyID', 'STRING')
+        - name: ResolverPolicyName
+          expr: try_variant_get(data, '$.ResolverPolicyName', 'STRING')
+        - name: ResourceRecords
+          expr: from_json(try_variant_get(data, '$.ResourceRecords', 'STRING'), 'ARRAY<MAP<STRING,STRING>>')
+        - name: ResourceRecordsJSON
+          expr: from_json(try_variant_get(data, '$.ResourceRecordsJSON', 'STRING'), 'ARRAY<MAP<STRING,STRING>>')
+        - name: SrcIP
+          expr: try_variant_get(data, '$.SrcIP', 'STRING')
+        - name: SrcIPContinentCode
+          expr: try_variant_get(data, '$.SrcIPContinentCode', 'STRING')
+        - name: SrcIPCountryCode
+          expr: try_variant_get(data, '$.SrcIPCountryCode', 'STRING')
+        - name: SrcPort
+          expr: TRY_CAST(try_variant_get(data, '$.SrcPort', 'STRING') AS INT)
+        - name: TimeZone
+          expr: try_variant_get(data, '$.TimeZone', 'STRING')
+        - name: TimeZoneInferredMethod
+          expr: try_variant_get(data, '$.TimeZoneInferredMethod', 'STRING')
+        - name: UserID
+          expr: try_variant_get(data, '$.UserID', 'STRING')
+      utils:
+        unreferencedColumns:
+          preserve: true
+gold:
+  - name: dns_activity
+    input: cloudflare_gateway_dns
+    fields:
+      - name: answers
+        expr: |
+          CASE 
+            -- Only parse ResourceRecordsJSON if it exists and has elements
+            WHEN ResourceRecordsJSON IS NOT NULL AND size(ResourceRecordsJSON) > 0 THEN
+              from_json(
+                to_json(ResourceRecordsJSON),
+                'array<struct<
+                    rdata:string,
+                    name:string,
+                    class:string,
+                    ttl:string,
+                    type:string
+                >>'
+              )
+            ELSE
+              NULL
+          END
+      - name: activity_id
+        expr: |
+          CAST(CASE 
+            WHEN answers IS NOT NULL AND size(answers) > 0 THEN 2 -- Response
+            ELSE 1 -- Query
+          END AS INT)
+      - name: activity_name
+        expr: |
+          CASE 
+            WHEN activity_id = 1 THEN 'Query'
+            WHEN activity_id = 2 THEN 'Response'
+            ELSE 'Unknown'
+          END
+      - name: app_name
+        from: ApplicationName
+      - name: category_name
+        literal: Network Activity
+      - name: category_uid
+        expr: CAST('4' AS INT)
+      - name: class_name
+        literal: DNS Activity
+      - name: class_uid
+        expr: CAST('4003' AS INT)
+      - name: connection_info.uuid
+        from: DeviceID
+      - name: connection_info.protocol_name
+        expr: LOWER(Protocol)
+      - name: dst_endpoint.ip
+        from: DstIP
+      - name: dst_endpoint.port
+        from: DstPort
+      - name: dst_endpoint.location.continent
+        expr: element_at(ResolvedIPContinentCodes, 1)
+      - name: dst_endpoint.location.country
+        expr: element_at(ResolvedIPCountryCodes, 1)
+      - name: metadata.version
+        literal: 1.0.0
+      - name: metadata.product.vendor_name
+        literal: Cloudflare
+      - name: metadata.product.name
+        literal: Gateway DNS
+      - name: metadata.log_provider
+        literal: Cloudflare Gateway DNS
+      - name: query.hostname
+        from: QueryName
+      - name: query.type
+        from: QueryTypeName
+      - name: query.class
+        literal: IN
+      - name: query.packet_uid
+        from: QueryID
+      - name: query_time
+        from: time
+      - name: rcode
+        expr: |
+          CASE
+            WHEN RCode = 0 THEN 'NoError'
+            WHEN RCode = 1 THEN 'FormError'
+            WHEN RCode = 2 THEN 'ServError'
+            WHEN RCode = 3 THEN 'NXDomain'
+            WHEN RCode = 4 THEN 'NotImp'
+            WHEN RCode = 5 THEN 'Refused'
+            WHEN RCode = 6 THEN 'YXDomain'
+            WHEN RCode = 7 THEN 'YXRRSet'
+            WHEN RCode = 8 THEN 'NXRRSet'
+            WHEN RCode = 9 THEN 'NotAuth'
+            WHEN RCode = 10 THEN 'NotZone'
+            WHEN RCode = 11 THEN 'DSOTYPENI'
+            WHEN RCode = 16 THEN 'BADSIG_VERS'
+            WHEN RCode = 17 THEN 'BADKEY'
+            WHEN RCode = 18 THEN 'BADTIME'
+            WHEN RCode = 19 THEN 'BADMODE'
+            WHEN RCode = 20 THEN 'BADNAME'
+            WHEN RCode = 21 THEN 'BADALG'
+            WHEN RCode = 22 THEN 'BADTRUNC'
+            WHEN RCode = 23 THEN 'BADCOOKIE'
+            WHEN RCode BETWEEN 12 AND 15 THEN 'Unassigned'
+            WHEN RCode BETWEEN 24 AND 3840 THEN 'Unassigned'
+            WHEN RCode BETWEEN 3841 AND 4095 THEN 'Reserved'
+            WHEN RCode BETWEEN 4096 AND 65534 THEN 'Unassigned'
+            WHEN RCode = 65535 THEN 'Reserved'
+            ELSE 'Other'
+          END
+      - name: rcode_id
+        from: RCode
+      - name: severity
+        literal: Informational
+      - name: severity_id
+        expr: CAST('0' AS INT)
+      - name: src_endpoint.ip
+        from: SrcIP
+      - name: src_endpoint.port
+        from: SrcPort
+      - name: src_endpoint.location.continent
+        from: SrcIPContinentCode
+      - name: src_endpoint.location.country
+        from: SrcIPCountryCode
+      - name: status
+        expr: |
+          CASE
+            WHEN RCode = 0 THEN 'Success'
+            WHEN RCode BETWEEN 1 AND 65534 THEN 'Failure'
+            ELSE 'Unknown'
+          END
+      - name: status_code
+        expr: CAST(RCode AS STRING)
+      - name: status_detail
+        expr: |
+          CASE
+            WHEN RCode = 0 THEN 'No Error'
+            WHEN RCode = 1 THEN 'Format Error'
+            WHEN RCode = 2 THEN 'Server Failure'
+            WHEN RCode = 3 THEN 'Non-Existent Domain'
+            WHEN RCode = 4 THEN 'Not Implemented'
+            WHEN RCode = 5 THEN 'Query Refused'
+            WHEN RCode = 6 THEN 'Name Exists When It Should Not'
+            WHEN RCode = 7 THEN 'RR Set Exists When It Should Not'
+            WHEN RCode = 8 THEN 'RR Set That Should Exist Does Not'
+            WHEN RCode = 9 THEN 'Not Authorized or Server Not Authoritative For Zone'
+            WHEN RCode = 10 THEN 'Name Not Contained in Zone'
+            WHEN RCode = 11 THEN 'DSO-TYPE Not Implemented'
+            WHEN RCode = 16 THEN 'TSIG Signature Failure or Bad OPT Version'
+            WHEN RCode = 17 THEN 'Key Not Recognized'
+            WHEN RCode = 18 THEN 'Signature Out of Time Window'
+            WHEN RCode = 19 THEN 'Bad TKEY Mode'
+            WHEN RCode = 20 THEN 'Duplicate Key Name'
+            WHEN RCode = 21 THEN 'Algorithm Not Supported'
+            WHEN RCode = 22 THEN 'Bad Truncation'
+            WHEN RCode = 23 THEN 'Bad or Missing Server Cookie'
+            WHEN RCode BETWEEN 12 AND 15 THEN 'Unassigned'
+            WHEN RCode BETWEEN 24 AND 3840 THEN 'Unassigned'
+            WHEN RCode BETWEEN 3841 AND 4095 THEN 'Reserved'
+            WHEN RCode BETWEEN 4096 AND 65534 THEN 'Unassigned'
+            WHEN RCode = 65535 THEN 'Reserved'
+            ELSE 'Other'
+          END
+      - name: status_id
+        from: RCode
+      - name: time
+        from: time
+      - name: type_name
+        expr: "CONCAT('DNS Activity: ', activity_name, ' [', QueryTypeName, ']')"
+      - name: type_uid
+        expr: CAST(class_uid*100 + activity_id as long)
+      - name: action
+        expr: |
+          CASE
+            WHEN LOWER(ResolverDecision) = 'allow' THEN 'Allowed'
+            WHEN LOWER(ResolverDecision) = 'block' THEN 'Denied'
+            WHEN LOWER(ResolverDecision) = 'challenge' THEN 'Challenged'
+            ELSE 'Other'
+          END
+      - name: action_id
+        expr: |
+          CAST(CASE
+            WHEN LOWER(ResolverDecision) = 'allow' THEN 1
+            WHEN LOWER(ResolverDecision) = 'block' THEN 2
+            WHEN LOWER(ResolverDecision) = 'challenge' THEN 3
+            ELSE 99
+          END AS INT)
+      - name: device.name
+        from: DeviceName
+      - name: device.uid
+        from: DeviceID
+      - name: disposition
+        expr: |
+          CASE
+            WHEN LOWER(ResolverDecision) = 'allow' THEN 'Allowed'
+            WHEN LOWER(ResolverDecision) = 'block' THEN 'Blocked'
+            WHEN LOWER(ResolverDecision) = 'challenge' THEN 'Other'
+            ELSE 'Unknown'
+          END
+      - name: disposition_id
+        expr: |
+          CAST(CASE
+            WHEN LOWER(ResolverDecision) = 'allow' THEN 1
+            WHEN LOWER(ResolverDecision) = 'block' THEN 2
+            WHEN LOWER(ResolverDecision) = 'challenge' THEN 99
+            ELSE 0
+          END AS INT)
+      - name: dst_endpoint.location.city
+        from: Location
+      - name: dst_endpoint.uid
+        from: LocationID
+      - name: enrichments
+        expr: |
+          CASE
+            WHEN (MatchedCategoryNames IS NOT NULL AND size(MatchedCategoryNames) > 0) OR 
+                 (MatchedIndicatorFeedNames IS NOT NULL AND size(MatchedIndicatorFeedNames) > 0)
+            THEN concat(
+              COALESCE(
+                TRANSFORM(
+                  FILTER(MatchedCategoryNames, x -> x IS NOT NULL),
+                  x -> NAMED_STRUCT(
+                    'name', 'Matched Category', 
+                    'value', x, 
+                    'data', CAST(NULL AS VARIANT), 
+                    'desc', CAST(NULL AS STRING)
+                  )
+                ),
+                ARRAY()
+              ),
+              COALESCE(
+                TRANSFORM(
+                  FILTER(MatchedIndicatorFeedNames, x -> x IS NOT NULL),
+                  x -> NAMED_STRUCT(
+                    'name', 'Matched Threat Feed', 
+                    'value', x, 
+                    'data', CAST(NULL AS VARIANT), 
+                    'desc', CAST(NULL AS STRING)
+                  )
+                ),
+                ARRAY()
+              )
+            )
+            ELSE NULL
+          END
+      - name: message
+        expr: |
+          CONCAT(
+            'DNS ',
+            activity_name,
+            ' for ',
+            QueryName,
+            ' (',
+            QueryTypeName,
+            ') - ',
+            COALESCE(rcode, 'Unknown'),
+            COALESCE(
+              CASE 
+                WHEN ResolverDecision IS NOT NULL THEN CONCAT(' - Decision: ', ResolverDecision)
+                ELSE ''
+              END,
+              ''
+            )
+          )
+      - name: metadata.correlation_uid
+        from: QueryID
+      - name: metadata.logged_time
+        from: time
+      - name: metadata.processed_time
+        expr: CURRENT_TIMESTAMP()
+      - name: metadata.uid
+        from: QueryID
+      - name: observables
+        expr: |
+          concat(
+            ARRAY(
+              NAMED_STRUCT('name', 'query_hostname', 'type', 'Hostname', 'value', QueryName)
+            ),
+            COALESCE(
+              TRANSFORM(
+                FILTER(ResolvedIPs, x -> x IS NOT NULL),
+                x -> NAMED_STRUCT('name', 'resolved_ip', 'type', 'IP Address', 'value', x)
+              ),
+              ARRAY()
+            )
+          )
+      - name: policy.name
+        from: PolicyName
+      - name: policy.uid
+        from: PolicyID
+      - name: policy.is_applied
+        expr: CAST(CASE WHEN PolicyID IS NOT NULL THEN TRUE ELSE FALSE END AS BOOLEAN)
+      - name: src_endpoint.name
+        from: DeviceName
+      - name: src_endpoint.uid
+        from: UserID
+      - name: traffic.bytes_in
+        expr: CAST(QuerySize AS BIGINT)
+      - name: unmapped
+        expr: |
+          CAST(
+            to_json(
+              named_struct(
+                'AccountID', AccountID,
+                'ApplicationID', ApplicationID,
+                'AuthoritativeNameServerIPs', AuthoritativeNameServerIPs,
+                'CNAMECategoryIDs', CNAMECategoryIDs,
+                'CNAMECategoryNames', CNAMECategoryNames,
+                'CNAMEs', CNAMEs,
+                'CNAMEsReversed', CNAMEsReversed,
+                'ColoCode', ColoCode,
+                'ColoID', ColoID,
+                'CustomResolveDurationMs', CustomResolveDurationMs,
+                'CustomResolverAddress', CustomResolverAddress,
+                'CustomResolverPolicyID', CustomResolverPolicyID,
+                'CustomResolverPolicyName', CustomResolverPolicyName,
+                'CustomResolverResponse', CustomResolverResponse,
+                'DoHSubdomain', DoHSubdomain,
+                'DoTSubdomain', DoTSubdomain,
+                'EDEErrors', EDEErrors,
+                'Email', Email,
+                'InitialCategoryIDs', InitialCategoryIDs,
+                'InitialCategoryNames', InitialCategoryNames,
+                'InitialResolvedIPs', InitialResolvedIPs,
+                'InternalDNSFallbackStrategy', InternalDNSFallbackStrategy,
+                'InternalDNSRCode', InternalDNSRCode,
+                'InternalDNSViewID', InternalDNSViewID,
+                'InternalDNSZoneID', InternalDNSZoneID,
+                'IsResponseCached', IsResponseCached,
+                'MatchedCategoryIDs', MatchedCategoryIDs,
+                'MatchedIndicatorFeedIDs', MatchedIndicatorFeedIDs,
+                'QueryApplicationIDs', QueryApplicationIDs,
+                'QueryApplicationNames', QueryApplicationNames,
+                'QueryCategoryIDs', QueryCategoryIDs,
+                'QueryCategoryNames', QueryCategoryNames,
+                'QueryID', QueryID,
+                'QueryIndicatorFeedIDs', QueryIndicatorFeedIDs,
+                'QueryIndicatorFeedNames', QueryIndicatorFeedNames,
+                'QueryNameReversed', QueryNameReversed,
+                'QueryType', QueryType,
+                'RData', RData,
+                'RedirectTargetURI', RedirectTargetURI,
+                'RegistrationID', RegistrationID,
+                'RequestContextCategoryIDs', RequestContextCategoryIDs,
+                'RequestContextCategoryNames', RequestContextCategoryNames,
+                'ResolvedIPCategoryIDs', ResolvedIPCategoryIDs,
+                'ResolvedIPCategoryNames', ResolvedIPCategoryNames,
+                'ResolverDecision', ResolverDecision,
+                'ResolverPolicyID', ResolverPolicyID,
+                'ResolverPolicyName', ResolverPolicyName,
+                'ResourceRecords', ResourceRecords,
+                'TimeZone', TimeZone,
+                'TimeZoneInferredMethod', TimeZoneInferredMethod
+              )
+            )
+          AS VARIANT)
