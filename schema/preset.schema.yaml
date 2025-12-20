@@ -3,8 +3,8 @@ type: object
 properties:
   name:
     description: >
-      The name of the preset. Preset names must be unique and should follow established patterns such as 
-      "${source}_${sourceType}".
+      The name of the preset. Preset names must be unique and should follow established patterns such as
+      "${source}_${sourceType}_${optionalInfo}".
     type: string
   author:
     description: >
@@ -33,7 +33,7 @@ properties:
 
   autoloader:
     description: >
-      The databricks autoloader configuration for this preset. This configuration will be used to load data from the source 
+      The databricks autoloader configuration for this preset. This configuration will be used to load data from the source
       during the bronze stage of the data pipeline. The fields available mirror those found in the DataSourceSpec
       except for the location field which is not available here.
     type: object
@@ -43,10 +43,10 @@ properties:
         description: json | jsonl | parquet | csv | text | wholetext
       schemaFile:
         type: string
-        description: An optional file containing the schema of the datasource.
+        description: An optional file containing the schema of the Datasource.
       schema:
         type: string
-        description: An optional string representing the schema of the datasource.
+        description: An optional string representing the schema of the Datasource.
       cloudFiles:
         type: object
         description: "The configuration used by the autoloader if format is 'cloudFiles'."
@@ -55,6 +55,14 @@ properties:
             type: string
           schemaHints:
             type: string
+      formatOptions:
+        type: object
+        description: >
+          Optional format-specific options passed to Databricks read_files().
+          Currently only supported for CSV format. For available options, see
+          https://docs.databricks.com/sql/language-manual/functions/read_files#csv-options
+        additionalProperties:
+          type: string
     required:
       - format
   bronze:
@@ -89,8 +97,8 @@ properties:
     properties:
       preTransform:
         description: >
-          A list of pretransform definitions that will be used in later stages. Each item will include a name of the 
-          pretransform (used for dataframe variable naming) as well as the FieldSpecs that define the column schema. 
+          A list of pretransform definitions that will be used in later stages. Each item will include a name of the
+          pretransform (used for dataframe variable naming) as well as the FieldSpecs that define the column schema.
           Other typical properties such as filter, postFilter, and FieldUtils may be included as well.
         type: array
         items:
@@ -98,7 +106,7 @@ properties:
           properties:
             name:
               description: >
-                The name of this pretransformation definition. This is used to identify the data transformation 
+                The name of this pretransformation definition. This is used to identify the data transformation
                 (dataframe) for later use.
               type: string
             filter:
@@ -111,21 +119,21 @@ properties:
               type: string
             fields:
               description: >
-                A list of FieldSpecs that define the column schema for this pretransformation. Each FieldSpec will 
+                A list of FieldSpecs that define the column schema for this pretransformation. Each FieldSpec will
                 include a name, type, and other properties that define the column schema.
               type: array
               items:
                 $ref: '#/components/schemas/FieldSpec'
             utils:
               description: >
-                A list of utilities for handling fields, including managing unreferenced fields and extracting fields 
+                A list of utilities for handling fields, including managing unreferenced fields and extracting fields
                 from hierarchical or JSON objects.
               allOf:
                 - $ref: '#/components/schemas/FieldUtils'
       transform:
         description: >
-          A list of silver transform definitions for data cleaning and processing. Each transformation item will 
-          include the name of the transformation which is used for variable and table naming. Other typical properties 
+          A list of silver transform definitions for data cleaning and processing. Each transformation item will
+          include the name of the transformation which is used for variable and table naming. Other typical properties
           such as filter, postFilter, and FieldUtils may be included as well.
         type: array
         items:
@@ -133,7 +141,7 @@ properties:
           properties:
             name:
               description: >
-                The name of this silver transform definition. This is used to identify the silver table for writes 
+                The name of this silver transform definition. This is used to identify the silver table for writes
                 as well as the data transformation variable (dataframe) for later use in the related notebook.
               type: string
             filter:
@@ -146,20 +154,20 @@ properties:
               type: string
             fields:
               description: >
-                A list of FieldSpecs that define the column schema for this data transformation. Each FieldSpec will 
+                A list of FieldSpecs that define the column schema for this data transformation. Each FieldSpec will
                 include a name, type, and other properties that define the column schema.
               type: array
               items:
                 $ref: '#/components/schemas/FieldSpec'
             utils:
               description: >
-                A list of utilities for handling fields, including managing unreferenced fields and extracting fields 
+                A list of utilities for handling fields, including managing unreferenced fields and extracting fields
                 from hierarchical or JSON objects.
               allOf:
                 - $ref: '#/components/schemas/FieldUtils'
   gold:
     description: >
-      The gold transform configuration for this preset. This configuration will be used to transform the silver data 
+      The gold transform configuration for this preset. This configuration will be used to transform the silver data
       into the gold OCSF tables. Note that you can have duplicate names for array objects which indicates the same
       destination table but different source (silver) tables.
     type: array
@@ -188,25 +196,32 @@ properties:
           type: string
         fields:
           description: >
-            A list of FieldSpecs that define the column schema for the gold stage data. Each FieldSpec will 
+            A list of FieldSpecs that define the column schema for the gold stage data. Each FieldSpec will
             include a name, type, and other properties that define the column schema.
           type: array
           items:
             $ref: '#/components/schemas/FieldSpec'
+  bronze_event_expr:
+    type: string
+    description: The Spark SQL expression used to determine a row's event class.
+  silver_table_event_mappings:
+    type: object
+    description: A mapping of which event classes maps to which silver tables.
+    additionalProperties:
+      type: string
+  gold_table_event_mappings:
+    type: object
+    description: A mapping of which event classes maps to which gold tables.
+    additionalProperties:
+      type: string
 
 components:
-  required:
-    - name
-    - author
-    - description
-    - title
-    - iconURL
   schemas:
     FieldSpec:
       description: >
-        A FieldSpec object is used to define a field to add to a dataset (dataframe). This field can be derived from an existing field, 
-        an expression, from a literal value, from a join, etc. FieldSpec objects are found wherever the user needs to transform data
-        including in datasources, custom notebooks, and transforms.
+        A FieldSpec object is used to define a field to add to a dataset (dataframe). This field can be derived from an existing field,
+        an expression, from a literal value, from a join, etc. FieldSpec objects are found whereever the user needs to transform data
+        including in Datasources, custom notebooks, and transforms.
       type: object
       properties:
         name:
@@ -238,12 +253,22 @@ components:
           type: string
           description: >
             This field obtains its value from the destination (transformed) column of this name.
-            Use this to alias a column from within the same table (ie. silver table). 
+            Use this to alias a column from within the same table (ie. silver table).
             You cannot alias a column from some upstream table
             (ie. you cannot use it in a silver transform to alias a column from a bronze input table)
         expr:
           type: string
           description: This field obtains its value from the given SQL expression.
+        referencedFields:
+          type: array
+          description: >
+            An optional list of field paths from the source table that can be populated when the field spec
+            contains an expression. Each field path is represented as a list of strings (e.g., ["user",
+            "contact", "email"]).
+          items:
+            type: array
+            items:
+              type: string
         literal:
           type: string
           description: This field obtains its value from the given literal string. For other data types, use expr.
@@ -275,7 +300,7 @@ components:
 
     FieldUtils:
       description: >
-        Defines utilities for handling fields, including managing unreferenced fields and extracting fields from 
+        Defines utilities for handling fields, including managing unreferenced fields and extracting fields from
         hierarchical or JSON objects.
       type: object
       properties:
@@ -283,7 +308,7 @@ components:
           type: array
           description: >
             A set of temporary columns to be added to the input in order to perform an arbitrary number
-            of data transformations that require sequential execution. These fields will not be 
+            of data transformations that require sequential execution. These fields will not be
             considered as unreferenced columns and so will not be preserved if preserve = true.
             Note: nested temporary field names are not supported. Temporary fields are applied after
             jsonExtract if also provided.
@@ -309,7 +334,7 @@ components:
               type: string
             omitColumns:
               description: >
-                Lists columns to exclude from the output (either preserved as columns or embedded). Useful for retaining 
+                Lists columns to exclude from the output (either preserved as columns or embedded). Useful for retaining
                 all columns except the specified ones.
               type: array
               items:
@@ -347,9 +372,10 @@ components:
                 type: string
               embedColumn:
                 description: >
-                  Specifies a column name to store the extracted JSON object as a structured type. If not specified, 
+                  Specifies a column name to store the extracted JSON object as a structured type. If not specified,
                   the object is extracted into the top-level structure.
                 type: string
+
     DataSourcePrimaryKeySpec:
       type: object
       properties:
