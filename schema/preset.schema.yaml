@@ -24,6 +24,13 @@ properties:
     description: >
       A URL to an icon representing the preset. This icon will be displayed in the UI.
     type: string
+  metaInfo:
+    description: >
+      Metadata for managed presets. These fields are typically set by the system
+      for official presets and not required for custom, user-created presets.
+    nullable: true
+    allOf:
+      - $ref: '#/components/schemas/content.v1.DatasourcePresetMetaInfo'
   primaryKey:
     description: >
       Configuration used to compute a primary key which will be composed of a timestamp plus hash computed over a set of columns.
@@ -65,6 +72,32 @@ properties:
           type: string
     required:
       - format
+  bronzeEventExpr:
+    type: string
+    description: >
+      The column or expression (e.g., event_class or CAST(data:operationName AS STRING)) that identifies event types in the bronze table. 
+      When a silver table has no explicit filter, this expression and silverTableEventMappings are used to automatically filter-in rows belonging to that table.
+  silverEventExpr:
+    type: string
+    description: >
+      The column or expression (e.g., event_class or CAST(data:operationName AS STRING)) that identifies event types in the silver table. 
+      When a gold table has no explicit filter, this expression and goldTableEventMappings are used to automatically filter-in rows belonging to that table.
+  silverTableEventMappings:
+    type: object
+    description: >
+      A dict[String, String] mapping event types to silver tables. Each key is an event type value (as produced by bronzeEventExpr); 
+      each value is the target silver table name. Multiple event types can map to the same table, 
+      resulting in an IN clause filter when no explicit table filter is provided.
+    additionalProperties:
+      type: string
+  goldTableEventMappings:
+    type: object
+    description: >
+      A dict[String, String] mapping event types to gold tables. Each key is an event type value (as produced by silverEventExpr); 
+      each value is the target gold table name. Multiple event types can map to the same table, 
+      resulting in an IN clause filter when no explicit table filter is provided.
+    additionalProperties:
+      type: string
   bronze:
     type: object
     properties:
@@ -201,19 +234,6 @@ properties:
           type: array
           items:
             $ref: '#/components/schemas/FieldSpec'
-  bronze_event_expr:
-    type: string
-    description: The Spark SQL expression used to determine a row's event class.
-  silver_table_event_mappings:
-    type: object
-    description: A mapping of which event classes maps to which silver tables.
-    additionalProperties:
-      type: string
-  gold_table_event_mappings:
-    type: object
-    description: A mapping of which event classes maps to which gold tables.
-    additionalProperties:
-      type: string
 
 components:
   schemas:
@@ -376,20 +396,35 @@ components:
                   the object is extracted into the top-level structure.
                 type: string
 
-    DataSourcePrimaryKeySpec:
-      type: object
-      properties:
-        timeColumn:
+  content.v1.DatasourcePresetMetaInfo:
+    type: object
+    description: >
+      Metadata for managed presets. These fields are typically set by the system 
+      for official presets and not required for custom, user-created presets.
+    properties:
+      versionNumber:
+        type: integer
+        description: The version number of this preset.
+        nullable: true
+      latestVersion:
+        type: integer
+        description: The latest available version number for this preset.
+        nullable: true
+
+  DataSourcePrimaryKeySpec:
+    type: object
+    properties:
+      timeColumn:
+        type: string
+        description: SQL expression that resolves to a timestamp value used to compute the primary key. This should be a stable timestamp for example event time, create time etc.
+      additionalColumns:
+        type: array
+        description: >
+          List of SQL expressions each resolving to a value of primitive type. All of which will be included in the calculation of the primary key.
+          Note that two rows having an identical timestamp and identical values for these expressions will be considered the same row
+        items:
           type: string
-          description: SQL expression that resolves to a timestamp value used to compute the primary key. This should be a stable timestamp for example event time, create time etc.
-        additionalColumns:
-          type: array
-          description: >
-            List of SQL expressions each resolving to a value of primitive type. All of which will be included in the calculation of the primary key.
-            Note that two rows having an identical timestamp and identical values for these expressions will be considered the same row
-          items:
-            type: string
-            description: A valid column name
-      required:
-        - timeColumn
-        - additionalColumns
+          description: A valid column name
+    required:
+      - timeColumn
+      - additionalColumns
