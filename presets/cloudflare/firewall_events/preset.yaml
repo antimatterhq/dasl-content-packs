@@ -1,0 +1,362 @@
+name: cloudflare_firewall_events
+title: "Cloudflare Firewall Events"
+author: Antimatter
+description: "Cloudflare Firewall Events logs"
+iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/cloudflare/firewall_events/icon.png"
+autoloader:
+  format: jsonl # json <add multiline: True>
+bronze:
+  loadAsSingleVariant: true
+  preTransform:
+    -
+      - "data"
+      - CAST(try_variant_get(data, '$.Datetime', 'STRING') as TIMESTAMP) as time
+      - CAST('cloudflare' AS STRING) AS source
+      - CAST('firewall_events' AS STRING) AS sourcetype
+      - CURRENT_TIMESTAMP() as processed_time
+silver:
+  transform:
+    - name: cloudflare_firewall_events
+      fields:
+        - name: Action
+          expr: try_variant_get(data, '$.Action', 'STRING')
+        - name: ClientASN
+          expr: TRY_CAST(try_variant_get(data, '$.ClientASN', 'STRING') AS INT)
+        - name: ClientASNDescription
+          expr: try_variant_get(data, '$.ClientASNDescription', 'STRING')
+        - name: ClientCountry
+          expr: try_variant_get(data, '$.ClientCountry', 'STRING')
+        - name: ClientIP
+          expr: try_variant_get(data, '$.ClientIP', 'STRING')
+        - name: ClientIPClass
+          expr: try_variant_get(data, '$.ClientIPClass', 'STRING')
+        - name: ClientRefererHost
+          expr: try_variant_get(data, '$.ClientRefererHost', 'STRING')
+        - name: ClientRefererPath
+          expr: try_variant_get(data, '$.ClientRefererPath', 'STRING')
+        - name: ClientRefererQuery
+          expr: try_variant_get(data, '$.ClientRefererQuery', 'STRING')
+        - name: ClientRefererScheme
+          expr: try_variant_get(data, '$.ClientRefererScheme', 'STRING')
+        - name: ClientRequestHost
+          expr: try_variant_get(data, '$.ClientRequestHost', 'STRING')
+        - name: ClientRequestMethod
+          expr: try_variant_get(data, '$.ClientRequestMethod', 'STRING')
+        - name: ClientRequestPath
+          expr: try_variant_get(data, '$.ClientRequestPath', 'STRING')
+        - name: ClientRequestProtocol
+          expr: try_variant_get(data, '$.ClientRequestProtocol', 'STRING')
+        - name: ClientRequestQuery
+          expr: try_variant_get(data, '$.ClientRequestQuery', 'STRING')
+        - name: ClientRequestScheme
+          expr: try_variant_get(data, '$.ClientRequestScheme', 'STRING')
+        - name: ClientRequestUserAgent
+          expr: try_variant_get(data, '$.ClientRequestUserAgent', 'STRING')
+        - name: Description
+          expr: try_variant_get(data, '$.Description', 'STRING')
+        - name: EdgeColoCode
+          expr: try_variant_get(data, '$.EdgeColoCode', 'STRING')
+        - name: EdgeResponseStatus
+          expr: TRY_CAST(try_variant_get(data, '$.EdgeResponseStatus', 'STRING') AS INT)
+        - name: Kind
+          expr: try_variant_get(data, '$.Kind', 'STRING')
+        - name: LeakedCredentialCheckResult
+          expr: try_variant_get(data, '$.LeakedCredentialCheckResult', 'STRING')
+        - name: MatchIndex
+          expr: TRY_CAST(try_variant_get(data, '$.MatchIndex', 'STRING') AS INT)
+        - name: OriginResponseStatus
+          expr: TRY_CAST(try_variant_get(data, '$.OriginResponseStatus', 'STRING') AS INT)
+        - name: OriginatorRayID
+          expr: try_variant_get(data, '$.OriginatorRayID', 'STRING')
+        - name: RayID
+          expr: try_variant_get(data, '$.RayID', 'STRING')
+        - name: Ref
+          expr: try_variant_get(data, '$.Ref', 'STRING')
+        - name: RuleID
+          expr: try_variant_get(data, '$.RuleID', 'STRING')
+        - name: Src # duplicate metadata field <source>; rename to <Src>
+          expr: try_variant_get(data, '$.Source', 'STRING')
+        - name: ContentScanObjResults
+          expr: try_variant_get(data, '$.ContentScanObjResults', 'ARRAY<STRING>')
+        - name: ContentScanObjSizes
+          expr: try_variant_get(data, '$.ContentScanObjSizes', 'ARRAY<INT>')
+        - name: ContentScanObjTypes
+          expr: try_variant_get(data, '$.ContentScanObjTypes', 'ARRAY<STRING>')
+        - name: Metadata
+          expr: try_variant_get(data, '$.Metadata', 'MAP<STRING,STRING>')
+      utils:
+        unreferencedColumns:
+          preserve: true
+gold:
+  - name: network_activity
+    input: cloudflare_firewall_events
+    fields:
+      - name: action
+        from: Action
+      - name: action_id
+        expr: |
+          CASE
+            WHEN LOWER(Action) IN ('allow', 'bypass') THEN 1
+            WHEN LOWER(Action) = 'block' THEN 2
+            WHEN LOWER(Action) IN ('challenge', 'jschallenge', 'managedchallenge') THEN 3
+            ELSE 99
+          END
+      - name: activity_id
+        expr: |
+          CASE
+            WHEN LOWER(Action) = 'connectionclose' THEN 2
+            WHEN LOWER(Action) = 'block' THEN 5
+            WHEN LOWER(Action) IN (
+                 'allow',
+                 'challenge',
+                 'jschallenge',
+                 'log',
+                 'challengesolved',
+                 'challengebypassed',
+                 'jschallengesolved',
+                 'jschallengebypassed',
+                 'bypass',
+                 'managedchallenge',
+                 'managedchallengenoninteractivesolved',
+                 'managedchallengeinteractivesolved',
+                 'managedchallengebypassed'
+            ) THEN 6
+            ELSE 99
+          END
+      - name: activity_name
+        expr: |
+          CASE
+            WHEN activity_id = 0 THEN 'Unknown'
+            WHEN activity_id = 1 THEN 'Open'
+            WHEN activity_id = 2 THEN 'Close'
+            WHEN activity_id = 3 THEN 'Reset'
+            WHEN activity_id = 4 THEN 'Fail'
+            WHEN activity_id = 5 THEN 'Refuse'
+            WHEN activity_id = 6 THEN 'Traffic'
+            WHEN activity_id = 7 THEN 'Listen'
+            ELSE 'Other'
+          END
+      - name: category_name
+        literal: Network Activity
+      - name: category_uid
+        expr: CAST('4' AS INT)
+      - name: class_name
+        literal: Network Activity
+      - name: class_uid
+        expr: CAST('4001' AS INT)
+      - name: connection_info.protocol_name
+        expr: ClientRequestProtocol
+      - name: disposition
+        expr: |
+          CASE
+            WHEN LOWER(Action) IN ('allow', 'bypass', 'log') THEN 'Allowed'
+            WHEN LOWER(Action) IN ('block', 'connectionclose') THEN 'Blocked'
+            WHEN LOWER(Action) IN ('challenge', 'jschallenge', 'managedchallenge') THEN 'Quarantined'
+            ELSE 'Unknown'
+          END
+      - name: disposition_id
+        expr: |
+          CASE
+            WHEN disposition = 'Allowed' THEN 1
+            WHEN disposition = 'Blocked' THEN 2
+            WHEN disposition = 'Quarantined' THEN 3
+            WHEN disposition = 'Unknown' THEN 0
+            ELSE 99
+          END
+      - name: message
+        from: Description
+      - name: metadata.version
+        literal: 1.0.0
+      - name: metadata.product.vendor_name
+        literal: Cloudflare
+      - name: metadata.product.name
+        literal: Firewall Events
+      - name: metadata.log_provider
+        literal: Cloudflare Firewall Events
+      - name: severity
+        expr: |
+          CASE
+            WHEN LOWER(Action) = 'block' AND LOWER(Src) = 'waf' THEN 'Critical'
+            WHEN LOWER(Action) IN ('block', 'connectionclose') THEN 'High'
+            WHEN LOWER(Action) IN ('challenge', 'jschallenge', 'managedchallenge') THEN 'Medium'
+            WHEN LOWER(Action) IN ('challengesolved', 'jschallengesolved', 'challengebypassed', 'jschallengebypassed', 'managedchallengebypassed', 'managedchallengeinteractivesolved', 'managedchallengenoninteractivesolved') THEN 'Low'
+            WHEN LOWER(Action) IN ('allow', 'bypass', 'log') THEN 'Informational'
+            ELSE 'Unknown'
+          END
+      - name: severity_id 
+        expr: |
+          CASE
+            WHEN LOWER(Action) = 'block' AND LOWER(Src) = 'waf' THEN 5
+            WHEN LOWER(Action) IN ('block', 'connectionclose') THEN 4
+            WHEN LOWER(Action) IN ('challenge', 'jschallenge', 'managedchallenge') THEN 3
+            WHEN LOWER(Action) IN ('challengesolved', 'jschallengesolved', 'challengebypassed', 'jschallengebypassed', 'managedchallengebypassed', 'managedchallengeinteractivesolved', 'managedchallengenoninteractivesolved') THEN 2
+            WHEN LOWER(Action) IN ('allow', 'bypass', 'log') THEN 1
+            ELSE 0
+          END
+      - name: src_endpoint.ip
+        from: ClientIP
+      - name: src_endpoint.domain
+        from: ClientRequestHost
+      - name: src_endpoint.location.country
+        from: ClientCountry
+      - name: src_endpoint.zone
+        expr: COALESCE(Metadata['zone_name'], 'Unknown')
+      - name: status
+        expr: |
+          CASE
+            WHEN LOWER(Action) IN ('allow', 'bypass', 'log') THEN 'Success'
+            WHEN LOWER(Action) IN ('block', 'connectionclose') THEN 'Failure'
+            WHEN LOWER(Action) IN ('challenge', 'jschallenge', 'managedchallenge', 'challengesolved', 'jschallengesolved', 'challengebypassed', 'jschallengebypassed', 'managedchallengebypassed', 'managedchallengeinteractivesolved', 'managedchallengenoninteractivesolved') THEN 'Other'
+            ELSE 'Unknown'
+          END
+      - name: status_code
+        expr: CAST(EdgeResponseStatus AS STRING)
+      - name: status_detail
+        expr: |
+          CONCAT(
+            'Action: ', Action,
+            '; Description: ', Description,
+            '; RuleID: ', COALESCE(CAST(RuleID AS STRING), 'N/A'),
+            '; Src: ', COALESCE(Src, 'N/A')
+            )
+      - name: status_id
+        expr: |
+          CASE
+            WHEN status = 'Success' THEN 1
+            WHEN status = 'Failure' THEN 2
+            WHEN status = 'Unknown' THEN 0
+            ELSE 99
+          END
+      - name: time
+        from: time
+      - name: type_name
+        expr: "CONCAT('Network Activity: ', activity_name)"
+      - name: type_uid
+        expr: CAST(class_uid * 100 + activity_id as long)
+      - name: url.scheme
+        from: ClientRequestScheme
+      - name: url.hostname
+        from: ClientRequestHost
+      - name: url.path
+        from: ClientRequestPath
+      - name: url.query_string
+        from: ClientRequestQuery
+      - name: url.url_string
+        expr: |
+          CONCAT(
+            COALESCE(ClientRequestScheme, ''), '://',
+            COALESCE(ClientRequestHost, ''),
+            COALESCE(ClientRequestPath, ''),
+            CASE WHEN ClientRequestQuery IS NOT NULL AND ClientRequestQuery != '' 
+              THEN CONCAT('?', ClientRequestQuery) 
+              ELSE '' 
+            END
+          )
+      - name: metadata.correlation_uid
+        from: RayID
+      - name: metadata.uid
+        from: RayID
+      - name: observables
+        expr: |
+          ARRAY(
+            STRUCT(
+              'Client IP' AS name,
+              'IP Address' AS type,
+              ClientIP AS value
+            ),
+            STRUCT(
+              'Request Host' AS name,
+              'Hostname' AS type,
+              ClientRequestHost AS value
+            ),
+            STRUCT(
+              'Ray ID' AS name,
+              'Resource UID' AS type,
+              RayID AS value
+            ),
+            STRUCT(
+              'Rule ID' AS name,
+              'Resource UID' AS type,
+              CAST(RuleID AS STRING) AS value
+            )
+          )
+      - name: enrichments
+        expr: |
+          FILTER(
+            ARRAY(
+              CASE 
+                WHEN ContentScanObjResults IS NOT NULL AND SIZE(ContentScanObjResults) > 0 THEN
+                  STRUCT(
+                    'Content Scan Results' AS name,
+                    'Content scanning detected objects' AS desc,
+                    CAST(NULL AS VARIANT) AS data,
+                    ARRAY_JOIN(ContentScanObjResults, ', ') AS value
+                  )
+                ELSE NULL
+              END,
+              CASE 
+                WHEN LeakedCredentialCheckResult IS NOT NULL THEN
+                  STRUCT(
+                    'Leaked Credential Check' AS name,
+                    'Credential leak detection result' AS desc,
+                    CAST(NULL AS VARIANT) AS data,
+                    LeakedCredentialCheckResult AS value
+                  )
+                ELSE NULL
+              END,
+              CASE 
+                WHEN ClientIPClass IS NOT NULL THEN
+                  STRUCT(
+                    'Client IP Classification' AS name,
+                    'IP address classification' AS desc,
+                    CAST(NULL AS VARIANT) AS data,
+                    ClientIPClass AS value
+                  )
+                ELSE NULL
+              END,
+              CASE 
+                WHEN ClientASN IS NOT NULL THEN
+                  STRUCT(
+                    'Client ASN' AS name,
+                    'Autonomous System Number' AS desc,
+                    CAST(NULL AS VARIANT) AS data,
+                    CONCAT('AS', CAST(ClientASN AS STRING), ' - ', COALESCE(ClientASNDescription, 'N/A')) AS value
+                  )
+                ELSE NULL
+              END
+            ),
+            x -> x IS NOT NULL
+          )
+      - name: unmapped
+        expr: |
+          CAST(
+            to_json(
+              named_struct(
+                'EdgeColoCode', EdgeColoCode,
+                'EdgeResponseStatus', EdgeResponseStatus,
+                'OriginResponseStatus', OriginResponseStatus,
+                'OriginatorRayID', OriginatorRayID,
+                'ClientASN', ClientASN,
+                'ClientASNDescription', ClientASNDescription,
+                'ClientIPClass', ClientIPClass,
+                'ClientRequestMethod', ClientRequestMethod,
+                'ClientRequestProtocol', ClientRequestProtocol,
+                'ClientRequestUserAgent', ClientRequestUserAgent,
+                'ClientRefererHost', ClientRefererHost,
+                'ClientRefererPath', ClientRefererPath,
+                'ClientRefererQuery', ClientRefererQuery,
+                'ClientRefererScheme', ClientRefererScheme,
+                'LeakedCredentialCheckResult', LeakedCredentialCheckResult,
+                'ContentScanObjResults', ContentScanObjResults,
+                'ContentScanObjSizes', ContentScanObjSizes,
+                'ContentScanObjTypes', ContentScanObjTypes,
+                'Kind', Kind,
+                'MatchIndex', MatchIndex,
+                'Metadata', Metadata,
+                'RuleID', RuleID,
+                'Ref', Ref,
+                'Src', Src,
+                'Description', Description
+              )
+            ) AS VARIANT
+          )
