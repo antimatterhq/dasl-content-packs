@@ -1,4 +1,4 @@
-# Akamai presets
+# Azure presets
 
 This preset directory contains Azure data sources. Current supported data sources:
 - http request
