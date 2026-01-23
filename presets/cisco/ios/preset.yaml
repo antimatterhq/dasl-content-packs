@@ -5,6 +5,8 @@ description: "Cisco IOS logs"
 iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/cisco/ios/icon.png"
 autoloader:
   format: text
+  cloudFiles:
+    schemaHints: "value string"
 bronze:
   preTransform:
     -
@@ -15,68 +17,7 @@ bronze:
       - CURRENT_TIMESTAMP() as processed_time
 silver:
   transform:
-    - name: cisco_ios_iam_authentication
-      postFilter: (facility IN ('AAA', 'SEC_LOGIN') AND mnemonic LIKE 'LOGIN%') OR (facility = 'SYS' AND mnemonic = 'LOGOUT')
-      fields:
-        - name: seq_no
-          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 1)
-        - name: timestamp
-          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 2)
-        - name: facility
-          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 3)
-        - name: severity
-          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 4)
-        - name: mnemonic
-          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 5)
-        - name: description
-          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 6)
-      utils:
-        unreferencedColumns:
-          preserve: true
-          omitColumns:
-            - value
-    - name: cisco_ios_iam_authorize_session
-      postFilter: mnemonic IN ('EXEC_FAILED', 'CLI_DENIED', 'ACCESS_DENIED')
-      fields:
-        - name: seq_no
-          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 1)
-        - name: timestamp
-          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 2)
-        - name: facility
-          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 3)
-        - name: severity
-          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 4)
-        - name: mnemonic
-          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 5)
-        - name: description
-          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 6)
-      utils:
-        unreferencedColumns:
-          preserve: true
-          omitColumns:
-            - value
-    - name: cisco_ios_process
-      postFilter: facility IN ('SYS', 'CPU', 'MEM', 'ENV')
-      fields:
-        - name: seq_no
-          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 1)
-        - name: timestamp
-          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 2)
-        - name: facility
-          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 3)
-        - name: severity
-          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 4)
-        - name: mnemonic
-          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 5)
-        - name: description
-          expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 6)
-      utils:
-        unreferencedColumns:
-          preserve: true
-          omitColumns:
-            - value
-    - name: cisco_ios_network
-      postFilter: facility IN ('LINK', 'LINEPROTO', 'ETHCNTR', 'IFMON', 'DEBUG')
+    - name: cisco_ios
       fields:
         - name: seq_no
           expr: REGEXP_EXTRACT(value, '^(\d+):\s+(\w+\s+\d+\s+\d+\s+\d+:\d+:\d+):\s+%(\w+)-(\d+)-(\w+):\s(.+)$', 1)
@@ -97,7 +38,8 @@ silver:
             - value
 gold:
   - name: authentication
-    input: cisco_ios_iam_authentication
+    input: cisco_ios
+    preFilter: (facility IN ('AAA', 'SEC_LOGIN') AND mnemonic LIKE 'LOGIN%') OR (facility = 'SYS' AND mnemonic = 'LOGOUT')
     fields:
       - name: category_uid
         expr: CAST('3' AS INT)
@@ -206,7 +148,8 @@ gold:
       - name: src_endpoint.port
         expr: TRY_CAST(REGEXP_EXTRACT(description, 'localport:\s*(\d+)', 1) AS INT)
   - name: authorize_session
-    input: cisco_ios_iam_authorize_session
+    input: cisco_ios
+    preFilter: mnemonic IN ('EXEC_FAILED', 'CLI_DENIED', 'ACCESS_DENIED')
     fields:
       - name: category_uid
         expr: CAST('3' AS INT)
@@ -277,7 +220,8 @@ gold:
       - name: dst_endpoint.svc_name
         expr: REGEXP_EXTRACT(description, 'attempted to\s+(\w+)', 1)
   - name: network_activity
-    input: cisco_ios_network
+    input: cisco_ios
+    preFilter: facility IN ('LINK', 'LINEPROTO', 'ETHCNTR', 'IFMON', 'DEBUG')
     fields:
       - name: category_uid
         expr: CAST('4' AS INT)
@@ -363,7 +307,8 @@ gold:
       - name: dst_endpoint.interface_name
         expr: REGEXP_EXTRACT(description, 'Interface\s+([^,]+)', 1)
   - name: process_activity
-    input: cisco_ios_process
+    input: cisco_ios
+    preFilter: facility IN ('SYS', 'CPU', 'MEM', 'ENV')
     fields:
       - name: category_uid
         expr: CAST('1' AS INT)

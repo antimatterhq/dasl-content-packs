@@ -9,10 +9,7 @@ This preset directory contains Cisco data sources ([IOS logs](https://www.cisco.
 Assumed data format: syslog
 
 Silver tables:
-- cisco_ios_iam_authentication
-- cisco_ios_iam_authorize_session
-- cisco_ios_network
-- cisco_ios_process
+- cisco_ios
 
 Gold tables:
 - authentication
