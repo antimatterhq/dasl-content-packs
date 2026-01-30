@@ -1,0 +1,648 @@
+name: internal_crowdstrike_falcon
+author: "Alex Ott <alexey.ott@databricks.com>"
+description: "Processing of Crowdstrike JSON logs"
+title: "Crowdstrike Falcon"
+#iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/zeek/http/icon.png"
+iconURL: "https://www.dropbox.com/scl/fi/ngmjyy8g6fuia5yyu5bqz/falcon.png?rlkey=oijjglg5dtoa0c5hlqacdl5xw&dl=0"
+autoloader:
+  format: jsonl
+bronze:
+  loadAsSingleVariant: true
+  # This is for normal FDR logs. Comment it if data is transferred with Cribl
+  preTransform:
+    -
+      - "*"
+      - current_timestamp() as ingest_time
+      - coalesce(cast(try_variant_get(data, '$.ContextTimeStamp', 'double') as timestamp), try_variant_get(data, '$.timestamp', 'timestamp'), cast((try_variant_get(data, '$.timestamp', 'long') / 1000.0) as timestamp), cast((try_variant_get(data, '$.UTCTimestamp', 'long') / 1000.0) as timestamp), current_timestamp()) as time
+  # Uncomment this if data is transferred with Cribl (and comment previous section)
+  # preTransform:
+  #   -
+  #     - "try_parse_json(_raw) as data"
+  #     - "cast(_time as timestamp) as cribl_time"
+  #     - current_timestamp() as ingest_time
+  #     - if(isnull(data), _raw, cast(null as string)) as _raw_bad
+  #   -
+  #     - "*"
+  #     - coalesce(cast(try_variant_get(data, '$.ContextTimeStamp', 'double') as timestamp), try_variant_get(data, '$.timestamp', 'timestamp'), cast((try_variant_get(data, '$.timestamp', 'long') / 1000.0) as timestamp), cast((try_variant_get(data, '$.UTCTimestamp', 'long') / 1000.0) as timestamp), current_timestamp()) as time
+silver:
+  transform:
+    - name: crowdstrike
+      filter: data is not null
+      fields:
+        - name: id
+          expr: try_variant_get(data, '$.id', 'string')
+        - name: cid
+          expr: try_variant_get(data, '$.cid', 'string')
+        - name: aid
+          expr: try_variant_get(data, '$.aid', 'string')
+        - name: aip
+          expr: try_variant_get(data, '$.aip', 'string')
+        - name: event_platform
+          expr: try_variant_get(data, '$.event_platform', 'string')
+        - name: name
+          expr: try_variant_get(data, '$.name', 'string')
+        - name: effective_transmission_class
+          expr: try_variant_get(data, '$.EffectiveTransmissionClass', 'int')
+        - name: entitlements
+          expr: try_variant_get(data, '$.Entitlements', 'int')
+        - name: config_build
+          expr: try_variant_get(data, '$.ConfigBuild', 'string')
+        - name: config_state_hash
+          expr: try_variant_get(data, '$.ConfigStateHash', 'string')
+        - name: context_process_id
+          expr: try_variant_get(data, '$.ContextProcessId', 'long')
+        - name: context_thread_id
+          expr: try_variant_get(data, '$.ContextThreadId', 'long')
+        - name: metadata.product.vendor_name
+          literal: Crowdstrike
+        - name: metadata.product.name
+          literal: Crowdstrike Falcon
+        - name: metadata.product.version
+          expr: try_variant_get(data, '$.ConfigBuild', 'string')
+        - name: metadata.tenant_uid
+          expr: try_variant_get(data, '$.cid', 'string')
+        - name: metadata.uid
+          expr: try_variant_get(data, '$.id', 'string')
+        - name: metadata.processed_time
+          from: ingest_time
+        - name: metadata.logged_time
+          expr: coalesce(try_variant_get(data, '$.timestamp', 'timestamp'), cast((try_variant_get(data, '$.timestamp', 'long') / 1000.0) as timestamp))
+        - name: event_name
+          expr: coalesce(try_variant_get(data, '$.event_simpleName', 'string'), try_variant_get(data, '$.EventType', 'string'), try_variant_get(data, '$.event_type', 'string'))
+        - name: metadata.event_code
+          expr: coalesce(try_variant_get(data, '$.event_simpleName', 'string'), try_variant_get(data, '$.EventType', 'string'), try_variant_get(data, '$.event_type', 'string'))
+      utils:
+        unreferencedColumns:
+          preserve: true
+gold:
+  - name: network_activity
+    input: crowdstrike
+    filter: |
+      event_name IN (
+        'NetworkConnectIP4', 'NetworkConnectIP6', 'NetworkCloseIP4', 'NetworkCloseIP6',
+        'NetworkListenIP4', 'NetworkListenIP6', 'NetworkReceiveAcceptIP4',
+        'NetworkReceiveAcceptIP6', 'RawBindIP4', 'RawBindIP6', 'PromiscuousBindIP4',
+        'PromiscuousBindIP6', 'NetworkConnectIP4Blocked', 'NetworkConnectIP6Blocked'
+      )
+    fields:
+      - name: activity_id
+        expr: |
+          CAST(
+            CASE
+              WHEN event_name IN ('NetworkConnectIP4', 'NetworkConnectIP6', 'NetworkConnectIP4Blocked', 'NetworkConnectIP6Blocked') THEN '1'
+              WHEN event_name IN ('NetworkCloseIP4', 'NetworkCloseIP6') THEN '2'
+              WHEN event_name IN ('NetworkListenIP4', 'NetworkListenIP6', 'RawBindIP4', 'RawBindIP6') THEN '7'
+              ELSE '0'
+            END
+          AS INT)
+      - name: activity_name
+        expr: |
+          CASE
+            WHEN activity_id = '1' THEN 'Open'
+            WHEN activity_id = '2' THEN 'Close'
+            WHEN activity_id = '7' THEN 'Listen'
+            ELSE 'Unknown'
+          END
+      - name: category_uid
+        expr: CAST('4' AS INT)
+      - name: category_name
+        literal: Network Activity
+      - name: class_uid
+        expr: CAST('4001' AS INT)
+      - name: class_name
+        literal: Network Activity
+      - name: severity_id
+        expr: CAST('0' AS INT)
+      - name: severity
+        literal: Unknown
+      - name: type_uid
+        expr: cast(class_uid*100 + activity_id as long)
+      - name: type_name
+        expr: "concat('Network Activity: ', activity_name)"
+      - name: time
+        from: time
+      - name: metadata
+        from: metadata
+      - name: src_endpoint.ip
+        expr: coalesce(try_variant_get(data, '$.LocalAddressIP4', 'string'), try_variant_get(data, '$.LocalAddressIP6', 'string'))
+      - name: dst_endpoint.ip
+        expr: coalesce(try_variant_get(data, '$.RemoteAddressIP4', 'string'), try_variant_get(data, '$.RemoteAddressIP6', 'string'))
+      - name: src_endpoint.port
+        expr: try_variant_get(data, '$.LocalPort', 'int')
+      - name: dst_endpoint.port
+        expr: try_variant_get(data, '$.RemotePort', 'int')
+      - name: connection_info.protocol_num
+        expr: try_variant_get(data, '$.Protocol', 'int')
+      - name: connection_info.direction_id
+        expr: |
+          CASE
+            WHEN try_variant_get(data, '$.ConnectionDirection', 'int') = 0 THEN 1
+            WHEN try_variant_get(data, '$.ConnectionDirection', 'int') = 1 THEN 2
+            WHEN try_variant_get(data, '$.ConnectionDirection', 'int') = 2 THEN 99
+            WHEN try_variant_get(data, '$.ConnectionDirection', 'int') = 3 THEN 99
+            ELSE 0
+          END
+      - name: connection_info.direction
+        expr: |
+          CASE
+            WHEN try_variant_get(data, '$.ConnectionDirection', 'int') = 0 THEN 'Inbound'
+            WHEN try_variant_get(data, '$.ConnectionDirection', 'int') = 1 THEN 'Outbound'
+            WHEN try_variant_get(data, '$.ConnectionDirection', 'int') = 2 THEN 'Neither'
+            WHEN try_variant_get(data, '$.ConnectionDirection', 'int') = 3 THEN 'Both'
+            ELSE 'Unknown'
+          END
+      - name: connection_info.protocol_ver_id
+        expr: |
+          CAST(
+            CASE
+              WHEN endswith(event_name, 'IP4') THEN '4'
+              WHEN endswith(event_name, 'IP6') THEN '6'
+              ELSE '0'
+            END
+          AS INT)
+      - name: raw_data
+        from: data
+  - name: file_activity
+    input: crowdstrike
+    filter: |
+      event_name IN (
+        'FileCreateInfo', 'FileDeleteInfo', 'FileOpenInfo', 'FileRenameInfo', 'FsVolumeMounted'
+        'PackedExecutableWritten', 'NewExecutableWritten', 'NewExecutableRenamed',
+        'NewScriptWritten', 'ExecutableDeleted', 'CriticalFileAccessed', 'CriticalFileModified'
+        'FsVolumeUnmounted', 'DirectoryCreate', 'ProcessSelfDeleted', 'VolumeSnapshotCreated', 
+        'VolumeSnapshotDeleted', 'RansomwareOpenFile') 
+      OR endswith(event_name, 'FileWritten')
+    fields:
+      - name: activity_id
+        expr: |
+          CAST(
+            CASE
+              WHEN event_name IN ('FileCreateInfo', 'DirectoryCreate', 'VolumeSnapshotCreated') THEN '1'
+              WHEN event_name IN ('FileOpenInfo', 'CriticalFileAccessed', 'RansomwareOpenFile') THEN '14'
+              WHEN event_name IN ('FileRenameInfo', 'NewExecutableRenamed') THEN '5'
+              WHEN event_name IN ('FileDeleteInfo', 'ExecutableDeleted', 'ProcessSelfDeleted', 'VolumeSnapshotDeleted') THEN '4'
+              WHEN endswith(event_name, 'Written') or event_name IN ('CriticalFileModified') THEN '3'
+              WHEN event_name = 'FsVolumeMounted' THEN '12'
+              WHEN event_name = 'FsVolumeUnmounted' THEN '13'
+              ELSE '0'
+            END
+          AS INT)
+      - name: activity_name
+        expr: |
+          CASE
+            WHEN activity_id = 1 THEN 'Create'
+            WHEN activity_id = 3 THEN 'Update'
+            WHEN activity_id = 4 THEN 'Delete'
+            WHEN activity_id = 5 THEN 'Rename'
+            WHEN activity_id = 12 THEN 'Mount'
+            WHEN activity_id = 13 THEN 'Unmount'
+            WHEN activity_id = 14 THEN 'Open'
+            ELSE 'Unknown'
+          END
+      - name: category_uid
+        expr: CAST('1' AS INT)
+      - name: category_name
+        literal: System Activity
+      - name: class_uid
+        expr: CAST('1001' AS INT)
+      - name: class_name
+        literal: File System Activity
+      - name: severity_id
+        expr: CAST('0' AS INT)
+      - name: severity
+        literal: Unknown
+      - name: type_uid
+        expr: cast(class_uid*100 + activity_id as long)
+      - name: type_name
+        expr: "concat('File System Activity: ', activity_name)"
+      - name: time
+        from: time
+      - name: metadata
+        from: metadata
+      - name: device.ip
+        expr: aip
+      - name: device.uid
+        expr: aid
+      - name: actor.user.name
+        expr: try_variant_get(data, '$.UserName', 'string')
+      - name: actor.user.uid
+        expr: try_variant_get(data, '$.UID', 'string')
+      # - name: actor.process.tid
+      #   expr: try_cast(context_thread_id as int)
+      - name: actor.process.pid
+        expr: try_cast(context_process_id as int)
+      - name: file.path
+        expr: |
+          coalesce(
+            try_variant_get(data, '$.TargetFileName', 'string'),
+            try_variant_get(data, '$.VolumeMountPoint', 'string')
+          )
+      - name: file.name
+        expr: |
+          coalesce(
+            regexp_extract(try_variant_get(data, '$.TargetFileName', 'string'), '^.*[/\\\\\\\\\\\\\\\\](.+?)$', 1), 
+            try_variant_get(data, '$.VolumeName', 'string')
+          )
+      - name: raw_data
+        from: data
+      # - name: file.uid
+      #   expr: try_variant_get(data, '$.FileIdentifier', 'string')
+      # - name: file.attributes
+      #   expr: try_variant_get(data, '$.UnixMode', 'int')
+      # - name: file.hashes
+      #   expr: |
+      #     CASE
+      #       WHEN try_variant_get(data, '$.SHA256HashData', 'string') IS NOT NULL THEN
+      #         array(named_struct('algorithm_id', cast('3' as int), 'algorithm', 'SHA-256', 'value', try_variant_get(data, '$.SHA256HashData', 'string')))
+      #     END
+      # - name: file.size
+      #   expr: try_variant_get(data, '$.Size', 'long')
+  - name: authentication
+    input: crowdstrike # TODO: add UserIdentity event
+    filter: |
+      event_name IN (
+        'UserLogoff', 'UserLogon', 'UserLogonFailed', 'UserLogonFailed2'
+      )
+    fields:
+      - name: activity_id
+        expr: |
+          CAST(
+            CASE
+              WHEN startswith(event_name, 'UserLogon') THEN '1'
+              WHEN event_name IN ('UserLogoff') THEN '2'
+              ELSE '0'
+            END
+          AS INT)
+      - name: activity_name
+        expr: |
+          CASE
+            WHEN activity_id = '1' THEN 'Logon'
+            WHEN activity_id = '2' THEN 'Logoff'
+            ELSE 'Unknown'
+          END
+      - name: category_uid
+        expr: CAST('3' AS INT)
+      - name: category_name
+        literal: Identity & Access Management
+      - name: class_uid
+        expr: CAST('3002' AS INT)
+      - name: class_name
+        literal: Authentication
+      - name: severity_id
+        expr: CAST('0' AS INT)
+      - name: severity
+        literal: Unknown
+      - name: type_uid
+        expr: cast(class_uid*100 + activity_id as long)
+      - name: type_name
+        expr: "concat('Authentication: ', activity_name)"
+      - name: time
+        from: time
+      - name: metadata
+        from: metadata
+      - name: actor.user.name
+        expr: try_variant_get(data, '$.UserName', 'string')
+      - name: actor.user.type_id
+        expr: CASE WHEN try_variant_get(data, '$.UserIsAdmin', 'string') = '1' THEN 2 ELSE 0 END
+      - name: actor.user.uid
+        expr: try_variant_get(data, '$.UserSid', 'string')
+      - name: status_id
+        expr: |
+          CASE
+            WHEN event_name IN ('UserLogoff', 'UserLogon') THEN 1
+            WHEN event_name IN ('UserLogonFailed', 'UserLogonFailed2') THEN 2
+            ELSE 0
+          END
+      - name: logon_type_id
+        expr: coalesce(try_variant_get(data, '$.LogonType', 'int'), cast('0' as int))
+      - name: logon_type
+        expr: |
+          CASE
+            WHEN logon_type_id = '1' THEN '2'
+            WHEN logon_type_id = '2' THEN 'Interactive'
+            WHEN logon_type_id = '3' THEN 'Network'
+            WHEN logon_type_id = '4' THEN 'Batch'
+            WHEN logon_type_id = '5' THEN 'OS Service'
+            WHEN logon_type_id = '7' THEN 'Unlock'
+            WHEN logon_type_id = '8' THEN 'Network Cleartext'
+            WHEN logon_type_id = '9' THEN 'New Credentials'
+            WHEN logon_type_id = '10' THEN 'Remote Interactive'
+            WHEN logon_type_id = '11' THEN 'Cached Interactive'
+            WHEN logon_type_id = '12' THEN 'Cached Remote Interactive'
+            WHEN logon_type_id = '13' THEN 'Cached Unlock'
+            WHEN logon_type_id = '99' THEN 'Other'
+            ELSE 'Unknown'
+          END
+      - name: is_remote
+        expr: try_variant_get(data, '$.RemoteAccount', 'string') = '1'
+      - name: raw_data
+        from: data
+  - name: kernel_extension_activity
+    input: crowdstrike
+    filter: |
+      event_name IN (
+        'KextLoad', 'KextUnload', 'KernelModeLoadImage', 'DriverLoad'
+      )
+    fields:
+      - name: activity_id
+        expr: |
+          CAST(
+            CASE
+              WHEN event_name IN ('KextLoad', 'KernelModeLoadImage', 'DriverLoad') THEN '1'
+              WHEN event_name IN ('KextUnload') THEN '2'
+              ELSE '0'
+            END
+          AS INT)
+      - name: activity_name
+        expr: |
+          CASE
+            WHEN activity_id = '1' THEN 'Load'
+            WHEN activity_id = '2' THEN 'Unload'
+            ELSE 'Unknown'
+          END
+      - name: category_uid
+        expr: CAST('1' AS INT)
+      - name: category_name
+        literal: System Activity
+      - name: class_uid
+        expr: CAST('1003' AS INT)
+      - name: class_name
+        literal: Kernel Activity
+      - name: severity_id
+        expr: CAST('0' AS INT)
+      - name: severity
+        literal: Unknown
+      - name: type_uid
+        expr: cast(class_uid*100 + activity_id as long)
+      - name: type_name
+        expr: "concat('Kernel Extension Activity: ', activity_name)"
+      - name: time
+        from: time
+      # TODO: this is temporary, until we fix metadata structure for kernel actitivy
+      # - name: metadata
+      #   from: metadata
+      - name: metadata.product.vendor_name
+        literal: Crowdstrike
+      - name: metadata.product.name
+        literal: Crowdstrike Falcon
+      - name: metadata.product.version
+        expr: try_variant_get(data, '$.ConfigBuild', 'string')
+      - name: metadata.tenant_uid
+        expr: try_variant_get(data, '$.cid', 'string')
+      - name: metadata.uid
+        expr: try_variant_get(data, '$.id', 'string')
+      - name: actor.process.tid
+        expr: try_cast(context_thread_id as int)
+      - name: actor.process.pid
+        expr: try_cast(context_process_id as int)
+      - name: driver.file.path
+        expr: |
+          coalesce(
+            try_variant_get(data, '$.BundleID', 'string'),
+            try_variant_get(data, '$.ImageFileName', 'string')
+          )
+      - name: driver.file.name
+        expr: |
+          coalesce(
+            try_variant_get(data, '$.BundleID', 'string'), 
+            regexp_extract(try_variant_get(data, '$.ImageFileName', 'string'), '^.*[/\\\\\\\\\\\\\\\\](.+?)$', 1)
+          )
+  - name: dns_activity
+    input: crowdstrike
+    filter: |
+      event_name IN (
+        'DnsRequest', 'SuspiciousDnsRequest', 'DnsRequestBlocked'
+      )
+    fields:
+      - name: activity_id
+        expr: |
+          CAST(
+            CASE
+              WHEN event_name IN ('DnsRequest') THEN '2'
+              WHEN event_name IN ('SuspiciousDnsRequest', 'DnsRequestBlocked') THEN '1'
+              ELSE '0'
+            END
+          AS INT)
+      - name: activity_name
+        expr: |
+          CASE
+            WHEN activity_id = 1 THEN 'Query'
+            WHEN activity_id = 2 THEN 'Response'
+            ELSE 'Unknown'
+          END
+      - name: category_uid
+        expr: CAST('4' AS INT)
+      - name: category_name
+        literal: Network Activity
+      - name: class_uid
+        expr: CAST('4003' AS INT)
+      - name: class_name
+        literal: DNS Activity
+      - name: severity_id
+        expr: CAST('0' AS INT)
+      - name: severity
+        literal: Unknown
+      - name: type_uid
+        expr: cast(class_uid*100 + activity_id as long)
+      - name: type_name
+        expr: "concat('DNS Activity: ', activity_name)"
+      - name: time
+        from: time
+      - name: metadata
+        from: metadata
+      - name: query.hostname
+        expr: try_variant_get(data, '$.DomainName', 'string')
+      - name: query.class
+        literal: IN
+      - name: query.type
+        expr: |
+          CASE
+            WHEN try_variant_get(data, '$.RequestType', 'int') = 1 THEN 'A'
+            WHEN try_variant_get(data, '$.RequestType', 'int') = 2 THEN 'NS'
+            WHEN try_variant_get(data, '$.RequestType', 'int') = 5 THEN 'CNAME'
+            WHEN try_variant_get(data, '$.RequestType', 'int') = 12 THEN 'PTR'
+            WHEN try_variant_get(data, '$.RequestType', 'int') = 15 THEN 'MX'
+            WHEN try_variant_get(data, '$.RequestType', 'int') = 16 THEN 'TXT'
+            WHEN try_variant_get(data, '$.RequestType', 'int') = 28 THEN 'AAAA'
+            WHEN try_variant_get(data, '$.RequestType', 'int') = 255 THEN 'ANY'
+            ELSE 'UNKNOWN'
+          END
+      - name: src_endpoint.ip
+        from: aip
+      - name: dst_endpoint.ip
+        expr: try_variant_get(data, '$.RespondingDnsServer', 'string')
+      - name: answers
+        expr: |
+          concat(
+            transform(array_remove(split(coalesce(try_variant_get(data, '$.IP4Records', 'string'), ''), ';'), ''), x -> named_struct('class', 'IN', 'type', 'A', 'rdata', x)),
+            transform(array_remove(split(coalesce(try_variant_get(data, '$.CNAMERecords', 'string'), ''), ';'), ''), x -> named_struct('class', 'IN', 'type', 'CNAME', 'rdata', x)),
+            transform(array_remove(split(coalesce(try_variant_get(data, '$.IP6Records', 'string'), ''), ';'), ''), x -> named_struct('class', 'IN', 'type', 'AAAA', 'rdata', x))
+          )
+      - name: rcode_id
+        expr: try_variant_get(data, '$.QueryStatus', 'int')  # we need to double check it as CRWD docs shows other values
+      - name: raw_data
+        from: data
+  - name: process_activity
+    input: crowdstrike
+    filter: |
+      event_name IN (
+        'SyntheticProcessRollup2', 'ProcessRollup2', 'CreateProcessArgs', 'EndOfProcess',
+        'ProcessInjection', 'ProcessBlocked', 'TerminateProcess', 'ServiceStarted',
+        'HostedServiceStarted', 'HostedServiceStopped', 'KernelServiceStarted',
+        'PrivilegedProcessHandleFromUnsignedModule'
+      )
+    fields:
+      - name: activity_id
+        expr: |
+          CAST(
+            CASE
+              WHEN event_name IN ('EndOfProcess', 'TerminateProcess', 'HostedServiceStopped') THEN 2
+              WHEN event_name IN ('CreateProcessArgs', 'ServiceStarted', 'HostedServiceStarted', 'KernelServiceStarted') THEN 1
+              WHEN event_name = 'ProcessInjection' THEN 4
+              ELSE 0
+            END
+          AS INT)
+      - name: activity_name
+        expr: |
+          CASE
+            WHEN activity_id = 1 THEN 'Launch'
+            WHEN activity_id = 2 THEN 'Terminate'
+            WHEN activity_id = 3 THEN 'Open'
+            WHEN activity_id = 4 THEN 'Inject'
+            WHEN activity_id = 5 THEN 'Set User ID'
+            ELSE 'Unknown'
+          END
+      - name: category_uid
+        expr: CAST('1' AS INT)
+      - name: category_name
+        literal: System Activity
+      - name: class_uid
+        expr: CAST('1007' AS INT)
+      - name: class_name
+        literal: Process Activity
+      - name: severity_id
+        expr: CAST('0' AS INT)
+      - name: severity
+        literal: Unknown
+      - name: type_uid
+        expr: cast(class_uid*100 + activity_id as long)
+      - name: type_name
+        expr: "concat('System Activity: ', activity_name)"
+      - name: time
+        from: time
+      - name: metadata
+        from: metadata
+      # - name: start_time
+      #   expr: cast(try_variant_get(data, '$.ProcessStartTime', 'double') as timestamp)
+      - name: process.cmd_line
+        expr: |
+          coalesce(
+            try_variant_get(data, '$.CommandLine', 'string'), 
+            try_variant_get(data, '$.ImageFileName', 'string')
+          )
+      - name: process.session.created_time
+        expr: cast(try_variant_get(data, '$.ProcessStartTime', 'double') as timestamp)
+      - name: process.session.uid
+        expr: try_variant_get(data, '$.TargetProcessId', 'string')
+      - name: process.uid
+        expr: try_variant_get(data, '$.TargetProcessId', 'string')
+      - name: process.user.name
+        expr: try_variant_get(data, '$.UserName', 'string')
+      - name: process.user.uid
+        expr: coalesce(try_variant_get(data, '$.UserSid', 'string'), try_variant_get(data, '$.UID', 'string'))
+      - name: process.pid
+        expr: try_variant_get(data, '$.RawProcessId', 'int')
+      - name: process.name
+        expr: "coalesce(try_variant_get(data, '$.ImageBaseName', 'string'), try_variant_get(data, '$.ServiceDisplayName', 'string'), regexp_extract(coalesce(try_variant_get(data, '$.ImageFileName', 'string'), try_variant_get(data, '$.TargetFileName', 'string'), try_variant_get(data, '$.InjecteeImageFileName', 'string')), '^.*[/\\\\\\\\\\\\\\\\](.+?)$', 1))"
+      - name: device.name
+        expr: try_variant_get(data, '$.ComputerName', 'string')
+      - name: device.ip
+        expr: |
+          coalesce(
+            try_variant_get(data, '$.LocalAddressIP4', 'string'),
+            try_variant_get(data, '$.LocalAddressIP6', 'string'),
+            aip
+          )
+      - name: device.uid
+        from: aid
+      - name: actor.process.name
+        expr: "regexp_extract(try_variant_get(data, '$.InjectorImageFileName', 'string'), '^.*[/\\\\\\\\\\\\\\\\](.+?)$', 1)"
+      - name: actor.process.cmd_line
+        expr: try_variant_get(data, '$.InjectorImageFileName', 'string')
+      - name: actor.process.uid
+        expr: try_variant_get(data, '$.TargetProcessId', 'string')
+      - name: raw_data
+        from: data
+      # - name:
+      #   expr: 
+  - name: scheduled_job_activity
+    input: crowdstrike
+    filter: |
+      startswith(event_name, 'ScheduledTask')
+    fields:
+      - name: activity_id
+        expr: |
+          CAST(
+            CASE
+              WHEN event_name IN ('ScheduledTaskDeleted') THEN 3
+              WHEN event_name IN ('ScheduledTaskModified') THEN 2
+              WHEN event_name IN ('ScheduledTaskRegistered') THEN 1
+              ELSE 0
+            END
+          AS INT)
+      - name: activity_name
+        expr: |
+          CASE
+            WHEN activity_id = 1 THEN 'Create'
+            WHEN activity_id = 2 THEN 'Update'
+            WHEN activity_id = 3 THEN 'Delete'
+            ELSE 'Unknown'
+          END
+      - name: category_uid
+        expr: CAST('1' AS INT)
+      - name: category_name
+        literal: System Activity
+      - name: class_uid
+        expr: CAST('1006' AS INT)
+      - name: class_name
+        literal: Process Activity
+      - name: severity_id
+        expr: CAST('0' AS INT)
+      - name: severity
+        literal: Unknown
+      - name: type_uid
+        expr: cast(class_uid*100 + activity_id as long)
+      - name: type_name
+        expr: "concat('System Activity: ', activity_name)"
+      - name: time
+        from: time
+      - name: metadata
+        from: metadata
+      - name: job.name
+        expr: try_variant_get(data, '$.TaskName', 'string')
+      - name: job.cmd_line
+        expr: |
+          concat_ws(' ', try_variant_get(data, '$.TaskExecCommand', 'string'),
+            try_variant_get(data, '$.TaskExecArguments', 'string'))
+      - name: job.file.path
+        expr: try_variant_get(data, '$.TaskExecCommand', 'string')
+      - name: job.file.name
+        expr: "regexp_extract(try_variant_get(data, '$.TaskExecCommand', 'string'), '^.*[/\\\\\\\\\\\\\\\\](.+?)$', 1)"
+      - name: actor.user.name
+        expr: try_variant_get(data, '$.UserName', 'string')
+      - name: raw_data
+        from: data
+      # - name:
+      #   expr: 
+      # - name:
+      #   expr: 
+      # - name:
+      #   expr: 
+      # - name:
+      #   expr: 
+      # - name:
+      #   expr: 
+      # - name:
+      #   expr: 
+          
+          
