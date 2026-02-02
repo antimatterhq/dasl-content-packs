@@ -1,9 +1,8 @@
-name: internal_crowdstrike_falcon
+name: crowdstrike_falcon
 author: "Alex Ott <alexey.ott@databricks.com>"
 description: "Processing of Crowdstrike JSON logs"
 title: "Crowdstrike Falcon"
-#iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/zeek/http/icon.png"
-iconURL: "https://www.dropbox.com/scl/fi/ngmjyy8g6fuia5yyu5bqz/falcon.png?rlkey=oijjglg5dtoa0c5hlqacdl5xw&dl=0"
+iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/dasl-v1.0/presets/crowdstrike/falcon/icon.png"
 autoloader:
   format: jsonl
 bronze:
@@ -170,7 +169,7 @@ gold:
         'PackedExecutableWritten', 'NewExecutableWritten', 'NewExecutableRenamed',
         'NewScriptWritten', 'ExecutableDeleted', 'CriticalFileAccessed', 'CriticalFileModified'
         'FsVolumeUnmounted', 'DirectoryCreate', 'ProcessSelfDeleted', 'VolumeSnapshotCreated', 
-        'VolumeSnapshotDeleted', 'RansomwareOpenFile') 
+        'VolumeSnapshotDeleted', 'RansomwareOpenFile', 'FsPostOpenSnapshotFile') 
       OR endswith(event_name, 'FileWritten')
     fields:
       - name: activity_id
@@ -178,7 +177,7 @@ gold:
           CAST(
             CASE
               WHEN event_name IN ('FileCreateInfo', 'DirectoryCreate', 'VolumeSnapshotCreated') THEN '1'
-              WHEN event_name IN ('FileOpenInfo', 'CriticalFileAccessed', 'RansomwareOpenFile') THEN '14'
+              WHEN event_name IN ('FileOpenInfo', 'CriticalFileAccessed', 'RansomwareOpenFile', 'FsPostOpenSnapshotFile') THEN '14'
               WHEN event_name IN ('FileRenameInfo', 'NewExecutableRenamed') THEN '5'
               WHEN event_name IN ('FileDeleteInfo', 'ExecutableDeleted', 'ProcessSelfDeleted', 'VolumeSnapshotDeleted') THEN '4'
               WHEN endswith(event_name, 'Written') or event_name IN ('CriticalFileModified') THEN '3'
@@ -341,14 +340,14 @@ gold:
     input: crowdstrike
     filter: |
       event_name IN (
-        'KextLoad', 'KextUnload', 'KernelModeLoadImage', 'DriverLoad'
+        'KextLoad', 'KextUnload', 'KernelModeLoadImage', 'DriverLoad', 'UnsignedModuleLoad'
       )
     fields:
       - name: activity_id
         expr: |
           CAST(
             CASE
-              WHEN event_name IN ('KextLoad', 'KernelModeLoadImage', 'DriverLoad') THEN '1'
+              WHEN event_name IN ('KextLoad', 'KernelModeLoadImage', 'DriverLoad', 'UnsignedModuleLoad') THEN '1'
               WHEN event_name IN ('KextUnload') THEN '2'
               ELSE '0'
             END
