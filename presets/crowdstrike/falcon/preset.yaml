@@ -165,9 +165,9 @@ gold:
     input: crowdstrike
     filter: |
       event_name IN (
-        'FileCreateInfo', 'FileDeleteInfo', 'FileOpenInfo', 'FileRenameInfo', 'FsVolumeMounted'
+        'FileCreateInfo', 'FileDeleteInfo', 'FileOpenInfo', 'FileRenameInfo', 'FsVolumeMounted',
         'PackedExecutableWritten', 'NewExecutableWritten', 'NewExecutableRenamed',
-        'NewScriptWritten', 'ExecutableDeleted', 'CriticalFileAccessed', 'CriticalFileModified'
+        'NewScriptWritten', 'ExecutableDeleted', 'CriticalFileAccessed', 'CriticalFileModified',
         'FsVolumeUnmounted', 'DirectoryCreate', 'ProcessSelfDeleted', 'VolumeSnapshotCreated', 
         'VolumeSnapshotDeleted', 'RansomwareOpenFile', 'FsPostOpenSnapshotFile') 
       OR endswith(event_name, 'FileWritten')
