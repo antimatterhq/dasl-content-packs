@@ -1,0 +1,210 @@
+name: onelogin_events
+author: Antimatter
+description: OneLogin Events
+title: "OneLogin - Events"
+iconURL: "https://dasl-icons.s3.us-east-1.amazonaws.com/onelogin/events/icon.png"
+autoloader:
+  format: json
+
+bronze:
+  loadAsSingleVariant: true
+  preTransform: [
+    [
+      explode_outer(CAST(data AS ARRAY<VARIANT>)) AS data
+    ],
+    [
+      "data", 
+      "data:created_at::TIMESTAMP AS time", 
+      "CAST('onelogin' AS STRING) AS source", 
+      "CAST('events' AS STRING) AS sourcetype"
+    ]
+  ]
+
+silver:
+  transform:
+
+    - name: onelogin_events_api_activity
+      filter: data:event_type_id::INT IN (502) # ('API_SHOW_ACTION')
+      fields:
+        - from: time
+          name: time
+        - expr: data:id::BIGINT
+          name: id
+          comment: The ID of the event.
+        - expr: data:created_at::STRING
+          name: created_at
+        - expr: data:actor_system::STRING
+          name: actor_system
+          comment: Acting system that triggered the event when the actor is not a user.
+        - expr: data:resource_type_id::STRING
+          name: resource_type_id
+          comment: ID identifying the type of resource (user, role, etc.) associated with the event.
+        - expr: data:client_id::STRING
+          name: client_id
+          comment: Client ID used to generate the access token for the API call.
+        - expr: data:risk_score::DOUBLE
+          name: risk_score
+          comment: Calculated risk score (if supported).
+        - expr: data:user_name::STRING
+          name: user_name
+          comment: First & last name (or email) of the affected user.
+        - expr: data:notes::STRING
+          name: notes
+          comment: Additional notes or details.
+        - expr: data:account_id::INT
+          name: account_id
+          comment: Account that triggered the event.
+        - expr: data:ipaddr::STRING
+          name: ipaddr
+          comment: IP address of the machine from which the event originated.
+        - expr: data:user_id::BIGINT
+          name: user_id
+          comment: ID of the user acted upon in the event.
+        - expr: data:actor_user_name::STRING
+          name: actor_user_name
+          comment: First & last name (or email) of that acting user.
+        - expr: data:event_type_id::INT
+          name: event_type_id
+          comment: Numeric ID indicating the type of event.
+    - name: onelogin_events_authentication
+      filter: data:event_type_id::INT IN (5, 6, 7, 8, 29, 86, 118, 1001, 1400, 3001, 3002, 3003, 3005, 3010, 3011, 3012) #('OIDC_REFRESH_TOKEN_FAILED','USER_LOGGED_INTO_ONELOGIN','OIDC_REFRESH_TOKEN_SUCCESS','USER_LOGGED_INTO_APP','USER_FAILED_ONELOGIN_LOGIN','OIDC_PASSWORD_FAILED','OIDC_GET_CODE_SUCCESS','OIDC_AUTHORIZATION_CODE_SUCCESS','USER_VERIFIED_OTP_DEVICE','OIDC_IMPLICIT_FLOW_SUCCESS','USER_LOGGED_OUT_OF_APP','USER_LOGIN_CHALLENGE','USER_FAILED_REMOTE_AUTHENTICATION','SAML_ACS_FAILED','OIDC_IMPLICIT_FLOW_FAILED','USER_LOGGED_OUT_OF_ONELOGIN')
+      fields:
+        - from: time
+          name: time
+        - expr: data:created_at::STRING
+          name: created_at
+        - expr: data:risk_reasons::STRING
+          name: risk_reasons
+          comment: Human-readable reasons for risk score.
+        - expr: data:actor_system::STRING
+          name: actor_system
+          comment: Acting system that triggered the event when the actor is not a user.
+        - expr: data:policy_id::STRING
+          name: policy_id
+          comment: ID of an associated policy.
+        - expr: data:id::BIGINT
+          name: id
+          comment: The ID of the event.
+        - expr: data:otp_device_name::STRING
+          name: otp_device_name
+          comment: Name of the OTP device.
+        - expr: data:actor_user_id::STRING
+          name: actor_user_id
+          comment: ID of the user whose action triggered the event.
+        - expr: data:risk_score::DOUBLE
+          name: risk_score
+          comment: Calculated risk score (if supported).
+        - expr: data:user_name::STRING
+          name: user_name
+          comment: First & last name (or email) of the affected user.
+        - expr: data:app_name::STRING
+          name: app_name
+          comment: Name of the app involved (if applicable).
+        - expr: data:otp_device_id::STRING
+          name: otp_device_id
+          comment: ID of an OTP device involved.
+        - expr: data:notes::STRING
+          name: notes
+          comment: Additional notes or details.
+        - expr: data:account_id::INT
+          name: account_id
+          comment: Account that triggered the event.
+        - expr: data:app_id::STRING
+          name: app_id
+          comment: ID of the app involved (if applicable).
+        - expr: data:custom_message::STRING
+          name: custom_message
+          comment: Extra details about the event.
+        - expr: data:ipaddr::STRING
+          name: ipaddr
+          comment: IP address of the machine from which the event originated.
+        - expr: data:user_id::BIGINT
+          name: user_id
+          comment: ID of the user acted upon in the event.
+        - expr: data:browser_fingerprint::STRING
+          name: browser_fingerprint
+        - expr: data:policy_name::STRING
+          name: policy_name
+          comment: Name of an associated policy.
+        - expr: data:actor_user_name::STRING
+          name: actor_user_name
+          comment: First & last name (or email) of that acting user.
+        - expr: data:event_type_id::INT
+          name: event_type_id
+          comment: Numeric ID indicating the type of event.
+        - expr: data:risk_cookie_id::STRING
+          name: risk_cookie_id
+          comment: Identifier for risk-related analysis.
+    - name: onelogin_events_account_change
+      filter: data:event_type_id::INT IN (14, 81) # ('USER_UPDATED_IN_DIRECTORY','UPDATED_USER')
+      fields:
+        - from: time
+          name: time
+        - expr: data:id::BIGINT
+          name: id
+          comment: The ID of the event.
+        - expr: data:created_at::STRING
+          name: created_at
+        - expr: data:account_id::INT
+          name: account_id
+          comment: Account that triggered the event.
+        - expr: data:actor_system::STRING
+          name: actor_system
+          comment: Acting system that triggered the event when the actor is not a user.
+        - expr: data:notes::STRING
+          name: notes
+          comment: Additional notes or details.
+        - expr: data:directory_id::STRING
+          name: directory_id
+        - expr: data:actor_user_id::STRING
+          name: actor_user_id
+          comment: ID of the user whose action triggered the event.
+        - expr: data:ipaddr::STRING
+          name: ipaddr
+          comment: IP address of the machine from which the event originated.
+        - expr: data:risk_score::DOUBLE
+          name: risk_score
+          comment: Calculated risk score (if supported).
+        - expr: data:user_id::BIGINT
+          name: user_id
+          comment: ID of the user acted upon in the event.
+        - expr: data:actor_user_name::STRING
+          name: actor_user_name
+          comment: First & last name (or email) of that acting user.
+        - expr: data:user_name::STRING
+          name: user_name
+          comment: First & last name (or email) of the affected user.
+        - expr: data:event_type_id::INT
+          name: event_type_id
+          comment: Numeric ID indicating the type of event.
+    - name: onelogin_events_user_access
+      filter: data:event_type_id::INT IN (254) # ('ENTITLEMENT_MAPPINGS_REAPPLIED')
+      fields:
+        - from: time
+          name: time
+        - expr: data:created_at::STRING
+          name: created_at
+        - expr: data:account_id::INT
+          name: account_id
+          comment: Account that triggered the event.
+        - expr: data:id::BIGINT
+          name: id
+          comment: The ID of the event.
+        - expr: data:app_id::STRING
+          name: app_id
+          comment: ID of the app involved (if applicable).
+        - expr: data:risk_score::DOUBLE
+          name: risk_score
+          comment: Calculated risk score (if supported).
+        - expr: data:user_id::BIGINT
+          name: user_id
+          comment: ID of the user acted upon in the event.
+        - expr: data:user_name::STRING
+          name: user_name
+          comment: First & last name (or email) of the affected user.
+        - expr: data:event_type_id::INT
+          name: event_type_id
+          comment: Numeric ID indicating the type of event.
+        - expr: data:app_name::STRING
+          name: app_name
+          comment: Name of the app involved (if applicable).

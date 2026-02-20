@@ -1,0 +1,440 @@
+name: cofense_phishme
+author: Antimatter
+description: Cofense PhishMe Logs
+title: Cofense - PhishMe
+iconURL: "https://dasl-icons.s3.us-east-1.amazonaws.com/cofense/phishme/icon.png"
+autoloader:
+  format: json
+bronze:
+  loadAsSingleVariant: true
+  preTransform: [
+    [
+      explode_outer(CAST(data AS ARRAY<VARIANT>)) AS data
+    ],
+    [
+      "data", 
+      "data:attributes.received_at::TIMESTAMP AS time", 
+      "CAST('cofense' AS STRING) AS source", 
+      "CAST('pishme' AS STRING) AS sourcetype"
+    ]
+  ]
+silver:
+  transform:
+
+    - fields:
+        - from: time
+          name: time
+        - expr: 'try_variant_get(data, ''$.type'', ''STRING'')::STRING'
+          name: type
+        - expr: 'data:attributes:[''received_at'']::STRING'
+          name: received_at
+        - expr: 'data:attributes:[''created_at'']::STRING'
+          name: created_at
+        - expr: 'data:attributes:[''location'']::STRING'
+          name: location
+        - expr: 'TRANSFORM(
+            data:comments::ARRAY<VARIANT>::ARRAY<VARIANT>,
+            elem -> STRUCT(
+            `elem`:[''activity_type'']::STRING AS `activity_type`,
+            `elem`:[''body'']::STRING AS `body`,
+            `elem`:[''body_format'']::STRING AS `body_format`,
+            `elem`:[''created_at'']::STRING AS `created_at`,
+            `elem`:[''message_type'']::STRING AS `message_type`,
+            TRANSFORM(`elem`:[''tags'']::ARRAY<VARIANT>, elem -> `elem`::STRING) AS `tags`,
+            `elem`:[''updated_at'']::STRING AS `updated_at`))'
+          name: comments
+        - expr: 'TRANSFORM(data:attributes:[''tags'']::ARRAY<VARIANT>, elem -> `elem`::STRING)'
+          name: tags
+        - expr: 'TRANSFORM(
+            data:attributes:[''attachment_details'']::ARRAY<VARIANT>,
+            elem -> STRUCT(
+            `elem`:[''filename'']::STRING AS `filename`,
+            `elem`:[''id'']::BIGINT AS `id`,
+            `elem`:[''md5'']::STRING AS `md5`,
+            `elem`:[''payload_id'']::BIGINT AS `payload_id`,
+            `elem`:[''sha256'']::STRING AS `sha256`,
+            `elem`:[''size_in_bytes'']::BIGINT AS `size_in_bytes`))'
+          name: attachment_details
+        - expr: 'TRANSFORM(
+            data:headers::ARRAY<VARIANT>::ARRAY<VARIANT>,
+            elem -> STRUCT(
+              `elem`:[''created_at'']::STRING AS `created_at`,
+              `elem`:[''key'']::STRING AS `key`,
+              `elem`:[''updated_at'']::STRING AS `updated_at`,
+              `elem`:[''value'']::STRING AS `value`))'
+          name: headers
+        - expr: 'TRANSFORM(
+            data:domains::ARRAY<VARIANT>::ARRAY<VARIANT>,
+            elem -> STRUCT(
+            `elem`:[''created_at'']::STRING AS `created_at`,
+            `elem`:[''domain'']::STRING AS `domain`,
+            `elem`:[''updated_at'']::STRING AS `updated_at`))'
+          name: domains
+        - expr: 'TRANSFORM(
+            data:reporter::ARRAY<VARIANT>::ARRAY<VARIANT>,
+            elem -> STRUCT(
+            `elem`:[''created_at'']::STRING AS `created_at`,
+            `elem`:[''email'']::STRING AS `email`,
+            `elem`:[''last_reported_at'']::STRING AS `last_reported_at`,
+            `elem`:[''reports_count'']::INT AS `reports_count`,
+            `elem`:[''reputation_score'']::INT AS `reputation_score`,
+            `elem`:[''updated_at'']::STRING AS `updated_at`,
+            `elem`:[''vip'']::BOOLEAN AS `vip`))'
+          name: reporter
+        - expr: 'data:attributes:[''sha256'']::STRING'
+          name: sha256
+        - expr: 'data:attributes:[''reported_at'']::STRING'
+          name: reported_at
+        - expr: 'TRANSFORM(
+            data:attachments::ARRAY<VARIANT>::ARRAY<VARIANT>,
+            elem -> STRUCT(
+            `elem`:[''created_at'']::STRING AS `created_at`,
+            `elem`:[''filename'']::STRING AS `filename`,
+            `elem`:[''is_child'']::BOOLEAN AS `is_child`,
+            `elem`:[''size'']::BIGINT AS `size`,
+            `elem`:[''updated_at'']::STRING AS `updated_at`))'
+          name: attachments
+        - expr: 'TRANSFORM(
+            data:thread_indicators::ARRAY<VARIANT>::ARRAY<VARIANT>,
+            elem -> STRUCT(
+            `elem`:[''created_at'']::STRING AS `created_at`,
+            `elem`:[''threat_level'']::STRING AS `threat_level`,
+            `elem`:[''threat_source'']::STRING AS `threat_source`,
+            `elem`:[''threat_type'']::STRING AS `threat_type`,
+            `elem`:[''threat_value'']::STRING AS `threat_value`,
+            `elem`:[''updated_at'']::STRING AS `updated_at`))'
+          name: threat_indicators
+        - expr: 'TRANSFORM(
+            data:attributes:[''categorization_tags'']::ARRAY<VARIANT>,
+            elem -> `elem`::STRING)'
+          name: categorization_tags
+        - expr: 'data:attributes:[''attachments_count'']::INT'
+          name: attachments_count
+        - expr: 'TRANSFORM(
+            data:rules::ARRAY<VARIANT>::ARRAY<VARIANT>,
+             elem -> STRUCT(
+            `elem`:[''active'']::BOOLEAN AS `active`,
+            `elem`:[''author_name'']::STRING AS `author_name`,
+            `elem`:[''content'']::STRING AS `content`,
+            `elem`:[''created_at'']::STRING AS `created_at`,
+            `elem`:[''description'']::STRING AS `description`,
+            `elem`:[''local'']::BOOLEAN AS `local`,
+            `elem`:[''name'']::STRING AS `name`,
+            `elem`:[''priority'']::INT AS `priority`,
+            `elem`:[''reports_count'']::BIGINT AS `reports_count`,
+            `elem`:[''rule_context'']::STRING AS `rule_context`,
+            `elem`:[''scope'']::STRING AS `scope`,
+            `elem`:[''share_with_cofense'']::BOOLEAN AS `share_with_cofense`,
+            TRANSFORM(`elem`:[''tags'']::ARRAY<VARIANT>, elem -> `elem`::STRING) AS `tags`,
+            `elem`:[''time_to_live'']::STRING AS `time_to_live`,
+            `elem`:[''updated_at'']::STRING AS `updated_at`))'
+          name: rules
+        - expr: 'data:attributes:[''comments_count'']::INT'
+          name: comments_count
+        - expr: 'data:attributes:[''rules_count'']::INT'
+          name: rules_count
+        - expr: 'data:attributes:[''updated_at'']::STRING'
+          name: updated_at
+        - expr: 'data:attributes:[''match_priority'']::INT'
+          name: match_priority
+        - expr: 'TRANSFORM(
+            data:processed_by::ARRAY<VARIANT>::ARRAY<VARIANT>,
+            elem -> STRUCT(
+            `elem`:[''email'']::STRING AS `email`,
+            `elem`:[''first_name'']::STRING AS `first_name`,
+            `elem`:[''last_name'']::STRING AS `last_name`,
+            `elem`:[''nickname'']::STRING AS `nickname`,
+            `elem`:[''time_zone'']::STRING AS `time_zone`))'
+          name: processed_by
+        - expr: 'TRANSFORM(
+            data:category::ARRAY<VARIANT>::ARRAY<VARIANT>,
+            elem -> STRUCT(
+            `elem`:[''archived'']::BOOLEAN AS `archived`,
+            `elem`:[''color'']::STRING AS `color`,
+            `elem`:[''created_at'']::STRING AS `created_at`,
+            `elem`:[''malicious'']::BOOLEAN AS `malicious`,
+            `elem`:[''name'']::STRING AS `name`,
+            `elem`:[''score'']::INT AS `score`,
+            `elem`:[''updated_at'']::STRING AS `updated_at`))'
+          name: category
+        - expr: 'try_variant_get(data, ''$.id'', ''STRING'')::STRING'
+          name: id
+        - expr: 'data:attributes:[''subject'']::STRING'
+          name: subject
+        - expr: 'TRANSFORM(
+            data:cluster::ARRAY<VARIANT>::ARRAY<VARIANT>,
+            elem -> STRUCT(
+            `elem`:[''attachment_signature'']::STRING AS `attachment_signature`,
+            `elem`:[''attachments_count'']::INT AS `attachments_count`,
+            `elem`:[''average_reporter_reputation'']::DOUBLE AS `average_reporter_reputation`,
+            TRANSFORM(`elem`:[''cluster_report_ids'']::ARRAY<VARIANT>, elem -> `elem`::STRING) AS `cluster_report_ids`,
+            `elem`:[''created_at'']::STRING AS `created_at`,
+            `elem`:[''first_reported_at'']::STRING AS `first_reported_at`,
+            `elem`:[''host_signature'']::STRING AS `host_signature`,
+            `elem`:[''host_source'']::STRING AS `host_source`,
+            `elem`:[''match_priority'']::INT AS `match_priority`,
+            `elem`:[''processed_reports_count'']::INT AS `processed_reports_count`,
+            `elem`:[''risk_score'']::INT AS `risk_score`,
+            `elem`:[''rules_count'']::INT AS `rules_count`,
+            TRANSFORM(`elem`:[''tags'']::ARRAY<VARIANT>, elem -> `elem`::STRING) AS `tags`,
+            `elem`:[''total_reports_count'']::INT AS `total_reports_count`,
+            `elem`:[''unprocessed_reports_count'']::INT AS `unprocessed_reports_count`,
+            `elem`:[''updated_at'']::STRING AS `updated_at`,
+            `elem`:[''urls_count'']::INT AS `urls_count`,
+            `elem`:[''vip_reporters_count'']::INT AS `vip_reporters_count`))'
+          name: cluster
+        - expr: 'TRANSFORM(
+            data:attachment_payloads::ARRAY<VARIANT>::ARRAY<VARIANT>,
+            elem -> STRUCT(
+            `elem`:[''created_at'']::STRING AS `created_at`,
+            `elem`:[''md5'']::STRING AS `md5`,
+            `elem`:[''mime_type'']::STRING AS `mime_type`,
+            `elem`:[''sha256'']::STRING AS `sha256`,
+            `elem`:[''updated_at'']::STRING AS `updated_at`))'
+          name: attachment_payloads
+        - expr: 'TRANSFORM(
+            data:urls::ARRAY<VARIANT>::ARRAY<VARIANT>,
+            elem -> STRUCT(
+            `elem`:[''created_at'']::STRING AS `created_at`,
+            `elem`:[''updated_at'']::STRING AS `updated_at`,
+            `elem`:[''url'']::STRING AS `url`))'
+          name: urls
+        - expr: 'TRANSFORM(
+            data:hostnames::ARRAY<VARIANT>::ARRAY<VARIANT>,
+            elem -> STRUCT(
+            `elem`:[''created_at'']::STRING AS `created_at`,
+            `elem`:[''hostname'']::STRING AS `hostname`,
+            `elem`:[''updated_at'']::STRING AS `updated_at`))'
+          name: hostnames
+        - expr: 'data:attributes:[''md5'']::STRING'
+          name: md5
+        - expr: 'data:links:[''self'']::STRING'
+          name: links.self
+        - expr: 'data:attributes:[''from_address'']::STRING'
+          name: from_address
+        - expr: 'data:attributes:[''processed_at'']::STRING'
+          name: processed_at
+        - expr: 'data:attributes:[''first_processed_at'']::STRING'
+          name: first_processed_at
+        - expr: 'data:attributes:[''urls_count'']::INT'
+          name: urls_count
+        - expr: 'data:attributes:[''risk_score'']::INT'
+          name: risk_score
+      filter: data:category::ARRAY<VARIANT>[0]:name::string IN ('Business Communications')
+      name: cofense_phishme_email_activity
+    - fields:
+        - from: time
+          name: time
+        - expr: 'try_variant_get(data, ''$.type'', ''STRING'')::STRING'
+          name: type
+        - expr: 'data:attributes:[''received_at'']::STRING'
+          name: received_at
+        - expr: 'data:attributes:[''created_at'']::STRING'
+          name: created_at
+        - expr: 'data:attributes:[''location'']::STRING'
+          name: location
+        - expr: 'TRANSFORM(
+            data:comments::ARRAY<VARIANT>::ARRAY<VARIANT>,
+            elem -> 
+            CASE WHEN data:category::ARRAY<VARIANT>[0]:name::string IN (
+              ''Spam'', ''Suspicious'', ''Scam'', ''Credential Phishing'', ''Malware''
+            ) THEN STRUCT(
+              `elem`:[''activity_type'']::STRING AS `activity_type`,
+              `elem`:[''body'']::STRING AS `body`,
+              `elem`:[''body_format'']::STRING AS `body_format`,
+              `elem`:[''created_at'']::STRING AS `created_at`,
+              `elem`:[''message_type'']::STRING AS `message_type`,
+              TRANSFORM(`elem`:[''tags'']::ARRAY<VARIANT>, elem -> `elem`::STRING) AS `tags`,
+              `elem`:[''updated_at'']::STRING AS `updated_at`
+            ) WHEN data:category::ARRAY<VARIANT>[0]:name::string IN (''Business Email Compromise'') THEN STRUCT(
+              `elem`:[''activity_type'']::STRING AS `activity_type`,
+              CAST(`elem`:[''body'']::STRING AS STRING) AS `body`,
+              `elem`:[''body_format'']::STRING AS `body_format`,
+              `elem`:[''created_at'']::STRING AS `created_at`,
+              `elem`:[''message_type'']::STRING AS `message_type`,
+              TRANSFORM(`elem`:[''tags'']::ARRAY<VARIANT>, elem -> `elem`::STRING) AS `tags`,
+              `elem`:[''updated_at'']::STRING AS `updated_at`
+            ) ELSE NULL END)'
+          name: comments
+        - expr: 'TRANSFORM( data:attributes:[''tags'']::ARRAY<VARIANT>, elem -> `elem`::STRING)'
+          name: tags
+        - expr: 'TRANSFORM(
+            data:attributes:[''attachment_details'']::ARRAY<VARIANT>,
+            elem -> STRUCT(
+            `elem`:[''filename'']::STRING AS `filename`,
+            `elem`:[''id'']::BIGINT AS `id`,
+            `elem`:[''md5'']::STRING AS `md5`,
+            `elem`:[''payload_id'']::BIGINT AS `payload_id`,
+            `elem`:[''sha256'']::STRING AS `sha256`,
+            `elem`:[''size_in_bytes'']::BIGINT AS `size_in_bytes`))'
+          name: attachment_details
+        - expr: 'TRANSFORM(
+            data:headers::ARRAY<VARIANT>::ARRAY<VARIANT>,
+             elem -> STRUCT(
+              `elem`:[''created_at'']::STRING AS `created_at`,
+              `elem`:[''key'']::STRING AS `key`,
+              `elem`:[''updated_at'']::STRING AS `updated_at`,
+              `elem`:[''value'']::STRING AS `value`))'
+          name: headers
+        - expr: 'TRANSFORM(
+            data:domains::ARRAY<VARIANT>::ARRAY<VARIANT>,
+            elem -> STRUCT(
+            `elem`:[''created_at'']::STRING AS `created_at`,
+            `elem`:[''domain'']::STRING AS `domain`,
+            `elem`:[''updated_at'']::STRING AS `updated_at`))'
+          name: domains
+        - expr: 'TRANSFORM(
+            data:reporter::ARRAY<VARIANT>::ARRAY<VARIANT>,
+            elem -> STRUCT(
+            `elem`:[''created_at'']::STRING AS `created_at`,
+            `elem`:[''email'']::STRING AS `email`,
+            `elem`:[''last_reported_at'']::STRING AS `last_reported_at`,
+            `elem`:[''reports_count'']::INT AS `reports_count`,
+            `elem`:[''reputation_score'']::INT AS `reputation_score`,
+            `elem`:[''updated_at'']::STRING AS `updated_at`,
+            `elem`:[''vip'']::BOOLEAN AS `vip`))'
+          name: reporter
+        - expr: 'data:attributes:[''sha256'']::STRING'
+          name: sha256
+        - expr: 'data:attributes:[''reported_at'']::STRING'
+          name: reported_at
+        - expr: 'TRANSFORM(
+            data:attachments::ARRAY<VARIANT>::ARRAY<VARIANT>,
+            elem -> STRUCT(
+            `elem`:[''created_at'']::STRING AS `created_at`,
+            `elem`:[''filename'']::STRING AS `filename`,
+            `elem`:[''is_child'']::BOOLEAN AS `is_child`,
+            `elem`:[''size'']::BIGINT AS `size`,
+            `elem`:[''updated_at'']::STRING AS `updated_at`))'
+          name: attachments
+        - expr: 'TRANSFORM(
+            data:thread_indicators::ARRAY<VARIANT>::ARRAY<VARIANT>,
+            elem -> STRUCT(
+            `elem`:[''created_at'']::STRING AS `created_at`,
+            `elem`:[''threat_level'']::STRING AS `threat_level`,
+            `elem`:[''threat_source'']::STRING AS `threat_source`,
+            `elem`:[''threat_type'']::STRING AS `threat_type`,
+            `elem`:[''threat_value'']::STRING AS `threat_value`,
+            `elem`:[''updated_at'']::STRING AS `updated_at`))'
+          name: threat_indicators
+        - expr: 'TRANSFORM(
+            data:attributes:[''categorization_tags'']::ARRAY<VARIANT>,
+            elem -> `elem`::STRING)'
+          name: categorization_tags
+        - expr: 'data:attributes:[''attachments_count'']::INT'
+          name: attachments_count
+        - expr: 'TRANSFORM(
+            data:rules::ARRAY<VARIANT>::ARRAY<VARIANT>,
+            elem -> STRUCT(
+            `elem`:[''active'']::BOOLEAN AS `active`,
+            `elem`:[''author_name'']::STRING AS `author_name`,
+            `elem`:[''content'']::STRING AS `content`,
+            `elem`:[''created_at'']::STRING AS `created_at`,
+            `elem`:[''description'']::STRING AS `description`,
+            `elem`:[''local'']::BOOLEAN AS `local`,
+            `elem`:[''name'']::STRING AS `name`,
+            `elem`:[''priority'']::INT AS `priority`,
+            `elem`:[''reports_count'']::BIGINT AS `reports_count`,
+            `elem`:[''rule_context'']::STRING AS `rule_context`,
+            `elem`:[''scope'']::STRING AS `scope`,
+            `elem`:[''share_with_cofense'']::BOOLEAN AS `share_with_cofense`,
+            TRANSFORM(`elem`:[''tags'']::ARRAY<VARIANT>, elem -> `elem`::STRING) AS `tags`,
+            `elem`:[''time_to_live'']::STRING AS `time_to_live`,
+            `elem`:[''updated_at'']::STRING AS `updated_at`))'
+          name: rules
+        - expr: 'data:attributes:[''comments_count'']::INT'
+          name: comments_count
+        - expr: 'data:attributes:[''rules_count'']::INT'
+          name: rules_count
+        - expr: 'data:attributes:[''updated_at'']::STRING'
+          name: updated_at
+        - expr: 'data:attributes:[''match_priority'']::INT'
+          name: match_priority
+        - expr: 'TRANSFORM(
+           data:processed_by::ARRAY<VARIANT>::ARRAY<VARIANT>,
+            elem -> STRUCT(
+            `elem`:[''email'']::STRING AS `email`,
+            `elem`:[''first_name'']::STRING AS `first_name`,
+            `elem`:[''last_name'']::STRING AS `last_name`,
+            `elem`:[''nickname'']::STRING AS `nickname`,
+            `elem`:[''time_zone'']::STRING AS `time_zone`))'
+          name: processed_by
+        - expr: 'TRANSFORM(
+            data:category::ARRAY<VARIANT>::ARRAY<VARIANT>,
+            elem -> STRUCT(
+            `elem`:[''archived'']::BOOLEAN AS `archived`,
+            `elem`:[''color'']::STRING AS `color`,
+            `elem`:[''created_at'']::STRING AS `created_at`,
+            `elem`:[''malicious'']::BOOLEAN AS `malicious`,
+            `elem`:[''name'']::STRING AS `name`,
+            `elem`:[''score'']::INT AS `score`,
+            `elem`:[''updated_at'']::STRING AS `updated_at`))'
+          name: category
+        - expr: 'try_variant_get(data, ''$.id'', ''STRING'')::STRING'
+          name: id
+        - expr: 'data:attributes:[''subject'']::STRING'
+          name: subject
+        - expr: 'TRANSFORM(
+            data:cluster::ARRAY<VARIANT>::ARRAY<VARIANT>,
+            elem -> STRUCT(
+            `elem`:[''attachment_signature'']::STRING AS `attachment_signature`,
+            `elem`:[''attachments_count'']::INT AS `attachments_count`,
+            `elem`:[''average_reporter_reputation'']::DOUBLE AS `average_reporter_reputation`,
+            TRANSFORM(`elem`:[''cluster_report_ids'']::ARRAY<VARIANT>, elem -> `elem`::STRING) AS `cluster_report_ids`,
+            `elem`:[''created_at'']::STRING AS `created_at`,
+            `elem`:[''first_reported_at'']::STRING AS `first_reported_at`,
+            `elem`:[''host_signature'']::STRING AS `host_signature`,
+            `elem`:[''host_source'']::STRING AS `host_source`,
+            `elem`:[''match_priority'']::INT AS `match_priority`,
+            `elem`:[''processed_reports_count'']::INT AS `processed_reports_count`,
+            `elem`:[''risk_score'']::INT AS `risk_score`,
+            `elem`:[''rules_count'']::INT AS `rules_count`,
+            TRANSFORM(`elem`:[''tags'']::ARRAY<VARIANT>, elem -> `elem`::STRING) AS `tags`,
+            `elem`:[''total_reports_count'']::INT AS `total_reports_count`,
+            `elem`:[''unprocessed_reports_count'']::INT AS `unprocessed_reports_count`,
+            `elem`:[''updated_at'']::STRING AS `updated_at`,
+            `elem`:[''urls_count'']::INT AS `urls_count`,
+            `elem`:[''vip_reporters_count'']::INT AS `vip_reporters_count`))'
+          name: cluster
+        - expr: 'TRANSFORM(
+            data:attachment_payloads::ARRAY<VARIANT>::ARRAY<VARIANT>,
+            elem -> STRUCT(
+            `elem`:[''created_at'']::STRING AS `created_at`,
+            `elem`:[''md5'']::STRING AS `md5`,
+            `elem`:[''mime_type'']::STRING AS `mime_type`,
+            `elem`:[''sha256'']::STRING AS `sha256`,
+            `elem`:[''updated_at'']::STRING AS `updated_at`))'
+          name: attachment_payloads
+        - expr: 'TRANSFORM(
+            data:urls::ARRAY<VARIANT>::ARRAY<VARIANT>,
+            elem -> STRUCT(
+            `elem`:[''created_at'']::STRING AS `created_at`,
+            `elem`:[''updated_at'']::STRING AS `updated_at`,
+            `elem`:[''url'']::STRING AS `url`))'
+          name: urls
+        - expr: 'TRANSFORM(
+            data:hostnames::ARRAY<VARIANT>::ARRAY<VARIANT>,
+            elem -> STRUCT(
+            `elem`:[''created_at'']::STRING AS `created_at`,
+            `elem`:[''hostname'']::STRING AS `hostname`,
+            `elem`:[''updated_at'']::STRING AS `updated_at`))'
+          name: hostnames
+        - expr: 'data:attributes:[''md5'']::STRING'
+          name: md5
+        - expr: 'data:links:[''self'']::STRING'
+          name: links.self
+        - expr: 'data:attributes:[''from_address'']::STRING'
+          name: from_address
+        - expr: 'data:attributes:[''processed_at'']::STRING'
+          name: processed_at
+        - expr: 'data:attributes:[''first_processed_at'']::STRING'
+          name: first_processed_at
+        - expr: 'data:attributes:[''urls_count'']::INT'
+          name: urls_count
+        - expr: 'data:attributes:[''risk_score'']::INT'
+          name: risk_score
+      filter: |
+        data:category::ARRAY<VARIANT>[0]:name::string IN (
+          'Spam', 'Suspicious', 'Business Email Compromise', 'Scam', 'Credential Phishing', 'Malware'
+        )
+      name: cofense_phishme_detection_finding

@@ -1,0 +1,756 @@
+author: Antimatter
+title: Microsoft - Entra
+name: microsoft_entra
+description: Microsoft Entra ID Logs
+autoloader:
+  format: json
+  cloudFiles:
+    options: {}
+
+bronze:
+  loadAsSingleVariant: true
+  preTransform:
+   - ["data", "CAST(data:time AS TIMESTAMP) as time", "cast('microsoft' AS STRING) AS source", 
+      "cast('entra' as STRING) AS sourcetype"]
+
+iconURL: "https://dasl-icons.s3.us-east-1.amazonaws.com/microsoft/entra/icon.png"
+
+silver:
+  transform:
+    - name: microsoft_entra_authentication
+      filter: |
+        CAST(data:category AS STRING) IN ('NonInteractiveUserSignInLogs','ManagedIdentitySignInLogs','ServicePrincipalSignInLogs','SignInLogs')
+      fields:
+        - name: location
+          expr: |
+            CAST(data:location AS STRING)
+        - name: properties.appId
+          expr: |
+            CAST(data:properties['appId'] AS STRING)
+        - name: properties.tenantId
+          expr: |
+            CAST(data:properties['tenantId'] AS STRING)
+        - name: properties.location
+          expr: |
+            CAST(data:properties['location'] AS STRING)
+        - name: properties.ipAddress
+          expr: |
+            CAST(data:properties['ipAddress'] AS STRING)
+        - name: properties.userId
+          expr: |
+            CAST(data:properties['userId'] AS STRING)
+        - name: properties.userAgent
+          expr: |
+            CAST(data:properties['userAgent'] AS STRING)
+        - name: resultSignature
+          expr: |
+            CAST(data:resultSignature AS STRING)
+        - name: category
+          expr: |
+            CAST(data:category AS STRING)
+        - name: operationName
+          expr: |
+            CAST(data:operationName AS STRING)
+        - name: resourceId
+          expr: |
+            CAST(data:resourceId AS STRING)
+        - name: tenantId
+          expr: |
+            CAST(data:tenantId AS STRING)
+        - name: index
+          expr: |
+            CAST(data:index AS STRING)
+        - name: sampled
+          expr: |
+            CAST(data:sampled AS INT)
+        - name: callerIpAddress
+          expr: |
+            CAST(data:callerIpAddress AS STRING)
+        - name: _time
+          expr: |
+            CAST(data:_time AS DOUBLE)
+        - name: sourcetype
+          expr: |
+            CAST(data:sourcetype AS STRING)
+        - name: correlationId
+          expr: |
+            CAST(data:correlationId AS STRING)
+        - name: durationMs
+          expr: |
+            CAST(data:durationMs AS BIGINT)
+        - name: operationVersion
+          expr: |
+            CAST(data:operationVersion AS STRING)
+        - name: time
+          from: time
+
+    - name: microsoft_entra_entity_management
+      filter: |
+        CAST(data:category AS STRING) IN ('ProvisioningLogs','AuditLogs')
+      fields:
+        - name: properties.tenantId
+          expr: |
+            CAST(data:properties['tenantId'] AS STRING)
+        - name: resultSignature
+          expr: |
+            CAST(data:resultSignature AS STRING)
+        - name: category
+          expr: |
+            CAST(data:category AS STRING)
+        - name: operationName
+          expr: |
+            CAST(data:operationName AS STRING)
+        - name: resourceId
+          expr: |
+            CAST(data:resourceId AS STRING)
+        - name: tenantId
+          expr: |
+            CAST(data:tenantId AS STRING)
+        - name: index
+          expr: |
+            CAST(data:index AS STRING)
+        - name: sampled
+          expr: |
+            CAST(data:sampled AS INT)
+        - name: callerIpAddress
+          expr: |
+            CAST(data:callerIpAddress AS STRING)
+        - name: _time
+          expr: |
+            CAST(data:_time AS DOUBLE)
+        - name: sourcetype
+          expr: |
+            CAST(data:sourcetype AS STRING)
+        - name: correlationId
+          expr: |
+            CAST(data:correlationId AS STRING)
+        - name: durationMs
+          expr: |
+            CAST(data:durationMs AS BIGINT)
+        - name: operationVersion
+          expr: |
+            CAST(data:operationVersion AS STRING)
+        - name: time
+          from: time
+
+    - name: microsoft_entra_api_activity
+      filter: |
+        CAST(data:category AS STRING) IN ('MicrosoftGraphActivityLogs')
+      fields:
+        - name: location
+          expr: |
+            CAST(data:location AS STRING)
+        - name: properties.location
+          expr: |
+            CAST(data:properties['location'] AS STRING)
+        - name: properties.operationId
+          expr: |
+            CAST(data:properties['operationId'] AS STRING)
+        - name: properties.timeGenerated
+          expr: |
+            CAST(data:properties['timeGenerated'] AS STRING)
+        - name: properties.__UDI_RequiredFields_UniqueId
+          expr: |
+            CAST(data:properties['__UDI_RequiredFields_UniqueId'] AS STRING)
+        - name: properties.appId
+          expr: |
+            CAST(data:properties['appId'] AS STRING)
+        - name: properties.clientAuthMethod
+          expr: |
+            CAST(data:properties['clientAuthMethod'] AS STRING)
+        - name: properties.tenantId
+          expr: |
+            CAST(data:properties['tenantId'] AS STRING)
+        - name: properties.roles
+          expr: |
+            CAST(data:properties['roles'] AS STRING)
+        - name: properties.C_Sid
+          expr: |
+            CAST(data:properties['C_Sid'] AS STRING)
+        - name: properties.__UDI_RequiredFields_EventTime
+          expr: |
+            CAST(data:properties['__UDI_RequiredFields_EventTime'] AS BIGINT)
+        - name: properties.__UDI_RequiredFields_TenantId
+          expr: |
+            CAST(data:properties['__UDI_RequiredFields_TenantId'] AS STRING)
+        - name: properties.scopes
+          expr: |
+            CAST(data:properties['scopes'] AS STRING)
+        - name: properties.requestId
+          expr: |
+            CAST(data:properties['requestId'] AS STRING)
+        - name: properties.userAgent
+          expr: |
+            CAST(data:properties['userAgent'] AS STRING)
+        - name: properties.durationMs
+          expr: |
+            CAST(data:properties['durationMs'] AS BIGINT)
+        - name: properties.requestUri
+          expr: |
+            url_encode(CAST(data:properties['requestUri'] AS STRING))
+        - name: properties.apiVersion
+          expr: |
+            CAST(data:properties['apiVersion'] AS STRING)
+        - name: properties.signInActivityId
+          expr: |
+            CAST(
+              hex(
+                unbase64(
+                  replace(
+                    replace(
+                      concat(
+                        CAST(data:properties['signInActivityId'] AS STRING),
+                        repeat('=', (4 - length(CAST(data:properties['signInActivityId'] AS STRING)) % 4) % 4)
+                      ),
+                      '-','+'
+                    ),
+                    '_','/'
+                  )
+                )
+              ) AS STRING
+            )
+        - name: properties.C_DeviceId
+          expr: |
+            CAST(data:properties['C_DeviceId'] AS STRING)
+        - name: properties.identityProvider
+          expr: |
+            CAST(data:properties['identityProvider'] AS STRING)
+        - name: properties.tokenIssuedAt
+          expr: |
+            CAST(data:properties['tokenIssuedAt'] AS STRING)
+        - name: properties.clientRequestId
+          expr: |
+            CAST(data:properties['clientRequestId'] AS STRING)
+        - name: properties.ipAddress
+          expr: |
+            CAST(data:properties['ipAddress'] AS STRING)
+        - name: properties.__UDI_RequiredFields_RegionScope
+          expr: |
+            CAST(data:properties['__UDI_RequiredFields_RegionScope'] AS STRING)
+        - name: properties.userId
+          expr: |
+            CAST(data:properties['userId'] AS STRING)
+        - name: properties.responseSizeBytes
+          expr: |
+            CAST(data:properties['responseSizeBytes'] AS BIGINT)
+        - name: properties.C_Idtyp
+          expr: |
+            CAST(data:properties['C_Idtyp'] AS STRING)
+        - name: properties.responseStatusCode
+          expr: |
+            CAST(data:properties['responseStatusCode'] AS INT)
+        - name: properties.UserPrincipalObjectID
+          expr: |
+            CAST(data:properties['UserPrincipalObjectID'] AS STRING)
+        - name: properties.wids
+          expr: |
+            CAST(data:properties['wids'] AS STRING)
+        - name: properties.requestMethod
+          expr: |
+            CAST(data:properties['requestMethod'] AS STRING)
+        - name: properties.C_Iat
+          expr: |
+            CAST(data:properties['C_Iat'] AS BIGINT)
+        - name: resultSignature
+          expr: |
+            CAST(data:resultSignature AS STRING)
+        - name: category
+          expr: |
+            CAST(data:category AS STRING)
+        - name: operationName
+          expr: |
+            CAST(data:operationName AS STRING)
+        - name: resourceId
+          expr: |
+            CAST(data:resourceId AS STRING)
+        - name: tenantId
+          expr: |
+            CAST(data:tenantId AS STRING)
+        - name: level
+          expr: |
+            CAST(data:level AS STRING)
+        - name: index
+          expr: |
+            CAST(data:index AS STRING)
+        - name: sampled
+          expr: |
+            CAST(data:sampled AS INT)
+        - name: callerIpAddress
+          expr: |
+            CAST(data:callerIpAddress AS STRING)
+        - name: _time
+          expr: |
+            CAST(data:_time AS DOUBLE)
+        - name: sourcetype
+          expr: |
+            CAST(data:sourcetype AS STRING)
+        - name: correlationId
+          expr: |
+            CAST(data:correlationId AS STRING)
+        - name: durationMs
+          expr: |
+            CAST(data:durationMs AS BIGINT)
+        - name: operationVersion
+          expr: |
+            CAST(data:operationVersion AS STRING)
+        - name: time
+          from: time
+        # Preserve raw properties object for gold.raw_data
+        - name: properties_raw
+          expr: |
+            CAST(data:properties AS VARIANT)
+
+gold:
+  - name: api_activity
+    input: microsoft_entra_api_activity
+    fields:
+      - name: action
+        expr: |
+          CASE
+            WHEN LOWER(resultSignature) IN ('200', 'success') THEN 'Allowed'
+            WHEN (TRY_CAST(resultSignature AS INT) > 200 AND TRY_CAST(resultSignature AS INT) < 499)
+                OR LOWER(resultSignature) = 'failure' THEN 'Denied'
+            ELSE 'Unknown'
+          END
+
+      - name: action_id
+        expr: |
+          CASE
+            WHEN LOWER(resultSignature) IN ('200', 'success') THEN 1
+            WHEN (TRY_CAST(resultSignature AS INT) > 200 AND TRY_CAST(resultSignature AS INT) < 499)
+                OR LOWER(resultSignature) = 'failure' THEN 2
+            ELSE 0
+          END
+
+      - name: activity_name
+        literal: "Read"
+
+      - name: activity_id
+        expr: CAST(2 AS INT)
+
+      - name: category_name
+        literal: "Identity & Access Management"
+
+      - name: category_uid
+        expr: CAST(3 AS INT)
+
+      - name: class_name
+        literal: "Authentication"
+
+      - name: class_uid
+        expr: CAST(3002 AS INT)
+
+      # --- disposition/status ---
+      - name: disposition
+        expr: |
+          CASE
+            WHEN LOWER(resultSignature) IN ('200', 'success') THEN 'Allowed'
+            WHEN (TRY_CAST(resultSignature AS INT) > 200 AND TRY_CAST(resultSignature AS INT) < 499)
+                OR LOWER(resultSignature) = 'failure' THEN 'Blocked'
+            ELSE 'Unknown'
+          END
+
+      - name: disposition_id
+        expr: |
+          CASE
+            WHEN LOWER(resultSignature) IN ('200', 'success') THEN 1
+            WHEN (TRY_CAST(resultSignature AS INT) > 200 AND TRY_CAST(resultSignature AS INT) < 499)
+                OR LOWER(resultSignature) = 'failure' THEN 2
+            ELSE 0
+          END
+
+      - name: message
+        from: operationName
+
+      # --- timestamps/timezone ---
+      - name: time
+        from: time
+
+      - name: timezone_offset
+        expr: CAST(0 AS INT)
+
+      # --- metadata (must match table spec) ---
+      - name: metadata.correlation_uid
+        from: correlationId
+
+      - name: metadata.event_code
+        expr: category
+
+      - name: metadata.log_level
+        literal: "Informational"
+
+      - name: metadata.log_name
+        from: category
+
+      - name: metadata.log_provider
+        literal: "Azure"
+
+      - name: metadata.log_version
+        expr: COALESCE(properties.apiVersion, 'Unknown')
+
+      - name: metadata.logged_time
+        from: time
+
+      - name: metadata.modified_time
+        expr: CAST(NULL AS TIMESTAMP)
+
+      - name: metadata.original_time
+        expr: CAST(time AS STRING)
+
+      - name: metadata.processed_time
+        expr: current_timestamp()
+
+      - name: metadata.product.name
+        expr: CONCAT('Microsoft Entra', ' ', category)
+
+      - name: metadata.product.vendor_name
+        literal: "Microsoft"
+
+      - name: metadata.product.version
+        from: properties.apiVersion
+
+      - name: metadata.tags
+        expr: CAST(NULL AS VARIANT)
+
+      - name: metadata.tenant_uid
+        from: tenantId
+
+      - name: metadata.uid
+        from: correlationId
+
+      - name: metadata.version
+        literal: "1.4.0"
+
+      # --- severity/status summary ---
+      - name: severity
+        literal: "Infomational"
+
+      - name: severity_id
+        expr: CAST(1 AS INT)
+
+      - name: status
+        expr: |
+          CASE
+            WHEN LOWER(resultSignature) IN ('200', 'success') THEN 'Success'
+            WHEN (TRY_CAST(resultSignature AS INT) > 200 AND TRY_CAST(resultSignature AS INT) < 499)
+                OR LOWER(resultSignature) = 'failure' THEN 'Failure'
+            ELSE 'Unknown'
+          END
+
+      - name: status_code
+        from: resultSignature
+
+      - name: status_id
+        expr: |
+          CASE
+            WHEN LOWER(resultSignature) IN ('200', 'success') THEN 1
+            WHEN (TRY_CAST(resultSignature AS INT) > 200 AND TRY_CAST(resultSignature AS INT) < 499)
+                OR LOWER(resultSignature) = 'failure' THEN 2
+            ELSE 0
+          END
+
+      # --- api (STRUCT) ---
+      - name: api.operation
+        expr: COALESCE(operationName, category, 'Unknown')
+
+      - name: api.request.data
+        expr: CAST(NULL AS VARIANT)
+
+      - name: api.request.uid
+        expr: CAST(NULL AS STRING)
+
+      - name: api.response.code
+        expr: TRY_CAST(resultSignature AS INT)
+
+      - name: api.response.data
+        expr: CAST(NULL AS VARIANT)
+
+      - name: api.response.error
+        expr: CASE WHEN LOWER(resultSignature) = 'failure' THEN 'failure' ELSE NULL END
+
+      - name: api.response.message
+        expr: CAST(NULL AS STRING)
+
+      # --- actor ---
+      - name: actor.app_name
+        expr: CAST(NULL AS STRING)
+
+      - name: actor.app_uid
+        expr: |
+          CASE
+            WHEN category IN ('NonInteractiveUserSignInLogs','ManagedIdentitySignInLogs','ServicePrincipalSignInLogs','SignInLogs')
+              THEN NULLIF(properties.appId, '')
+            ELSE NULL
+          END
+
+      # actor.authorizations is ARRAY<STRUCT<decision:STRING>>
+      - name: actor.authorizations
+        expr: |
+          ARRAY(
+            NAMED_STRUCT('decision',
+              CASE WHEN LOWER(resultSignature) IN ('200','success') THEN 'allowed' ELSE 'denied' END
+            )
+          )
+
+      - name: actor.idp.domain
+        expr: CAST(NULL AS STRING)
+
+      - name: actor.idp.name
+        expr: CAST(NULL AS STRING)
+
+      - name: actor.idp.protocol_name
+        expr: CAST(NULL AS STRING)
+
+      - name: actor.idp.tenant_uid
+        from: properties.tenantId
+
+      - name: actor.idp.uid
+        from: tenantId
+
+      - name: actor.process.cmd_line
+        expr: CAST(NULL AS STRING)
+
+      - name: actor.process.cpid
+        expr: CAST(NULL AS STRING)
+
+      - name: actor.process.name
+        expr: CAST(NULL AS STRING)
+
+      - name: actor.process.pid
+        expr: CAST(NULL AS INT)
+
+      - name: actor.process.session.created_time
+        expr: CAST(NULL AS TIMESTAMP)
+
+      - name: actor.process.session.credential_uid
+        expr: CAST(NULL AS STRING)
+
+      - name: actor.process.session.expiration_reason
+        expr: CAST(NULL AS STRING)
+
+      - name: actor.process.session.expiration_time
+        expr: CAST(NULL AS TIMESTAMP)
+
+      - name: actor.process.session.is_mfa
+        expr: CAST(NULL AS BOOLEAN)
+
+      - name: actor.process.session.is_remote
+        expr: |
+          CASE WHEN category IN ('NonInteractiveUserSignInLogs') THEN TRUE ELSE NULL END
+
+      - name: actor.process.session.is_vpn
+        expr: CAST(NULL AS BOOLEAN)
+
+      - name: actor.process.session.issuer
+        expr: CAST(NULL AS STRING)
+
+      - name: actor.process.session.terminal
+        expr: CAST(NULL AS STRING)
+
+      - name: actor.process.session.uid
+        from: properties.signInActivityId
+
+      - name: actor.process.session.uid_alt
+        expr: |
+          CASE WHEN category IN ('SignInLogs') THEN properties.userId ELSE NULL END
+
+      - name: actor.process.session.uuid
+        expr: CAST(NULL AS STRING)
+
+      - name: actor.process.uid
+        expr: CAST(NULL AS STRING)
+
+      # actor.process.user is STRUCT<has_mfa,name,type,type_id,uid>
+      - name: actor.process.user
+        expr: |
+          NAMED_STRUCT(
+            'has_mfa', CAST(NULL AS BOOLEAN),
+            'name',    CAST(NULL AS STRING),
+            'type',    CAST(NULL AS STRING),
+            'type_id', CAST(NULL AS INT),
+            'uid',     CAST(properties.userId AS STRING)
+          )
+
+      # actor.user is STRUCT<has_mfa,name,type,type_id,uid>
+      - name: actor.user
+        expr: |
+          NAMED_STRUCT(
+            'has_mfa', CAST(NULL AS BOOLEAN),
+            'name',    CAST(NULL AS STRING),
+            'type',    CAST(NULL AS STRING),
+            'type_id', CAST(NULL AS INT),
+            'uid',     CAST(properties.userId AS STRING)
+          )
+
+      # --- dst / src endpoints (expanded to match table) ---
+      - name: dst_endpoint.domain
+        expr: CAST(NULL AS STRING)
+      - name: dst_endpoint.hostname
+        expr: CAST(NULL AS STRING)
+      - name: dst_endpoint.instance_uid
+        expr: CAST(NULL AS STRING)
+      - name: dst_endpoint.interface_name
+        expr: CAST(NULL AS STRING)
+      - name: dst_endpoint.interface_uid
+        expr: CAST(NULL AS STRING)
+      - name: dst_endpoint.ip
+        expr: CAST(NULL AS STRING)
+      - name: dst_endpoint.name
+        expr: CAST(NULL AS STRING)
+      - name: dst_endpoint.port
+        expr: CAST(NULL AS INT)
+      - name: dst_endpoint.svc_name
+        expr: CAST(NULL AS STRING)
+      - name: dst_endpoint.type
+        literal: "Browser"
+      - name: dst_endpoint.type_id
+        expr: CAST(8 AS INT)
+      - name: dst_endpoint.uid
+        from: resourceId
+      - name: dst_endpoint.location
+        expr: |
+          NAMED_STRUCT(
+            'city',        CAST(NULL AS STRING),
+            'continent',   CAST(NULL AS STRING),
+            'country',     CAST(NULL AS STRING),
+            'lat',         CAST(NULL AS FLOAT),
+            'long',        CAST(NULL AS FLOAT),
+            'postal_code', CAST(NULL AS STRING)
+          )
+      - name: dst_endpoint.mac
+        expr: CAST(NULL AS STRING)
+      - name: dst_endpoint.vpc_uid
+        expr: CAST(NULL AS STRING)
+      - name: dst_endpoint.zone
+        expr: CAST(NULL AS STRING)
+
+      - name: src_endpoint.domain
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.hostname
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.instance_uid
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.interface_name
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.interface_uid
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.ip
+        expr: COALESCE(properties.ipAddress, callerIpAddress)
+      - name: src_endpoint.name
+        expr: |
+          CASE WHEN category IN ('ServicePrincipalSignInLogs') THEN index ELSE NULL END
+      - name: src_endpoint.port
+        expr: CAST(NULL AS INT)
+      - name: src_endpoint.svc_name
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.type
+        expr: |
+          CASE
+            WHEN category IN ('NonInteractiveUserSignInLogs','ManagedIdentitySignInLogs') THEN 'Azure AD Tenant'
+            WHEN category IN ('ServicePrincipalSignInLogs','SignInLogs') THEN 'Azure Active Directory Tenant'
+            ELSE NULL
+          END
+      - name: src_endpoint.type_id
+        expr: |
+          CASE
+            WHEN category IN ('NonInteractiveUserSignInLogs','ManagedIdentitySignInLogs','ServicePrincipalSignInLogs','SignInLogs') THEN 99
+            ELSE NULL
+          END
+      - name: src_endpoint.uid
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.location
+        expr: |
+          NAMED_STRUCT(
+            'city',        CAST(NULL AS STRING),
+            'continent',   CAST(NULL AS STRING),
+            'country',     CAST(NULL AS STRING),
+            'lat',         CAST(NULL AS FLOAT),
+            'long',        CAST(NULL AS FLOAT),
+            'postal_code', CAST(NULL AS STRING)
+          )
+      - name: src_endpoint.mac
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.vpc_uid
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.zone
+        expr: CAST(NULL AS STRING)
+
+      # --- raw_data is VARIANT (ignore STRING in old spec) ---
+      - name: raw_data
+        expr: CAST(properties_raw AS VARIANT)
+
+      # --- type_name / type_uid ---
+      - name: type_name
+        literal: "API Activity: Read"
+
+      - name: type_uid
+        expr: CAST(3002 * 100 + 2 AS BIGINT)
+
+      # --- Arrays / collections ---
+      - name: enrichments
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<data: VARIANT, desc: STRING, name: STRING, value: STRING>>)
+
+      - name: observables
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<name: STRING, type: STRING, value: STRING>>)
+
+      - name: resources
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<hostname: STRING, ip: STRING, name: STRING, uid: STRING>>)
+
+      # --- cloud ---
+      - name: cloud.account.name
+        expr: CAST(NULL AS STRING)
+
+      - name: cloud.account.uid
+        expr: CAST(NULL AS STRING)
+
+      - name: cloud.cloud_partition
+        expr: CAST(NULL AS STRING)
+
+      - name: cloud.project_uid
+        expr: CAST(NULL AS STRING)
+
+      - name: cloud.provider
+        literal: "Azure"
+
+      - name: cloud.region
+        expr: CAST(NULL AS STRING)
+
+      - name: cloud.zone
+        expr: CAST(NULL AS STRING)
+
+      # --- http_request / http_response (match table types) ---
+      - name: http_request
+        expr: |
+          CAST(NULL AS STRUCT<
+            args: STRING,
+            body_length: INT,
+            http_headers: ARRAY<STRUCT<name: STRING, value: STRING>>,
+            http_method: STRING,
+            length: INT,
+            referrer: STRING,
+            url: STRING,
+            user_agent: STRING,
+            version: STRING
+          >)
+
+      - name: http_response
+        expr: |
+          CAST(NULL AS STRUCT<
+            body_length: INT,
+            code: INT,
+            content_type: STRING,
+            http_headers: ARRAY<STRUCT<name: STRING, value: STRING>>,
+            latency: INT,
+            length: INT,
+            message: STRING,
+            status: STRING
+          >)
+
+      - name: start_time
+        from: time
+
+      - name: status_detail
+        expr: CAST(NULL AS STRING)

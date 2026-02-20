@@ -1,0 +1,253 @@
+author: Antimatter
+autoloader:
+  format: json
+  multiline: false
+name: microsoft_mdi_directory
+title: Microsoft - MDI Directory Events
+description: Microsoft Defender For Identity Directory Events
+iconURL: "https://dasl-icons.s3.us-east-1.amazonaws.com/microsoft/mdi_directory/icon.png"
+
+bronze:
+  loadAsSingleVariant: true
+  preTransform: [
+    [
+      "data", 
+      "CAST(data:time AS TIMESTAMP) AS time", 
+      "CAST('microsoft' AS STRING) AS source", 
+      "CAST('mdi_directory' AS STRING) AS sourcetype"
+    ]
+  ]
+
+gold: []
+
+silver:
+  bronzeTables: []
+  transform:
+
+    - fields:
+        - expr: 'data:Tenant::STRING'
+          name: Tenant
+        - expr: 'data:_TimeReceivedBySvc::STRING'
+          name: _TimeReceivedBySvc
+        - from: time
+          name: time
+        - expr: 'data:properties:[''TargetAccountDisplayName'']::STRING'
+          name: properties.TargetAccountDisplayName
+        - expr: 'data:properties:[''Location'']::STRING'
+          name: properties.Location
+        - expr: 'data:properties:[''DestinationDeviceName'']::STRING'
+          name: properties.DestinationDeviceName
+        - expr: 'data:properties:[''DeviceName'']::STRING'
+          name: properties.DeviceName
+        - expr: 'data:properties:[''DestinationIPAddress'']::STRING'
+          name: properties.DestinationIPAddress
+        - expr: 'data:properties:[''AccountDisplayName'']::STRING'
+          name: properties.AccountDisplayName
+        - expr: 'data:properties:[''TargetDeviceName'']::STRING'
+          name: properties.TargetDeviceName
+        - expr: 'data:properties:[''Application'']::STRING'
+          name: properties.Application
+        - expr: 'data:properties:[''IPAddress'']::STRING'
+          name: properties.IPAddress
+        - expr: 'data:properties:[''DestinationPort'']::INT'
+          name: properties.DestinationPort
+        - expr: 'data:properties:[''Port'']::INT'
+          name: properties.Port
+        - expr: 'data:properties:[''TargetAccountUpn'']::STRING'
+          name: properties.TargetAccountUpn
+        - expr: 'data:properties:[''AccountUpn'']::STRING'
+          name: properties.AccountUpn
+        - expr: 'data:properties:[''Protocol'']::STRING'
+          name: properties.Protocol
+        - expr: 'data:properties:[''Timestamp'']::STRING'
+          name: properties.Timestamp
+        - expr: 'data:properties:[''AccountName'']::STRING'
+          name: properties.AccountName
+        - expr: 'data:properties:[''AccountDomain'']::STRING'
+          name: properties.AccountDomain
+        - expr: 'data:properties:[''ActionType'']::STRING'
+          name: properties.ActionType
+        - expr: 'data:properties:[''AdditionalFields'']::VARIANT'
+          name: properties.AdditionalFields
+        - expr: 'data:properties:[''AccountSid'']::STRING'
+          name: properties.AccountSid
+        - expr: 'data:properties:[''ReportId'']::STRING'
+          name: properties.ReportId
+        - expr: 'data:properties:[''ISP'']::STRING'
+          name: properties.ISP
+        - expr: 'data:category::STRING'
+          name: category
+        - expr: 'data:operationName::STRING'
+          name: operationName
+        - expr: 'data:tenantId::STRING'
+          name: tenantId
+      filter: 'data:properties:[''ActionType'']::STRING IN (''Domain trusts discovery'',''gMSA
+                password read attempt'',''Directory Services replication'',''Account Path changed'')'
+      name: microsoft_mdi_directory_entity_management
+    - fields:
+        - expr: 'data:Tenant::STRING'
+          name: Tenant
+        - expr: 'data:properties:[''TargetAccountDisplayName'']::STRING'
+          name: TargetAccountDisplayName
+        - expr: 'data:properties:[''AccountObjectId'']::STRING'
+          name: AccountObjectId
+        - expr: 'data:properties:[''DestinationDeviceName'']::STRING'
+          name: DestinationDeviceName
+        - expr: 'data:properties:[''AccountDisplayName'']::STRING'
+          name: AccountDisplayName
+        - from: time
+          name: time
+        - expr: 'data:properties:[''IPAddress'']::STRING'
+          name: IPAddress
+        - expr: 'data:properties:[''Application'']::STRING'
+          name: Application
+        - expr: 'data:operationName::STRING'
+          name: operationName
+        - expr: 'data:tenantId::STRING'
+          name: tenantId
+        - expr: 'data:category::STRING'
+          name: category
+        - expr: 'data:properties:[''TargetAccountUpn'']::STRING'
+          name: TargetAccountUpn
+        - expr: 'data:properties:[''AccountUpn'']::STRING'
+          name: AccountUpn
+        - expr: 'data:properties:[''Timestamp'']::STRING'
+          name: Timestamp
+        - expr: 'data:properties:[''AccountName'']::STRING'
+          name: AccountName
+        - expr: 'data:properties:[''AccountDomain'']::STRING'
+          name: AccountDomain
+        - expr: 'data:_TimeReceivedBySvc::STRING'
+          name: _TimeReceivedBySvc
+        - expr: 'data:properties:[''TargetAccountDisplayName'']::STRING'
+          name: properties.TargetAccountDisplayName
+        - expr: 'data:properties:[''Timestamp'']::STRING'
+          name: properties.Timestamp
+        - expr: 'data:properties:[''DestinationDeviceName'']::STRING'
+          name: properties.DestinationDeviceName
+        - expr: 'data:properties:[''AccountDomain'']::STRING'
+          name: properties.AccountDomain
+        - expr: 'data:properties:[''AccountName'']::STRING'
+          name: properties.AccountName
+        - expr: 'data:properties:[''AccountDisplayName'']::STRING'
+          name: properties.AccountDisplayName
+        - expr: 'data:properties:[''TargetDeviceName'']::STRING'
+          name: properties.TargetDeviceName
+        - expr: 'data:properties:[''Application'']::STRING'
+          name: properties.Application
+        - expr: 'data:properties:[''IPAddress'']::STRING'
+          name: properties.IPAddress
+        - expr: 'data:properties:[''ActionType'']::STRING'
+          name: properties.ActionType
+        - expr: 'data:properties:[''AdditionalFields'']::VARIANT'
+          name: properties.AdditionalFields
+        - expr: 'data:properties:[''AccountSid'']::STRING'
+          name: properties.AccountSid
+        - expr: 'data:properties:[''ReportId'']::STRING'
+          name: properties.ReportId
+        - expr: 'data:properties:[''TargetAccountUpn'']::STRING'
+          name: properties.TargetAccountUpn
+        - expr: 'data:properties:[''AccountUpn'']::STRING'
+          name: properties.AccountUpn
+        - expr: 'data:properties:[''ActionType'']::STRING'
+          name: ActionType
+        - expr: 'data:properties:[''AdditionalFields'']::VARIANT'
+          name: AdditionalFields
+        - expr: 'data:properties:[''AccountSid'']::STRING'
+          name: AccountSid
+        - expr: 'data:properties:[''ReportId'']::STRING'
+          name: ReportId
+      filter: 'data:properties:[''ActionType'']::STRING IN (''Account Password change failed'',''Account
+              Password changed'',''Account Password expired'',''User Account Created'',''Account
+              Unlock changed'',''Account enabled'',''User Manager changed'')'
+      name: microsoft_mdi_directory_account_change
+    - fields:
+        - expr: 'data:Tenant::STRING'
+          name: Tenant
+        - expr: 'data:_TimeReceivedBySvc::STRING'
+          name: _TimeReceivedBySvc
+        - from: time
+          name: time
+        - expr: 'data:properties:[''TargetAccountDisplayName'']::STRING'
+          name: properties.TargetAccountDisplayName
+        - expr: 'data:properties:[''Timestamp'']::STRING'
+          name: properties.Timestamp
+        - expr: 'data:properties:[''DestinationDeviceName'']::STRING'
+          name: properties.DestinationDeviceName
+        - expr: 'data:properties:[''AccountDomain'']::STRING'
+          name: properties.AccountDomain
+        - expr: 'data:properties:[''AccountName'']::STRING'
+          name: properties.AccountName
+        - expr: 'data:properties:[''AccountDisplayName'']::STRING'
+          name: properties.AccountDisplayName
+        - expr: 'data:properties:[''Application'']::STRING'
+          name: properties.Application
+        - expr: 'data:properties:[''IPAddress'']::STRING'
+          name: properties.IPAddress
+        - expr: 'data:properties:[''ActionType'']::STRING'
+          name: properties.ActionType
+        - expr: 'data:properties:[''AdditionalFields'']:[''FROM.GROUP_SID'']::STRING'
+          name: properties.AdditionalFields.FROM.GROUP_SID
+        - expr: 'data:properties:[''AdditionalFields'']:[''TO.DEVICE'']::STRING'
+          name: properties.AdditionalFields.TO.DEVICE
+        - expr: 'data:properties:[''AdditionalFields'']:[''TO.GROUP_ID'']::STRING'
+          name: properties.AdditionalFields.TO.GROUP_ID
+        - expr: 'data:properties:[''AdditionalFields'']:[''TargetAccountSid'']::STRING'
+          name: properties.AdditionalFields.TargetAccountSid
+        - expr: 'data:properties:[''AdditionalFields'']:[''ACTOR.ENTITY_USER'']::STRING'
+          name: properties.AdditionalFields.ACTOR.ENTITY_USER
+        - expr: 'data:properties:[''AdditionalFields'']:[''FROM.GROUP'']::STRING'
+          name: properties.AdditionalFields.FROM.GROUP
+        - expr: 'data:properties:[''AdditionalFields'']:[''FROM.GROUP_ID'']::STRING'
+          name: properties.AdditionalFields.FROM.GROUP_ID
+        - expr: 'data:properties:[''AdditionalFields'']:[''MembershipChange'']::STRING'
+          name: properties.AdditionalFields.MembershipChange
+        - expr: 'data:properties:[''AdditionalFields'']:[''DestinationComputerOperatingSystemType'']::STRING'
+          name: properties.AdditionalFields.DestinationComputerOperatingSystemType
+        - expr: 'data:properties:[''AdditionalFields'']:[''ACTOR.ACCOUNT'']::STRING'
+          name: properties.AdditionalFields.ACTOR.ACCOUNT
+        - expr: 'data:properties:[''AdditionalFields'']:[''TO.GROUP_SID'']::STRING'
+          name: properties.AdditionalFields.TO.GROUP_SID
+        - expr: 'data:properties:[''AdditionalFields'']:[''AttackTechniques'']::STRING'
+          name: properties.AdditionalFields.AttackTechniques
+        - expr: 'data:properties:[''AdditionalFields'']:[''DestinationComputerObjectGuid'']::STRING'
+          name: properties.AdditionalFields.DestinationComputerObjectGuid
+        - expr: 'data:properties:[''AdditionalFields'']:[''TARGET_OBJECT.USER'']::STRING'
+          name: properties.AdditionalFields.TARGET_OBJECT.USER
+        - expr: 'data:properties:[''AdditionalFields'']:[''Category'']::STRING'
+          name: properties.AdditionalFields.Category
+        - expr: 'data:properties:[''AdditionalFields'']:[''DestinationComputerOperatingSystemVersion'']::STRING'
+          name: properties.AdditionalFields.DestinationComputerOperatingSystemVersion
+        - expr: 'data:properties:[''AdditionalFields'']:[''ActionTypeInner'']::STRING'
+          name: properties.AdditionalFields.ActionTypeInner
+        - expr: 'data:properties:[''AdditionalFields'']:[''SourceAccountSid'']::STRING'
+          name: properties.AdditionalFields.SourceAccountSid
+        - expr: 'data:properties:[''AdditionalFields'']:[''DestinationComputerOperatingSystem'']::STRING'
+          name: properties.AdditionalFields.DestinationComputerOperatingSystem
+        - expr: 'data:properties:[''AdditionalFields'']:[''TARGET_OBJECT.ENTITY_USER'']::STRING'
+          name: properties.AdditionalFields.TARGET_OBJECT.ENTITY_USER
+        - expr: 'data:properties:[''AdditionalFields'']:[''TO.GROUP'']::STRING'
+          name: properties.AdditionalFields.TO.GROUP
+        - expr: 'data:properties:[''AdditionalFields'']:[''TargetAccountId'']::STRING'
+          name: properties.AdditionalFields.TargetAccountId
+        - expr: 'data:properties:[''AdditionalFields'']:[''Count'']::INT'
+          name: properties.AdditionalFields.Count
+        - expr: 'data:properties:[''AdditionalFields'']:[''SourceAccountId'']::STRING'
+          name: properties.AdditionalFields.SourceAccountId
+        - expr: 'data:properties:[''AccountSid'']::STRING'
+          name: properties.AccountSid
+        - expr: 'data:properties:[''ReportId'']::STRING'
+          name: properties.ReportId
+        - expr: 'data:properties:[''TargetAccountUpn'']::STRING'
+          name: properties.TargetAccountUpn
+        - expr: 'data:properties:[''AccountUpn'']::STRING'
+          name: properties.AccountUpn
+        - expr: 'data:category::STRING'
+          name: category
+        - expr: 'data:operationName::STRING'
+          name: operationName
+        - expr: 'data:tenantId::STRING'
+          name: tenantId
+      filter: 'data:properties:[''ActionType'']::STRING IN (''Group Membership changed'')'
+      name: microsoft_mdi_directory_group_management
+
