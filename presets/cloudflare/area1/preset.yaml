@@ -1,0 +1,319 @@
+name: "cloudflare_area1"
+author: "Antimatter"
+title: "Cloudflare - Area 1"
+description: "Cloudflare Area 1 Email Security Logs"
+iconURL: "https://dasl-icons.s3.us-east-1.amazonaws.com/cloudflare/area1/icon.png"
+
+autoloader:
+  format: json
+  cloudFiles:
+    options: {}
+
+bronze:
+  loadAsSingleVariant: true 
+  preTransform:
+  - ["data", "to_timestamp(data:event:ts::STRING, 'yyyy-MM-dd HH:mm:ssX') AS time", "cast('cloudflare' AS STRING) as source", "cast('area1' AS STRING) AS sourcetype"]
+
+
+silver:
+  transform:
+  - name: cloudflare_area1_email_activity
+    fields:
+    - name: time
+      from: time
+    - name: raw_data
+      from: data
+
+    - name: cc
+      expr: |
+        (
+          CASE
+            WHEN data:event['cc'] IS NULL THEN NULL
+            WHEN data:event['cc']::STRING LIKE '[%]' THEN split(translate(data:event['cc']::STRING, '[]"', ''), ',')
+            ELSE array(regexp_replace(data:event['cc']::STRING, '^"|"$', ''))
+          END
+        )::ARRAY<STRING>
+
+    - name: from
+      expr: |
+        data:event['from']::STRING
+
+    - name: links
+      expr: |
+        TRANSFORM(
+          data:event['links']::ARRAY<VARIANT>,
+          elem -> elem::STRING
+        )
+
+    - name: subject
+      expr: |
+        data:event['subject']::STRING
+
+    - name: final_disposition
+      expr: |
+        data:event['final_disposition']::STRING
+
+    - name: smtp_helo_server_ip_geo
+      expr: |
+        data:event['smtp_helo_server_ip_geo']::STRING
+
+    - name: smtp_helo_server_name
+      expr: |
+        data:event['smtp_helo_server_name']::STRING
+
+    - name: company
+      expr: |
+        data:company::STRING
+
+    - name: smtp_helo_server_ip
+      expr: |
+        data:event['smtp_helo_server_ip']::STRING
+
+    - name: alert_reasons
+      expr: |
+        TRANSFORM(
+          data:event['alert_reasons']::ARRAY<VARIANT>,
+          elem -> elem::STRING
+        )
+
+    - name: time_ms
+      expr: |
+        data:time::BIGINT
+
+    - name: source
+      expr: |
+        data:source::STRING
+
+    - name: alert_id
+      expr: |
+        data:event['alert_id']::STRING
+
+    - name: attachments
+      expr: |
+        TRANSFORM(
+          CAST(data:event['attachments'] AS ARRAY<VARIANT>),
+          e -> from_json(
+                 to_json(e),
+                 'att_size BIGINT,
+                  content_type_computed STRING,
+                  disposition STRING,
+                  extension STRING,
+                  md5 STRING,
+                  name STRING,
+                  sha1 STRING,
+                  sha256 STRING,
+                  ssdeep STRING'
+               )
+        )
+
+    - name: delivery_mode
+      expr: |
+        data:event['delivery_mode']::STRING
+
+    - name: smtp_helo_server_ip_as_name
+      expr: |
+        data:event['smtp_helo_server_ip_as_name']::STRING
+
+    - name: envelope_from
+      expr: |
+        data:event['envelope_from']::STRING
+
+    - name: smtp_helo_server_ip_as_number
+      expr: |
+        data:event['smtp_helo_server_ip_as_number']::STRING
+
+    - name: envelope_to
+      expr: |
+        TRANSFORM(
+          data:event['envelope_to']::ARRAY<VARIANT>,
+          elem -> elem::STRING
+        )
+
+    - name: replyto
+      expr: |
+        data:event['replyto']::STRING
+
+    - name: message_id
+      expr: |
+        data:event['message_id']::STRING
+
+    - name: to_recipients
+      expr: |
+        TRANSFORM(
+          data:event['to']::ARRAY<VARIANT>,
+          elem -> elem::STRING
+        )
+
+    - name: ts
+      expr: |
+        data:event['ts']::STRING
+
+    - name: ts_timestamp
+      expr: |
+        to_timestamp(data:event['ts']::STRING, 'yyyy-MM-dd HH:mm:ssX')
+
+gold:
+- name: email_activity
+  input: cloudflare_area1_email_activity
+  fields:
+  # action / action_id
+  - expr: "'Observed'"
+    name: action
+  - expr: "3"
+    name: action_id
+
+  # activity (string) + activity_id + activity_name
+  - expr: "'Scan'"
+    name: activity
+  - expr: "3"
+    name: activity_id
+  - expr: "'Scan'"
+    name: activity_name
+
+  # category / class
+  - expr: "'Network'"
+    name: category_name
+  - expr: "4"
+    name: category_uid
+  - expr: "'Email Activity'"
+    name: class_name
+  - expr: "4009"
+    name: class_uid
+
+  # direction
+  - expr: "'Unknown'"
+    name: direction
+  - expr: "0"
+    name: direction_id
+
+  # disposition
+  - expr: "final_disposition::STRING"
+    name: disposition
+  - expr: "99"
+    name: disposition_id
+
+
+  - expr: |
+      named_struct('to', concat_ws(', ', to_recipients))
+    name: email
+
+  - expr: |
+          CAST(array() AS ARRAY<STRUCT<data: VARIANT, desc: STRING, name: STRING, value: STRING>>)
+    name: enrichments
+    
+
+  # message
+  - expr: "NULLIF(concat_ws(', ', alert_reasons), '')"
+    name: message
+
+
+  # metadata (must match table struct)
+  - expr: "alert_id::STRING"
+    name: metadata.correlation_uid
+  - expr: "'Email Activity'"
+    name: metadata.event_code
+  - literal: "Informational"
+    name: metadata.log_level
+  - literal: "area1"
+    name: metadata.log_name
+  - expr: "source::STRING"
+    name: metadata.log_provider
+  - literal: "cloudflare" 
+    name: metadata.log_version
+  - from: ts_timestamp
+    name: metadata.logged_time
+  - from: ts_timestamp
+    name: metadata.modified_time
+  - expr: "ts::STRING"
+    name: metadata.original_time
+  - expr: "current_timestamp()"
+    name: metadata.processed_time
+  - expr: "'Area 1'"
+    name: metadata.product.name
+  - expr: "'Cloudflare'"
+    name: metadata.product.vendor_name
+  - literal: "Unknown"
+    name: metadata.product.version
+
+  - expr: "company::STRING"
+    name: metadata.tenant_uid
+
+  - expr: "'1.4.0'"
+    name: metadata.version
+
+  # observables
+  - expr: |
+      filter(
+        array(
+          CASE
+            WHEN smtp_helo_server_ip IS NOT NULL THEN
+              named_struct('name','SMTP HELO server IP','type','IP Address','value',smtp_helo_server_ip::STRING)
+            ELSE NULL
+          END,
+          CASE
+            WHEN smtp_helo_server_ip_as_name IS NOT NULL THEN
+              named_struct('name','SMTP HELO server IP as name','type','Hostname','value',smtp_helo_server_ip_as_name::STRING)
+            ELSE NULL
+          END,
+          CASE
+            WHEN smtp_helo_server_ip_as_number IS NOT NULL THEN
+              named_struct('name','SMTP HELO server IP as number','type','Resource UID','value',smtp_helo_server_ip_as_number::STRING)
+            ELSE NULL
+          END,
+          CASE
+            WHEN smtp_helo_server_ip_geo IS NOT NULL THEN
+              named_struct('name','SMTP HELO server IP geo','type','Geo Location','value',smtp_helo_server_ip_geo::STRING)
+            ELSE NULL
+          END,
+          CASE
+            WHEN delivery_mode IS NOT NULL THEN
+              named_struct('name','Delivery mode','type','Other','value',delivery_mode::STRING)
+            ELSE NULL
+          END
+        ),
+        observable -> observable IS NOT NULL
+      )
+    name: observables
+
+  # protocol
+  - expr: "'SMTP'"
+    name: protocol_name
+
+  - from: raw_data
+    name: raw_data
+
+  # severity
+  - expr: "'Unknown'"
+    name: severity
+  - expr: "0"
+    name: severity_id
+
+  # status / status_code / status_detail / status_id
+  - expr: "final_disposition::STRING"
+    name: status
+  - expr: cast(0 as string)
+      
+    name: status_code
+  - expr: cast('0' as string)
+    name: status_detail
+  - expr: "99"
+    name: status_id
+
+  # time TIMESTAMP
+  - from: time
+    name: time
+
+  # timezone_offset
+  - expr: "CAST(right(ts::STRING, 3) AS INT)"
+    name: timezone_offset
+
+  # type
+  - expr: "'Email Activity Scan'"
+    name: type_name
+  - expr: cast(400903 as BIGINT)
+    name: type_uid
+
+  # unmapped bucket for anything else
+  - expr: |
+      CAST(NULL AS VARIANT)
+    name: unmapped

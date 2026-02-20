@@ -1,0 +1,59 @@
+author: Antimatter
+title: Pulse Secure - Syslog
+name: pulse_secure_syslog
+description: Pulse Connect Secure Logs
+autoloader:
+  format: json
+iconURL: "https://dasl-icons.s3.us-east-1.amazonaws.com/pulse_secure/syslog/icon.png"
+
+bronze:
+  loadAsSingleVariant: true
+  preTransform: [
+    [
+      "data", 
+      "data:_time::TIMESTAMP AS time", 
+      "CAST('pulse_secure' AS STRING) AS source", 
+      "CAST('syslog' AS STRING) AS sourcetype"
+    ]
+  ]
+
+silver:
+  transform:
+  - name: pulse_secure_tunnel_activity
+    fields:
+      - expr: 'data:SourceIP::STRING'
+        name: SourceIP
+      - expr: 'data:Message::STRING'
+        name: Message
+      - expr: 'data:Timestamp::STRING'
+        name: Timestamp
+      - expr: 'data:syslog_severityName::STRING'
+        name: syslog_severityName
+      - expr: 'data:Role::STRING'
+        name: Role
+      - expr: 'data:User::STRING'
+        name: User
+      - expr: 'data:_raw::STRING'
+        name: _raw
+      - expr: 'data:cribl_pipe::STRING'
+        name: cribl_pipe
+      - from: time
+        name: time
+      - expr: 'data:Host::STRING'
+        name: Host
+      - expr: 'data:syslog_procid::STRING'
+        name: syslog_procid
+      - expr: 'data:Service_Name::STRING'
+        name: Service_Name
+      - expr: 'data:Syslog_Timestamp::STRING'
+        name: Syslog_Timestamp
+      - expr: 'data:Realm::STRING'
+        name: Realm
+      - expr: 'data:syslog_facilityName::STRING'
+        name: syslog_facilityName
+      - expr: 'data:Syslog_Hostname::STRING'
+        name: Syslog_Hostname
+      - expr: 'data:syslog_facility::INT'
+        name: syslog_facility
+      - expr: 'data:syslog_severity::INT'
+        name: syslog_severity

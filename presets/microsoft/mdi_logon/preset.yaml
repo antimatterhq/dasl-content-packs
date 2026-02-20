@@ -1,0 +1,82 @@
+author: Antimatter
+name: microsoft_mdi_logon
+title: Microsoft - MDI Logon Events
+description: Microsoft Defender For Identity Authentication Events
+iconURL: "https://dasl-icons.s3.us-east-1.amazonaws.com/microsoft/mdi_logon/icon.png"
+
+bronze:
+  loadAsSingleVariant: true
+  preTransform: [
+    [
+      "data", 
+      "CAST(data:time AS TIMESTAMP) AS time", 
+      "CAST('microsoft' AS STRING) AS source", 
+      "CAST('mdi_logon' AS STRING) AS sourcetype"
+    ]
+  ]
+
+silver:
+  transform:
+  - name: microsoft_mdi_logon_authentication
+    fields:
+    - from: time
+      name: time
+    - expr: 'data:operationName::STRING'
+      name: operationName
+    - expr: 'data:Tenant::STRING'
+      name: Tenant
+    - expr: 'data:tenantId::STRING'
+      name: tenantId
+    - expr: 'data:category::STRING'
+      name: category
+    - expr: 'data:_TimeReceivedBySvc::STRING'
+      name: _TimeReceivedBySvc
+    - expr: 'data:properties:[''DeviceName'']::STRING'
+      name: properties.DeviceName
+    - expr: 'data:properties:[''AccountObjectId'']::STRING'
+      name: properties.AccountObjectId
+    - expr: 'data:properties:[''DestinationDeviceName'']::STRING'
+      name: properties.DestinationDeviceName
+    - expr: 'data:properties:[''AdditionalFields'']::VARIANT'
+      name: properties.AdditionalFields
+    - expr: 'data:properties:[''FailureReason'']::STRING'
+      name: properties.FailureReason
+    - expr: 'data:properties:[''DestinationPort'']::INT'
+      name: properties.DestinationPort
+    - expr: 'data:properties:[''AccountDisplayName'']::STRING'
+      name: properties.AccountDisplayName
+    - expr: 'data:properties:[''Port'']::INT'
+      name: properties.Port
+    - expr: 'data:properties:[''ReportId'']::STRING'
+      name: properties.ReportId
+    - expr: 'data:properties:[''ISP'']::STRING'
+      name: properties.ISP
+    - expr: 'data:properties:[''TargetDeviceName'']::STRING'
+      name: properties.TargetDeviceName
+    - expr: 'data:properties:[''IPAddress'']::STRING'
+      name: properties.IPAddress
+    - expr: 'data:properties:[''AccountName'']::STRING'
+      name: properties.AccountName
+    - expr: 'data:properties:[''LogonType'']::STRING'
+      name: properties.LogonType
+    - expr: 'data:properties:[''Application'']::STRING'
+      name: properties.Application
+    - expr: 'data:properties:[''AccountSid'']::STRING'
+      name: properties.AccountSid
+    - expr: 'data:properties:[''Timestamp'']::STRING'
+      name: properties.Timestamp
+    - expr: 'data:properties:[''Protocol'']::STRING'
+      name: properties.Protocol
+    - expr: 'data:properties:[''AccountUpn'']::STRING'
+      name: properties.AccountUpn
+    - expr: 'data:properties:[''ActionType'']::STRING'
+      name: properties.ActionType
+    - expr: 'data:properties:[''TargetAccountDisplayName'']::STRING'
+      name: properties.TargetAccountDisplayName
+    - expr: 'data:properties:[''Location'']::STRING'
+      name: properties.Location
+    - expr: 'data:properties:[''AccountDomain'']::STRING'
+      name: properties.AccountDomain
+    - expr: 'data:properties:[''DestinationIPAddress'']::STRING'
+      name: properties.DestinationIPAddress
+

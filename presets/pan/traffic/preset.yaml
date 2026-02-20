@@ -1,0 +1,540 @@
+author: Antimatter
+iconURL: "https://dasl-icons.s3.us-east-1.amazonaws.com/pan/traffic/icon.png"
+name: pan_traffic
+description: Palo Alto Networks Traffic Logs
+title: Palo Alto Networks - Traffic Logs
+autoloader:
+  format: json
+bronze:
+  loadAsSingleVariant: true
+  preTransform: [
+    [
+      "data", 
+      "CAST(data:_time AS FLOAT)::TIMESTAMP AS time", 
+      "CAST('pan' AS STRING) AS source", 
+      "CAST('traffic' AS STRING) AS sourcetype"
+    ]
+  ]
+
+silver:
+  transform:
+  - name: pan_traffic_network_activity
+    filter: CAST(data:subtype AS STRING) IN ('drop','end','start','deny')
+    fields:
+    - expr: 'data:action::STRING'
+      name: action
+    - expr: 'data:log_setting::STRING'
+      name: log_setting
+    - expr: 'data:virtual_system_name::STRING'
+      name: virtual_system_name
+    - expr: 'data:facility::INT'
+      name: facility
+    - expr: 'data:is_url_denied::BOOLEAN'
+      name: is_url_denied
+    - expr: 'data:nat_destination_port::INT'
+      name: nat_destination_port
+    - expr: 'data:virtual_location::STRING'
+      name: virtual_location
+    - expr: 'data:device_name::STRING'
+      name: device_name
+    - expr: 'data:action_source::STRING'
+      name: action_source
+    - expr: 'data:sanctioned_state_of_app::BOOLEAN'
+      name: sanctioned_state_of_app
+    - expr: 'data:destination_edl::STRING'
+      name: destination_edl
+    - expr: 'data:from_zone::STRING'
+      name: from_zone
+    - expr: 'data:packets_total::BIGINT'
+      name: packets_total
+    - expr: 'data:dg_hierarchy_level_2::INT'
+      name: dg_hierarchy_level_2
+    - expr: 'data:dg_hierarchy_level_4::INT'
+      name: dg_hierarchy_level_4
+    - expr: 'data:nat_source_port::INT'
+      name: nat_source_port
+    - expr: 'data:packets_received::BIGINT'
+      name: packets_received
+    - expr: 'data:nat_source::STRING'
+      name: nat_source
+    - expr: 'data:dg_hierarchy_level_3::INT'
+      name: dg_hierarchy_level_3
+    - expr: 'data:outbound_interface_details_slot::INT'
+      name: outbound_interface_details_slot
+    - expr: 'data:source_location::STRING'
+      name: source_location
+    - expr: 'data:application_risk::INT'
+      name: application_risk
+    - expr: 'data:virtual_system_id::INT'
+      name: virtual_system_id
+    - expr: 'data:session_start_time::STRING'
+      name: session_start_time
+    - expr: 'data:inbound_interface_details_port::INT'
+      name: inbound_interface_details_port
+    - expr: 'data:source_port::INT'
+      name: source_port
+    - expr: 'data:is_prisma_users::BOOLEAN'
+      name: is_prisma_users
+    - expr: 'data:to_zone::STRING'
+      name: to_zone
+    - expr: 'data:inbound_interface_details_slot::INT'
+      name: inbound_interface_details_slot
+    - expr: 'data:url_category::STRING'
+      name: url_category
+    - expr: 'data:session_id::BIGINT'
+      name: session_id
+    - expr: 'data:time_received::STRING'
+      name: time_received
+    - expr: 'data:nat::BOOLEAN'
+      name: nat
+    - expr: 'data:nat_destination::STRING'
+      name: nat_destination
+    - expr: 'data:subtype::STRING'
+      name: subtype
+    - expr: 'data:sequence_no::BIGINT'
+      name: sequence_no
+    - expr: 'data:time_generated_high_resolution::STRING'
+      name: time_generated_high_resolution
+    - expr: 'data:appname::STRING'
+      name: appname
+    - expr: 'data:bytes::LONG'
+      name: bytes
+    - expr: 'data:inbound_interface_details_type::STRING'
+      name: inbound_interface_details_type
+    - expr: 'data:protocol::STRING'
+      name: protocol
+    - expr: 'data:source_address::STRING'
+      name: source_address
+    - expr: 'data:outbound_interface_details_port::INT'
+      name: outbound_interface_details_port
+    - expr: 'data:log_type::STRING'
+      name: log_type
+    - expr: 'data:application_subcategory::STRING'
+      name: application_subcategory
+    - expr: 'data:device_sn::STRING'
+      name: device_sn
+    - expr: 'data:captive_portal::BOOLEAN'
+      name: captive_portal
+    - expr: 'data:panorama_sn::STRING'
+      name: panorama_sn
+    - expr: 'data:time_generated::STRING'
+      name: time_generated
+    - expr: 'data:facilityName::STRING'
+      name: facilityName
+    - expr: 'data:is_client_to_server::BOOLEAN'
+      name: is_client_to_server
+    - expr: 'data:non_standard_destination_port::INT'
+      name: non_standard_destination_port
+    - expr: 'data:packets_sent::BIGINT'
+      name: packets_sent
+    - expr: 'data:is_prisma_network::BOOLEAN'
+      name: is_prisma_network
+    - expr: 'data:repeat_count::INT'
+      name: repeat_count
+    - expr: 'data:is_container::BOOLEAN'
+      name: is_container
+    - expr: 'data:severityName::STRING'
+      name: severityName
+    - expr: 'data:destination_address::STRING'
+      name: destination_address
+    - expr: 'data:procid::STRING'
+      name: procid
+    - expr: 'data:application_technology::STRING'
+      name: application_technology
+    - expr: 'data:session_duration::BIGINT'
+      name: session_duration
+    - from: time
+      name: time
+    - expr: 'data:application::STRING'
+      name: application
+    - expr: 'data:is_saas_application::BOOLEAN'
+      name: is_saas_application
+    - expr: 'data:destination_port::INT'
+      name: destination_port
+    - expr: 'data:application_container::STRING'
+      name: application_container
+    - expr: 'data:dg_hierarchy_level_1::INT'
+      name: dg_hierarchy_level_1
+    - expr: 'data:msgid::STRING'
+      name: msgid
+    - expr: 'data:rule_uuid::STRING'
+      name: rule_uuid
+    - expr: 'data:is_server_to_client::BOOLEAN'
+      name: is_server_to_client
+    - expr: 'data:bytes_sent::BIGINT'
+      name: bytes_sent
+    - expr: 'data:cribl_pipe::STRING'
+      name: cribl_pipe
+    - expr: 'data:host::STRING'
+      name: host
+    - expr: 'data:outbound_interface_details_type::STRING'
+      name: outbound_interface_details_type
+    - expr: 'data:config_version::STRING'
+      name: config_version
+    - expr: 'data:session_end_reason::STRING'
+      name: session_end_reason
+    - expr: 'data:message::STRING'
+      name: message
+    - expr: 'data:http2_connection::BIGINT'
+      name: http2_connection
+    - expr: 'data:destination_location::STRING'
+      name: destination_location
+    - expr: 'data:rule::STRING'
+      name: rule
+    - expr: 'data:is_decrypted::BOOLEAN'
+      name: is_decrypted
+    - expr: 'data:application_category::STRING'
+      name: application_category
+    - expr: 'data:is_phishing::BOOLEAN'
+      name: is_phishing
+    - expr: 'data:inbound_interface::STRING'
+      name: inbound_interface
+    - expr: 'data:outbound_interface::STRING'
+      name: outbound_interface
+    - expr: 'data:bytes_received::BIGINT'
+      name: bytes_received
+    - expr: 'data:severity::INT'
+      name: severity
+    - expr: 'data:is_proxy::BOOLEAN'
+      name: is_proxy
+    - from: data
+      name: raw_data
+
+gold:
+- input: pan_traffic_network_activity
+  name: network_activity
+  fields:
+  - expr: >
+        CASE
+          WHEN subtype::string IN ('drop', 'end', 'start', 'deny') THEN
+            CASE
+              WHEN LOWER(`action`::STRING) IN ('allow', 'allowed', 'permit') THEN 'Allowed'
+              WHEN LOWER(`action`::STRING) IN ('deny', 'drop', 'blocked', 'reject') THEN 'Denied'
+              WHEN subtype::string = 'drop' AND LOWER(`action`::STRING) IN ('observe', 'observed', 'log', 'logged') THEN 'Observed'
+              WHEN subtype::string = 'drop' AND LOWER(`action`::STRING) IN ('modified', 'altered', 'changed') THEN 'Modified'
+              ELSE `action`::STRING
+            END
+          ELSE NULL
+        END
+    name: action
+  - expr: >
+        CASE
+          WHEN subtype::string IN ('drop', 'end', 'start', 'deny') THEN
+            CASE
+              WHEN LOWER(`action`::STRING) IN ('allow', 'allowed', 'permit') THEN 1
+              WHEN LOWER(`action`::STRING) IN ('deny', 'drop', 'blocked', 'reject') THEN 2
+              WHEN subtype::string = 'drop' AND LOWER(`action`::STRING) IN ('observe', 'observed', 'log', 'logged') THEN 3
+              WHEN subtype::string = 'drop' AND LOWER(`action`::STRING) IN ('modified', 'altered', 'changed') THEN 4
+              ELSE 99
+            END
+          ELSE NULL
+        END
+    name: action_id
+  - expr: >
+      CASE 
+        WHEN subtype::string IN ('drop','end', 'deny') THEN 'Traffic'
+        WHEN subtype::string IN ('start') THEN 
+        CASE
+         WHEN `subtype`::STRING = 'start' THEN 'Open' 
+         WHEN `subtype`::STRING = 'end' THEN 'Close' 
+         ELSE 'Traffic' END ELSE NULL
+      END
+    name: activity_name
+  - expr: CASE WHEN subtype::string IN ('drop','end', 'start','deny') THEN 'network'ELSE NULL END
+    name: category_name
+  - expr: CASE WHEN subtype::string IN ('drop','end', 'start','deny') THEN 4 ELSE NULL END
+    name: category_uid
+  - expr: CASE WHEN subtype::string IN ('drop','end', 'start','deny') THEN 'network_activity' ELSE NULL END
+    name: class_name
+
+  - expr: >
+      CASE
+        WHEN subtype::string IN ('drop') THEN CASE WHEN `subtype`::STRING = 'drop' THEN 'Dropped' 
+        WHEN `subtype`::STRING = 'reset' THEN 'Reset' WHEN `action`::STRING = 'allow' THEN 'Allowed' 
+        ELSE COALESCE(`subtype`::STRING, `action`::STRING) END 
+        WHEN subtype::string IN ('end','start') THEN CASE WHEN `action`::STRING = 'allow' THEN 'Allowed' WHEN `action`::STRING = 'deny' THEN 'Blocked' ELSE `action`::STRING END 
+        WHEN subtype::string IN ('deny') THEN CASE WHEN LOWER(`action`::STRING) = 'reset-both' THEN 'Reset' 
+        WHEN LOWER(`action`::STRING) = 'deny' THEN 'Blocked' ELSE `action`::STRING
+        END 
+        ELSE NULL 
+      END
+    name: disposition
+  - expr: >
+      CASE
+        WHEN subtype::string IN ('drop') THEN CASE WHEN `subtype`::STRING = 'drop' THEN 6 WHEN `subtype`::STRING = 'reset' THEN 21 WHEN `action`::STRING = 'allow' THEN 1 ELSE 99 END 
+        WHEN subtype::string IN ('end')  THEN CASE WHEN `action`::STRING = 'allow' THEN 1 WHEN `action`::STRING = 'deny' THEN 2 ELSE 99 END
+        WHEN subtype::string IN ('start') THEN CASE WHEN `action`::STRING = 'allow' THEN 1 WHEN `action`::STRING = 'deny' THEN 2 ELSE 0 END WHEN subtype::string IN ('deny') THEN 
+        CASE WHEN LOWER(`action`::STRING) = 'reset-both' THEN 21 WHEN LOWER(`action`::STRING) = 'deny' THEN 2 ELSE 99 END ELSE NULL 
+      END
+    name: disposition_id
+
+  - expr: '`message`::STRING'
+    name: message
+  
+  - literal: "1.4.0"
+    name: metadata.log_version
+
+  - expr: TO_TIMESTAMP(`time_received`::STRING, "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'")
+    name: metadata.logged_time
+
+  - expr: TO_TIMESTAMP(`time_received`::STRING, "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'")
+    name: metadata.modified_time
+
+  - expr: '`time_generated`::STRING'
+    name: metadata.original_time
+
+  - expr: current_timestamp()
+    name: metadata.processed_time
+
+  - literal: "Palo Alto Networks Firewall"
+    name: metadata.product.name
+  - literal: "Palo Alto Networks"
+    name: metadata.product.vendor_name
+  - expr: '`config_version`::STRING'
+    name: metadata.product.version
+
+  - expr: CAST(parse_json('[]') AS VARIANT)
+    name: metadata.tags
+
+  - expr: CAST(NULL AS STRING)
+    name: metadata.tenant_uid
+
+  - from: raw_data
+    name: raw_data
+  - expr: >
+      CASE
+        WHEN subtype::string IN ('drop', 'end', 'deny', 'start') THEN
+          CASE
+            WHEN LOWER(`severityName`::STRING) IN ('debug', 'info') THEN 'Informational'
+            WHEN LOWER(`severityName`::STRING) = 'notice' THEN 'Low'
+            WHEN LOWER(`severityName`::STRING) = 'warning' THEN 'Medium'
+            WHEN LOWER(`severityName`::STRING) IN ('err', 'error') THEN 'High'
+            WHEN LOWER(`severityName`::STRING) IN ('crit', 'critical', 'alert') THEN 'Critical'
+            WHEN LOWER(`severityName`::STRING) IN ('emerg', 'emergency') THEN 'Fatal'
+            WHEN subtype::string = 'start' THEN 'Unknown'
+            ELSE `severityName`::STRING
+          END
+        ELSE NULL
+      END
+    name: severity
+  - expr: >
+      CASE
+        WHEN LOWER(`severityName`::STRING) IN ('debug', 'info') THEN 1
+        WHEN LOWER(`severityName`::STRING) = 'notice' THEN 2
+        WHEN LOWER(`severityName`::STRING) = 'warning' THEN 3
+        WHEN LOWER(`severityName`::STRING) IN ('err', 'error') THEN 4
+        WHEN LOWER(`severityName`::STRING) IN ('crit', 'critical', 'alert') THEN 5
+        WHEN LOWER(`severityName`::STRING) IN ('emerg', 'emergency') THEN 6
+
+        WHEN subtype::string = 'end' AND LOWER(`severityName`::STRING) = 'low' THEN 2
+        WHEN subtype::string = 'end' AND LOWER(`severityName`::STRING) = 'medium' THEN 3
+        WHEN subtype::string = 'end' AND LOWER(`severityName`::STRING) = 'high' THEN 4
+        WHEN subtype::string = 'end' AND LOWER(`severityName`::STRING) = 'fatal' THEN 6
+
+        WHEN subtype::string = 'start' AND LOWER(`severityName`::STRING) = 'error' THEN 4
+        WHEN subtype::string = 'start' AND LOWER(`severityName`::STRING) IN ('critical', 'crit') THEN 5
+        WHEN subtype::string = 'start' AND LOWER(`severityName`::STRING) IN ('alert', 'emerg', 'emergency') THEN 6
+        WHEN subtype::string = 'start' THEN 0
+
+        WHEN subtype::string = 'deny' AND LOWER(`severityName`::STRING) = 'debug' THEN 0
+        ELSE 99
+      END
+
+    name: severity_id
+  - expr: >
+      CASE 
+        WHEN subtype::string IN ('drop','end','start') THEN 
+        CASE WHEN `action`::STRING = 'allow' THEN 'Success' WHEN `action`::STRING = 'deny' THEN 'Failure' 
+        ELSE `action`::STRING END WHEN subtype::string IN ('deny') THEN 'Failure'
+      END
+    name: status
+  - expr: CASE WHEN subtype::string IN ('deny') THEN `session_end_reason`::STRING ELSE NULL END
+    name: status_code
+  - expr: CASE WHEN subtype::string IN ('drop','end', 'start','deny') THEN `session_end_reason`::STRING ELSE NULL END
+    name: status_detail
+  - expr: >
+      CASE 
+        WHEN subtype::string IN ('drop','end', 'start') THEN CASE 
+          WHEN `action`::STRING = 'allow' THEN 1 
+          WHEN `action`::STRING = 'deny' THEN 2 ELSE 99 
+          END 
+        WHEN subtype::string IN ('deny') THEN 2 ELSE NULL 
+      END
+    name: status_id
+  - expr: to_timestamp(`time_generated`, "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'")
+    name: time
+  - expr: CAST('0' AS INT) 
+    name: timezone_offset
+  - expr: >
+      CASE 
+        WHEN subtype::string = 'start' THEN 'Open'
+        WHEN subtype::string = 'end' THEN 'Close'
+        WHEN subtype::string IN ('drop', 'deny') THEN 'Traffic'
+        ELSE 'Unknown'
+      END
+    name: activity
+  - expr: >
+      CASE 
+        WHEN subtype::string = 'start' THEN 1
+        WHEN subtype::string = 'end' THEN 2
+        WHEN subtype::string IN ('drop', 'deny') THEN 6
+        ELSE 0
+      END
+    name: activity_id
+  - expr: CASE WHEN subtype::string IN ('drop','end', 'start','deny') THEN 4001 ELSE NULL END
+    name: class_uid
+  # --- connection_info struct ---
+  - expr: >
+      CASE
+        WHEN source_address RLIKE '^10\\\\.'
+          OR source_address RLIKE '^192\\\\.168\\\\.'
+          OR source_address RLIKE '^172\\\\.(1[6-9]|2[0-9]|3[0-1])\\\\.'
+        THEN
+          CASE
+            WHEN destination_address RLIKE '^10\\\\.'
+              OR destination_address RLIKE '^192\\\\.168\\\\.'
+              OR destination_address RLIKE '^172\\\\.(1[6-9]|2[0-9]|3[0-1])\\\\.'
+            THEN 'Lateral'
+            ELSE 'Outbound'
+          END
+        WHEN destination_address RLIKE '^10\\\\.'
+          OR destination_address RLIKE '^192\\\\.168\\\\.'
+          OR destination_address RLIKE '^172\\\\.(1[6-9]|2[0-9]|3[0-1])\\\\.'
+        THEN 'Inbound'
+        ELSE 'Unknown'
+      END
+    name: connection_info.direction
+
+  - expr: >
+      CASE
+        WHEN source_address RLIKE '^10\\\\.' 
+          OR source_address RLIKE '^192\\\\.168\\\\.' 
+          OR source_address RLIKE '^172\\\\.(1[6-9]|2[0-9]|3[0-1])\\\\.'
+        THEN
+          CASE
+            WHEN destination_address RLIKE '^10\\\\.' 
+              OR destination_address RLIKE '^192\\\\.168\\\\.' 
+              OR destination_address RLIKE '^172\\\\.(1[6-9]|2[0-9]|3[0-1])\\\\.'
+            THEN 3
+            ELSE 2
+          END
+        ELSE 1
+      END
+    name: connection_info.direction_id
+
+  # NEW: required by DDL, placeholder since no source
+  - expr: CAST(NULL AS STRING)
+    name: connection_info.flag_history
+
+  - expr: CASE WHEN subtype::string IN ('drop','end', 'start','deny') THEN lower(`protocol`::STRING) ELSE NULL END
+    name: connection_info.protocol_name
+
+  - expr: >
+      CASE 
+        WHEN subtype::string IN ('drop','end', 'start') THEN CASE LOWER(`protocol`::STRING) 
+          WHEN 'tcp' THEN 6 
+          WHEN 'udp' THEN 17 
+          ELSE NULL 
+        END 
+        WHEN subtype::string IN ('deny') THEN CASE LOWER(`protocol`::STRING)
+          WHEN 'tcp' THEN 6 
+          WHEN 'udp' THEN 17 
+          WHEN 'icmp' THEN 1 
+          WHEN 'icmpv6' THEN 58 
+          ELSE NULL 
+        END 
+        ELSE NULL
+      END
+    name: connection_info.protocol_num
+
+  - expr: >
+      CASE 
+        WHEN subtype::string IN ('drop') THEN 
+          CASE 
+            WHEN `destination_address`::STRING RLIKE ':' THEN 'IPv6' 
+            WHEN `destination_address`::STRING RLIKE '\\\\.' THEN 'IPv4' 
+            ELSE 'Unknown' 
+          END 
+        WHEN subtype::string IN ('end') THEN 'IPv4' 
+        WHEN subtype::string IN ('start','deny') THEN CAST(NULL AS STRING) 
+        ELSE NULL 
+      END
+    name: connection_info.protocol_ver
+
+  - expr: >
+      CASE 
+        WHEN subtype::string IN ('drop') THEN 
+          CASE 
+            WHEN `destination_address`::STRING RLIKE ':' THEN 6 
+            WHEN `destination_address`::STRING RLIKE '\\\\.' THEN 4 
+            ELSE 0 
+          END 
+        WHEN subtype::string IN ('end') THEN 99 
+        WHEN subtype::string IN ('start','deny') THEN 0 
+        ELSE NULL 
+      END
+    name: connection_info.protocol_ver_id
+
+  - expr: '`session_id`::BIGINT::string'
+    name: connection_info.uid
+
+  - expr: CASE WHEN subtype::string IN ('drop') THEN `inbound_interface`::STRING WHEN subtype::string IN ('start','deny') THEN `outbound_interface`::STRING ELSE NULL END
+    name: dst_endpoint.interface_name
+  - expr: CASE WHEN subtype::string IN ('drop') THEN `inbound_interface`::STRING ELSE NULL END
+    name: dst_endpoint.interface_uid
+  - expr: '`destination_address`::STRING'
+    name: dst_endpoint.ip
+  - expr: >
+      CASE WHEN subtype::string IN ('drop','end') THEN CASE WHEN `destination_location`::STRING RLIKE '^[A-Za-z]{2}$' THEN UPPER(`destination_location`::STRING) ELSE NULL END 
+        WHEN subtype::string IN ('deny') THEN NULLIF(UPPER(`destination_location`::STRING), '') ELSE NULL
+      END
+    name: dst_endpoint.location.country
+  - expr: CASE WHEN subtype::string IN ('drop','end', 'start','deny') THEN `inbound_interface`::STRING ELSE NULL END
+    name: src_endpoint.interface_name
+  - expr: CASE WHEN subtype::string IN ('end','deny') THEN `inbound_interface`::STRING::string ELSE NULL END
+    name: src_endpoint.interface_uid
+  - expr: '`source_address`::STRING'
+    name: src_endpoint.ip
+  - expr: >
+      CASE 
+        WHEN subtype::string IN ('drop') THEN UPPER(NULLIF(`source_location`::STRING, '')) 
+        WHEN subtype::string IN ('end')  THEN CASE
+        WHEN `source_location`::STRING RLIKE '^[A-Za-z]{2}$' THEN UPPER(NULLIF(`source_location`::STRING, '')) 
+        ELSE NULL END WHEN subtype::string IN ('deny') THEN CASE WHEN `source_location`::STRING RLIKE '^[A-Z]{2}$' THEN UPPER(NULLIF(`source_location`::STRING, '')) ELSE NULL END ELSE NULL
+      END
+    name: src_endpoint.location.country
+  - expr: '`source_port`::INT'
+    name: src_endpoint.port
+  - from: log_type
+    name: src_endpoint.svc_name
+  - literal: "Unknown"
+    name: src_endpoint.type
+  - expr: CAST("0" AS INT)
+    name: src_endpoint.type_id
+  - expr: NULLIF(`from_zone`::STRING, '')
+    name: src_endpoint.zone
+  - expr: '`bytes_received`::BIGINT'
+    name: traffic.bytes_in
+  - expr: '`bytes_sent`::BIGINT'
+    name: traffic.bytes_out
+  - expr: '`bytes`::LONG' 
+    name: traffic.bytes
+  - expr: '`packets_received`::BIGINT'
+    name: traffic.packets_in
+  - expr: '`packets_sent`::BIGINT'
+    name: traffic.packets_out
+  - expr: CAST(`packets_total`::BIGINT AS BIGINT)
+    name: traffic.packets
+  - expr: >
+      CAST(
+      CASE
+        WHEN subtype::string IN ('drop', 'end', 'deny') THEN 400106
+        WHEN subtype::string = 'start' THEN 400100 + 
+          CASE 
+            WHEN subtype::string = 'start' THEN 1 
+            WHEN subtype::string = 'end' THEN 2 
+            ELSE 6 
+          END
+        ELSE NULL
+      END AS BIGINT)
+    name: type_uid

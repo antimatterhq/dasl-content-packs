@@ -1,0 +1,1661 @@
+author: Antimatter
+title: AWS - CloudTrail
+iconURL: "https://dasl-icons.s3.us-east-1.amazonaws.com/aws/cloudtrail/icon.png"
+name: aws_cloudtrail
+description: AWS CloudTrail Logs
+autoloader:
+  cloudFiles:
+    schemaHints: >
+      Records ARRAY<VARIANT>
+  format: json
+
+bronze:
+  preTransform:
+    - ["explode(Records) as data"]
+    - ["data", "CAST(data:eventTime AS TIMESTAMP) AS time", "CAST('aws' AS STRING) AS source", "CAST('cloudtrail' AS STRING) AS sourcetype"]
+
+silver:
+  transform:
+    - fields:
+        - expr: '`data`:[''vpcEndpointAccountId'']::STRING'
+          name: vpcEndpointAccountId
+        - expr: '`data`:[''vpcEndpointId'']::STRING'
+          name: vpcEndpointId
+        - expr: '`data`:[''additionalEventData'']::VARIANT'
+          name: additionalEventData
+        - expr: '`data`:[''eventType'']::STRING'
+          name: eventType
+        - expr: '`data`:[''eventTime'']::STRING'
+          name: eventTime
+        - expr: '`data`:[''eventTime'']::STRING'
+          name: time
+        - expr: '`data`:[''sourceIPAddress'']::STRING'
+          name: sourceIPAddress
+        - expr: '`data`:[''sharedEventID'']::STRING'
+          name: sharedEventID
+        - expr: '`data`:[''requestParameters'']::VARIANT'
+          name: requestParameters
+        - expr: '`data`:[''eventVersion'']::STRING'
+          name: eventVersion
+        - expr: '`data`:[''readOnly'']::BOOLEAN'
+          name: readOnly
+        - expr: '`data`:[''requestID'']::STRING'
+          name: requestID
+        - expr: '`data`:[''tlsDetails'']:[''clientProvidedHostHeader'']::STRING'
+          name: tlsDetails.clientProvidedHostHeader
+        - expr: '`data`:[''tlsDetails'']:[''cipherSuite'']::STRING'
+          name: tlsDetails.cipherSuite
+        - expr: '`data`:[''tlsDetails'']:[''tlsVersion'']::STRING'
+          name: tlsDetails.tlsVersion
+        - expr: '`data`:[''eventSource'']::STRING'
+          name: eventSource
+        - expr: '`data`:[''awsRegion'']::STRING'
+          name: awsRegion
+        - expr: '`data`:[''recipientAccountId'']::STRING'
+          name: recipientAccountId
+        - expr: '`data`:[''errorMessage'']::STRING'
+          name: errorMessage
+        - expr: '`data`:[''userIdentity'']:[''invokedBy'']::STRING'
+          name: userIdentity.invokedBy
+        - expr: '`data`:[''userIdentity'']:[''accessKeyId'']::STRING'
+          name: userIdentity.accessKeyId
+        - expr: '`data`:[''userIdentity'']:[''type'']::STRING'
+          name: userIdentity.type
+        - expr: '`data`:[''userIdentity'']:[''arn'']::STRING'
+          name: userIdentity.arn
+        - expr: '`data`:[''userIdentity'']:[''principalId'']::STRING'
+          name: userIdentity.principalId
+        - expr: '`data`:[''userIdentity'']:[''accountId'']::STRING'
+          name: userIdentity.accountId
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''webIdFederationData'']::VARIANT'
+          name: userIdentity.sessionContext.webIdFederationData
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''attributes'']:[''mfaAuthenticated'']::BOOLEAN'
+          name: userIdentity.sessionContext.attributes.mfaAuthenticated
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''attributes'']:[''creationDate'']::STRING'
+          name: userIdentity.sessionContext.attributes.creationDate
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''sessionIssuer'']:[''userName'']::STRING'
+          name: userIdentity.sessionContext.sessionIssuer.userName
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''sessionIssuer'']:[''type'']::STRING'
+          name: userIdentity.sessionContext.sessionIssuer.type
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''sessionIssuer'']:[''arn'']::STRING'
+          name: userIdentity.sessionContext.sessionIssuer.arn
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''sessionIssuer'']:[''principalId'']::STRING'
+          name: userIdentity.sessionContext.sessionIssuer.principalId
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''sessionIssuer'']:[''accountId'']::STRING'
+          name: userIdentity.sessionContext.sessionIssuer.accountId
+        - expr: '`data`:[''errorCode'']::STRING'
+          name: errorCode
+        - expr: '`data`:[''apiVersion'']::STRING'
+          name: apiVersion
+        - expr: '`data`:[''userAgent'']::STRING'
+          name: userAgent
+        - expr: '`data`:[''managementEvent'']::BOOLEAN'
+          name: managementEvent
+        - expr: '`data`:[''eventName'']::STRING'
+          name: eventName
+        - expr: '`data`:[''eventID'']::STRING'
+          name: eventID
+        - expr: '`data`:[''eventCategory'']::STRING'
+          name: eventCategory
+        - expr: '`data`:[''userIdentity'']:[''userName'']::STRING'
+          name: userIdentity.userName
+      filter: >
+        data:eventName::string IN (
+          'GetObject','PutObject','DeleteObject','CopyObject','RestoreObject',
+          'ListObjects','ListObjectsV2','SelectObjectContent',
+          'GetItem','BatchGetItem','Query','Scan','PutItem','UpdateItem','DeleteItem',
+          'BatchWriteItem','ExecuteStatement','BatchExecuteStatement','ExecuteSql',
+          'ESHttpGet','ESHttpPost','ESHttpPut','ESHttpDelete','ESHttpHead',
+          'StartQueryExecution','GetQueryResults',
+          'ReceiveMessage','SendMessage',
+          'PutRecord','GetRecords','PutRecords',
+          'StartJobRun','GetJobRun','GetTableObjects','GetWorkUnits','GetWorkUnitResults'
+        )
+        AND data:eventSource::string IN (
+          's3.amazonaws.com','dynamodb.amazonaws.com',
+          'redshift-data.amazonaws.com','rds-data.amazonaws.com',
+          'es.amazonaws.com','opensearchservice.amazonaws.com','aoss.amazonaws.com',
+          'athena.amazonaws.com','kinesis.amazonaws.com',
+          'sqs.amazonaws.com','glue.amazonaws.com','lakeformation.amazonaws.com'
+        )
+      name: aws_cloudtrail_datastore_activity
+    - fields:
+        - expr: '`data`:[''responseElements'']::VARIANT'
+          name: responseElements
+        - expr: '`data`:[''vpcEndpointId'']::STRING'
+          name: vpcEndpointId
+        - expr: '`data`:[''eventType'']::STRING'
+          name: eventType
+        - expr: '`data`:[''additionalEventData'']::VARIANT'
+          name: additionalEventData
+        - expr: '`data`:[''eventTime'']::STRING'
+          name: eventTime
+        - expr: '`data`:[''eventTime'']::STRING'
+          name: time
+        - expr: '`data`:[''sourceIPAddress'']::STRING'
+          name: sourceIPAddress
+        - expr: '`data`:[''sharedEventID'']::STRING'
+          name: sharedEventID
+        - expr: '`data`:[''requestParameters'']::VARIANT'
+          name: requestParameters
+        - expr: '`data`:[''eventVersion'']::STRING'
+          name: eventVersion
+        - expr: '`data`:[''readOnly'']::BOOLEAN'
+          name: readOnly
+        - expr: '`data`:[''requestID'']::STRING'
+          name: requestID
+        - expr: '`data`:[''tlsDetails'']:[''clientProvidedHostHeader'']::STRING'
+          name: tlsDetails.clientProvidedHostHeader
+        - expr: '`data`:[''tlsDetails'']:[''cipherSuite'']::STRING'
+          name: tlsDetails.cipherSuite
+        - expr: '`data`:[''tlsDetails'']:[''tlsVersion'']::STRING'
+          name: tlsDetails.tlsVersion
+        - expr: '`data`:[''eventSource'']::STRING'
+          name: eventSource
+        - expr: '`data`:[''awsRegion'']::STRING'
+          name: awsRegion
+        - expr: '`data`:[''recipientAccountId'']::STRING'
+          name: recipientAccountId
+        - expr: '`data`:[''errorMessage'']::STRING'
+          name: errorMessage
+        - expr: '`data`:[''userIdentity'']:[''invokedBy'']::STRING'
+          name: userIdentity.invokedBy
+        - expr: '`data`:[''userIdentity'']:[''accessKeyId'']::STRING'
+          name: userIdentity.accessKeyId
+        - expr: '`data`:[''userIdentity'']:[''type'']::STRING'
+          name: userIdentity.type
+        - expr: '`data`:[''userIdentity'']:[''arn'']::STRING'
+          name: userIdentity.arn
+        - expr: '`data`:[''userIdentity'']:[''principalId'']::STRING'
+          name: userIdentity.principalId
+        - expr: '`data`:[''userIdentity'']:[''accountId'']::STRING'
+          name: userIdentity.accountId
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''ec2RoleDelivery'']::STRING'
+          name: userIdentity.sessionContext.ec2RoleDelivery
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''webIdFederationData'']::VARIANT'
+          name: userIdentity.sessionContext.webIdFederationData
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''attributes'']:[''mfaAuthenticated'']::BOOLEAN'
+          name: userIdentity.sessionContext.attributes.mfaAuthenticated
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''attributes'']:[''creationDate'']::STRING'
+          name: userIdentity.sessionContext.attributes.creationDate
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''sessionIssuer'']:[''userName'']::STRING'
+          name: userIdentity.sessionContext.sessionIssuer.userName
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''sessionIssuer'']:[''type'']::STRING'
+          name: userIdentity.sessionContext.sessionIssuer.type
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''sessionIssuer'']:[''arn'']::STRING'
+          name: userIdentity.sessionContext.sessionIssuer.arn
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''sessionIssuer'']:[''principalId'']::STRING'
+          name: userIdentity.sessionContext.sessionIssuer.principalId
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''sessionIssuer'']:[''accountId'']::STRING'
+          name: userIdentity.sessionContext.sessionIssuer.accountId
+        - expr: '`data`:[''errorCode'']::STRING'
+          name: errorCode
+        - expr: '`data`:[''apiVersion'']::STRING'
+          name: apiVersion
+        - expr: '`data`:[''userAgent'']::STRING'
+          name: userAgent
+        - expr: '`data`:[''managementEvent'']::BOOLEAN'
+          name: managementEvent
+        - expr: '`data`:[''eventName'']::STRING'
+          name: eventName
+        - expr: '`data`:[''eventID'']::STRING'
+          name: eventID
+        - expr: '`data`:[''eventCategory'']::STRING'
+          name: eventCategory
+        - expr: '`data`:[''userIdentity'']:[''userName'']::STRING'
+          name: userIdentity.userName
+      filter: data:eventName::string IN ('DescribeTrustStores','ListGroups','ListDomains','DescribeCanaries','DescribeVpnConnections','ListFirewalls','GetApplication','DescribeVpcBlockPublicAccessOptions','DescribeVpcEndpoints','ListCertificateProviders','ListQueryLoggingConfigs','ListGroupsForUser','DescribeNetworkInterfaces','ListConnections','CreateServiceLinkedChannel','DescribeClusterSubnetGroups','DescribeVpnGateways','ListApplications','ListGroupPolicies','ListServerCertificates','ListIdentityProviders','DescribeTransitGatewayRouteTableAnnouncements','DescribeEnvironments','GetKeyRotationStatus','GetIPSet','DescribeKey','ListCoverage','DescribeFileSystems','GetDistribution','ListLayers20181031','DescribeRules','GetMalwareProtectionPlan','ListFilters','ListEndpoints','GetDomainNames','GetGuardrail','ListThingTypes','ListBillingGroups','DescribeManagedPrefixLists','ListRules','ListGraphqlApis','DescribeVolumes','GetAllowedImagesSettings','DescribeCertificateProvider','ListComplianceItems','ListNodegroups','DescribeStacks','ListReplays','ListInstanceProfiles','DescribeAlarms','ListBrokers','BatchGetProjects','ListAttachedUserPolicies','ListVpcConnections','ListAuthorizers','GetLoadBalancers','DescribeApplications','ListStacks','ListDomainNames','GenerateCredentialReport','DescribeDirectConnectGatewayAssociations','DescribeWorkspaces','ListThingGroups','DescribeSecret','ListServices','DescribeWorkspaceBundles','ListJobTemplates','DescribeOrganization','ListHostedZones','GetDiskSnapshots','ListContainerInstances','GetPolicy','DescribeWorkspacesPools','DescribeAddresses','DescribeDhcpOptions','CreateFleet','ListAssociatedAccessPolicies','DescribeReplicationInstances','DescribeThingGroup','DescribeInstanceConnectEndpoints','ListFlowAliases','GetIntegrations','DescribeVerifiedAccessEndpoints','DescribeLocalGatewayRouteTables','DescribeDocumentPermission','BatchGetDeploymentGroups','DescribeThingType','DescribeVpcEndpointServices','DescribeInstanceTypes','DescribeInstanceInformation','GetFlowAlias','DescribeUser','GetSendQuota','GetCredentialReport','DescribeReplicationGroups','DescribeSubscription','ListIPSets','ListIdentities','DescribeVpcBlockPublicAccessExclusions','DescribeDimension','DescribeRegions','DescribeTargetGroups','ListPublishingDestinations','ListTasks','DescribeInstanceStatus','ListCustomModels','DescribeDomainConfiguration','DescribeRouteTables','DescribeAutoScalingGroups','DescribeIpamScopes','AssumeRoleForPodIdentity','GetThreatIntelSet','GetRegistryPolicy','DescribeConfigurationSettings','DescribeUserGroups','DescribeInstances','DescribeDeliveryStream','ListUserPools','DescribeDirectConnectGateways','ListDeploymentConfigs','ListClustersV2','GetAutoTerminationPolicy','ListProjects','GetResources','ListBackupVaults','DescribeConfigurationRecorders','ListArchives','DescribeThing','DescribeCustomerGateways','DescribeLocalGatewayVirtualInterfaces','ListServiceLinkedChannels','ListKeyGroups','DescribeIpamResourceDiscoveries','DescribeTransitGatewayVpcAttachments','DescribeAccessPoints','ListRuleGroups','ListReplicators','DescribeHosts','ListServers','GetEventSelectors','GetSnapshotBlockPublicAccessState','DescribeCapacityReservationFleets','GetPolicy20150331v2','DescribeFleets','GetWorkGroup','ListProtections','GetInstanceMetadataDefaults','ListSourceCredentials','ListRegexPatternSets','DescribePublishingDestination','ListEventBuses','ListDeliveryStreams','ListClusters','GetBlockPublicAccessConfiguration','Encrypt','DescribeProvisioningTemplate','ListAliases','ListRoleAliases','DescribeHub','ListGuardrails','DescribeLoadBalancerAttributes','DescribeVerifiedAccessInstances','GetFilter','DescribeCapacityProviders','ListThings','ListProtectedResources','ListSecurityProfiles','DescribeLaunchTemplateVersions','ListPolicies','DescribeCluster','DescribeTrafficMirrorSessions','DescribeTrails','DescribeCacheSubnetGroups','DescribeLocalGateways','GetInferenceProfile','ListDomainConfigurations','DescribeIpamExternalResourceVerificationTokens','DescribeCacheParameterGroups','ListSecurityConfigurations','ListFunctions','ListInferenceProfiles','DescribeIpamResourceDiscoveryAssociations','GetMethod','GetIdentityDkimAttributes','GetInstancePortStates','ListTopics','DescribeIpamPools','ListPromptRouters','DescribeSavingsPlans','DescribeVerifiedAccessTrustProviders','ListCertificates','DescribeTransitGatewayAttachments','DeleteLaunchTemplate','GetImageBlockPublicAccessState','ListStreams','ListPublicKeys','GetFlow','ListConnectors','DescribeInternetGateways','DescribeTrafficMirrorTargets','DescribeTransitGatewayMulticastDomains','ListKeys','BatchGetApplications','GetMarketplaceModelEndpoint','DescribeBillingGroup','ListProvisioningTemplates','ListConfigurationSets','DescribeUsers','ListResourcesInProtectionGroup','DescribeClientVpnEndpoints','ListBots','GetSerialConsoleAccessStatus','ListMalwareProtectionPlans','DescribeReservedInstances','ListWebACLs','DescribePlacementGroups','DescribeTrafficMirrorFilterRules','ListAccessKeys','GetResourcePolicy','ListUserPolicies','ListDetectors','ListCodeSigningConfigs','GetBasePathMappings','DescribeUserPool','DescribeWorkspaceImages','DescribeSecurityGroups','GetIdentityMailFromDomainAttributes','ListConfigurations','DescribeConfigurationRevision','ListDistributions','DescribeNotebookInstance','ListTunnels','DescribeTasks','DescribeLaunchConfigurations','DescribeLocalGatewayRouteTableVirtualInterfaceGroupAssociations','ListProfiles','GetStages','GetEbsDefaultKmsKeyId','DescribeAuthorizer','ListIdentityPools','GetDeploymentConfig','DescribeIpams','GetSubscriptionState','ListSubscriptions','GetIdentityPoolRoles','DescribeImages','DescribeConnections','GetLifecyclePolicy','DescribeLaunchTemplates','GetEnvironment','DescribeClusterParameters','DescribeKeyPairs','DescribeNetworkAcls','ListDocuments','DescribeVpcEndpointConnectionNotifications','DescribeSecurityGroupRules','DescribeBroker','ListAttacks','DescribeRegistry','ListStateMachines','GetSendStatistics','DescribeIpGroups','ListRegistries','DescribeListeners','DescribeTransitGatewayPeeringAttachments','DescribeIpv6Pools','ListWorkflows','DescribeSavingsPlanRates','DescribeEndpoints','DescribeLogGroups','ListJobs','DescribeAttack','DescribeExportTasks','GetClientCertificates','GetSpotPlacementScores','GetCallerIdentity','GetDisks','DescribeVolumeStatus','DescribeVirtualInterfaces','DescribeReplicationTasks','DescribeTransitGatewayRouteTables','ListFunctions20150331','DescribeVpcs','ListCertificateAuthorities','ListAnalyzers','CreateLaunchTemplate','DescribeTaskDefinition','DescribeSnapshots','GetServiceSetting','ListImportedModels','DescribeFlowLogs','DescribeTransitGatewayPolicyTables','ListNotebookInstances','DescribeServices','GetRestApis','ListWebApps','GetAccountSummary','GetAgent','DescribeTrafficMirrorFilters','DescribeLocalGatewayVirtualInterfaceGroups','DescribeJobTemplate','GetDetector','DescribeNatGateways','DescribeScalingActivities','DescribeCoipPools','ListAttachedGroupPolicies','ListProtectionGroups','DescribeAvailabilityZones','ListImages','ListEnvironments','GetAdministratorAccount','DescribeAccessEntry','ListEventSources','DescribeTransitGatewayConnectPeers','ListFleetMetrics','DescribeTags','DescribeInstanceEventWindows','DescribeScalingPolicies','ListOriginAccessControls','DescribeTunnel','GetEbsEncryptionByDefault','DescribeCapacityReservations','GetApiMappings','DescribeTargetHealth','DescribeEgressOnlyInternetGateways','DescribeStream','DescribeMetricFilters','DescribeSecurityProfile','LookupEvents','DescribeRegistries','GetApis','DescribeClusters','DescribeTransitGateways','GetExternalModels','ListSecrets','DescribeRepositories','GetRoutes','GetContainerServices','DescribeSubnets','DescribeWorkspaceDirectories','DescribeEmergencyContactSettings','DescribeFleetMetric','DescribeBackups','ListDimensions','DescribeLocalGatewayRouteTableVpcAssociations','ListTargetsByRule','ListBackupPlans','DescribeJob','DescribeServerlessCaches','GetTrailStatus','DescribeClusterParameterGroups','ListPipelines','DescribeCarrierGateways','ListWorkGroups','DescribeVpcPeeringConnections','DescribeSpotFleetRequests','DescribeCertificate','DescribeLoadBalancers','ListVaults','DescribeVerifiedAccessGroups')
+      name: aws_cloudtrail_api_activity
+    - fields:
+        - expr: '`data`:[''responseElements'']:[''credentials'']:[''accessKeyId'']::STRING'
+          name: responseElements.credentials.accessKeyId
+        - expr: '`data`:[''responseElements'']:[''credentials'']:[''sessionToken'']::STRING'
+          name: responseElements.credentials.sessionToken
+        - expr: '`data`:[''responseElements'']:[''credentials'']:[''expiration'']::STRING'
+          name: responseElements.credentials.expiration
+        - expr: '`data`:[''responseElements'']:[''assumedRoleUser'']:[''assumedRoleId'']::STRING'
+          name: responseElements.assumedRoleUser.assumedRoleId
+        - expr: '`data`:[''responseElements'']:[''assumedRoleUser'']:[''arn'']::STRING'
+          name: responseElements.assumedRoleUser.arn
+        - expr: '`data`:[''responseElements'']:[''packedPolicySize'']::INT'
+          name: responseElements.packedPolicySize
+        - expr: '`data`:[''additionalEventData'']::VARIANT'
+          name: additionalEventData
+        - expr: '`data`:[''eventType'']::STRING'
+          name: eventType
+        - expr: '`data`:[''eventTime'']::STRING'
+          name: eventTime
+        - expr: '`data`:[''eventTime'']::STRING'
+          name: time
+        - expr: '`data`:[''sourceIPAddress'']::STRING'
+          name: sourceIPAddress
+        - expr: '`data`:[''sharedEventID'']::STRING'
+          name: sharedEventID
+        - expr: '`data`:[''requestParameters'']:[''durationSeconds'']::INT'
+          name: requestParameters.durationSeconds
+        - expr: '`data`:[''requestParameters'']:[''externalId'']::STRING'
+          name: requestParameters.externalId
+        - expr: '`data`:[''requestParameters'']:[''roleSessionName'']::STRING'
+          name: requestParameters.roleSessionName
+        - expr: '`data`:[''requestParameters'']:[''roleArn'']::STRING'
+          name: requestParameters.roleArn
+        - expr: '`data`:[''requestParameters'']:[''policy'']::STRING'
+          name: requestParameters.policy
+        - expr: '`data`:[''eventVersion'']::STRING'
+          name: eventVersion
+        - expr: '`data`:[''readOnly'']::BOOLEAN'
+          name: readOnly
+        - expr: '`data`:[''requestID'']::STRING'
+          name: requestID
+        - expr: '`data`:[''tlsDetails'']:[''clientProvidedHostHeader'']::STRING'
+          name: tlsDetails.clientProvidedHostHeader
+        - expr: '`data`:[''tlsDetails'']:[''cipherSuite'']::STRING'
+          name: tlsDetails.cipherSuite
+        - expr: '`data`:[''tlsDetails'']:[''tlsVersion'']::STRING'
+          name: tlsDetails.tlsVersion
+        - expr: '`data`:[''eventSource'']::STRING'
+          name: eventSource
+        - expr: '`data`:[''awsRegion'']::STRING'
+          name: awsRegion
+        - expr: '`data`:[''recipientAccountId'']::STRING'
+          name: recipientAccountId
+        - expr: '`data`:[''errorMessage'']::STRING'
+          name: errorMessage
+        - expr: '`data`:[''errorCode'']::STRING'
+          name: errorCode
+        - expr: '`data`:[''userIdentity'']:[''invokedBy'']::STRING'
+          name: userIdentity.invokedBy
+        - expr: '`data`:[''userIdentity'']:[''accessKeyId'']::STRING'
+          name: userIdentity.accessKeyId
+        - expr: '`data`:[''userIdentity'']:[''type'']::STRING'
+          name: userIdentity.type
+        - expr: '`data`:[''userIdentity'']:[''arn'']::STRING'
+          name: userIdentity.arn
+        - expr: '`data`:[''userIdentity'']:[''principalId'']::STRING'
+          name: userIdentity.principalId
+        - expr: '`data`:[''userIdentity'']:[''accountId'']::STRING'
+          name: userIdentity.accountId
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''attributes'']:[''mfaAuthenticated'']::BOOLEAN'
+          name: userIdentity.sessionContext.attributes.mfaAuthenticated
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''attributes'']:[''creationDate'']::STRING'
+          name: userIdentity.sessionContext.attributes.creationDate
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''sessionIssuer'']:[''userName'']::STRING'
+          name: userIdentity.sessionContext.sessionIssuer.userName
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''sessionIssuer'']:[''type'']::STRING'
+          name: userIdentity.sessionContext.sessionIssuer.type
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''sessionIssuer'']:[''arn'']::STRING'
+          name: userIdentity.sessionContext.sessionIssuer.arn
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''sessionIssuer'']:[''principalId'']::STRING'
+          name: userIdentity.sessionContext.sessionIssuer.principalId
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''sessionIssuer'']:[''accountId'']::STRING'
+          name: userIdentity.sessionContext.sessionIssuer.accountId
+        - expr: '`data`:[''userAgent'']::STRING'
+          name: userAgent
+        - expr: '`data`:[''managementEvent'']::BOOLEAN'
+          name: managementEvent
+        - expr: '`data`:[''eventName'']::STRING'
+          name: eventName
+        - expr: '`data`:[''eventID'']::STRING'
+          name: eventID
+        - expr: '`data`:[''eventCategory'']::STRING'
+          name: eventCategory
+        - expr: '`data`:[''userIdentity'']:[''userName'']::STRING'
+          name: userIdentity.userName
+      filter: data:eventName::string IN ('GetInstanceProfile','ListMFADevices','GetUser','GetLoginProfile','DescribeRoleAlias','GetGroupPolicy','ListSSHPublicKeys','GetAccountPasswordPolicy','GetUserPolicy','GetKeyPolicy','GetGroup','GetPolicyVersion')
+      name: aws_cloudtrail_entity_management
+    - fields:
+        - expr: '`data`:[''responseElements'']:[''credentials'']:[''accessKeyId'']::STRING'
+          name: responseElements.credentials.accessKeyId
+        - expr: '`data`:[''responseElements'']:[''credentials'']:[''sessionToken'']::STRING'
+          name: responseElements.credentials.sessionToken
+        - expr: '`data`:[''responseElements'']:[''credentials'']:[''expiration'']::STRING'
+          name: responseElements.credentials.expiration
+        - expr: '`data`:[''responseElements'']:[''assumedRoleUser'']:[''assumedRoleId'']::STRING'
+          name: responseElements.assumedRoleUser.assumedRoleId
+        - expr: '`data`:[''responseElements'']:[''assumedRoleUser'']:[''arn'']::STRING'
+          name: responseElements.assumedRoleUser.arn
+        - expr: '`data`:[''responseElements'']:[''packedPolicySize'']::INT'
+          name: responseElements.packedPolicySize
+        - expr: '`data`:[''additionalEventData'']::VARIANT'
+          name: additionalEventData
+        - expr: '`data`:[''eventType'']::STRING'
+          name: eventType
+        - expr: '`data`:[''eventTime'']::STRING'
+          name: eventTime
+        - expr: '`data`:[''eventTime'']::STRING'
+          name: time
+        - expr: '`data`:[''sourceIPAddress'']::STRING'
+          name: sourceIPAddress
+        - expr: '`data`:[''sharedEventID'']::STRING'
+          name: sharedEventID
+        - expr: '`data`:[''requestParameters'']:[''durationSeconds'']::INT'
+          name: requestParameters.durationSeconds
+        - expr: '`data`:[''requestParameters'']:[''externalId'']::STRING'
+          name: requestParameters.externalId
+        - expr: '`data`:[''requestParameters'']:[''roleSessionName'']::STRING'
+          name: requestParameters.roleSessionName
+        - expr: '`data`:[''requestParameters'']:[''roleArn'']::STRING'
+          name: requestParameters.roleArn
+        - expr: '`data`:[''requestParameters'']:[''policy'']::STRING'
+          name: requestParameters.policy
+        - expr: '`data`:[''eventVersion'']::STRING'
+          name: eventVersion
+        - expr: '`data`:[''readOnly'']::BOOLEAN'
+          name: readOnly
+        - expr: '`data`:[''requestID'']::STRING'
+          name: requestID
+        - expr: '`data`:[''tlsDetails'']:[''clientProvidedHostHeader'']::STRING'
+          name: tlsDetails.clientProvidedHostHeader
+        - expr: '`data`:[''tlsDetails'']:[''cipherSuite'']::STRING'
+          name: tlsDetails.cipherSuite
+        - expr: '`data`:[''tlsDetails'']:[''tlsVersion'']::STRING'
+          name: tlsDetails.tlsVersion
+        - expr: '`data`:[''eventSource'']::STRING'
+          name: eventSource
+        - expr: '`data`:[''awsRegion'']::STRING'
+          name: awsRegion
+        - expr: '`data`:[''recipientAccountId'']::STRING'
+          name: recipientAccountId
+        - expr: '`data`:[''errorMessage'']::STRING'
+          name: errorMessage
+        - expr: '`data`:[''errorCode'']::STRING'
+          name: errorCode
+        - expr: '`data`:[''userIdentity'']:[''invokedBy'']::STRING'
+          name: userIdentity.invokedBy
+        - expr: '`data`:[''userIdentity'']:[''accessKeyId'']::STRING'
+          name: userIdentity.accessKeyId
+        - expr: '`data`:[''userIdentity'']:[''type'']::STRING'
+          name: userIdentity.type
+        - expr: '`data`:[''userIdentity'']:[''arn'']::STRING'
+          name: userIdentity.arn
+        - expr: '`data`:[''userIdentity'']:[''principalId'']::STRING'
+          name: userIdentity.principalId
+        - expr: '`data`:[''userIdentity'']:[''accountId'']::STRING'
+          name: userIdentity.accountId
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''attributes'']:[''mfaAuthenticated'']::BOOLEAN'
+          name: userIdentity.sessionContext.attributes.mfaAuthenticated
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''attributes'']:[''creationDate'']::STRING'
+          name: userIdentity.sessionContext.attributes.creationDate
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''sessionIssuer'']:[''userName'']::STRING'
+          name: userIdentity.sessionContext.sessionIssuer.userName
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''sessionIssuer'']:[''type'']::STRING'
+          name: userIdentity.sessionContext.sessionIssuer.type
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''sessionIssuer'']:[''arn'']::STRING'
+          name: userIdentity.sessionContext.sessionIssuer.arn
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''sessionIssuer'']:[''principalId'']::STRING'
+          name: userIdentity.sessionContext.sessionIssuer.principalId
+        - expr: '`data`:[''userIdentity'']:[''sessionContext'']:[''sessionIssuer'']:[''accountId'']::STRING'
+          name: userIdentity.sessionContext.sessionIssuer.accountId
+        - expr: '`data`:[''userAgent'']::STRING'
+          name: userAgent
+        - expr: '`data`:[''managementEvent'']::BOOLEAN'
+          name: managementEvent
+        - expr: '`data`:[''eventName'']::STRING'
+          name: eventName
+        - expr: '`data`:[''eventID'']::STRING'
+          name: eventID
+        - expr: '`data`:[''eventCategory'']::STRING'
+          name: eventCategory
+        - expr: '`data`:[''userIdentity'']:[''userName'']::STRING'
+          name: userIdentity.userName
+      filter: data:eventName::string IN ('AssumeRole')
+      name: aws_cloudtrail_authorize_session
+
+gold:
+  - name: entity_management
+    input: aws_cloudtrail_entity_management
+    fields:
+      # -------------------- Core classification --------------------
+      - name: activity_id
+        expr: |
+          CASE
+            WHEN eventName LIKE 'Create%' THEN 1
+            WHEN eventName LIKE 'Get%' OR eventName LIKE 'List%' OR eventName LIKE 'Describe%' THEN 2
+            WHEN eventName IN (
+              'UpdateUser','UpdateGroup','UpdateRole','ChangePassword','UpdateLoginProfile',
+              'PutUserPolicy','PutGroupPolicy','PutRolePolicy',
+              'AttachUserPolicy','AttachGroupPolicy','AttachRolePolicy',
+              'AddUserToGroup','RemoveUserFromGroup',
+              'ResetServiceSpecificCredential','UpdateAssumeRolePolicy'
+            ) THEN 3
+            WHEN eventName LIKE 'Delete%' THEN 4
+            WHEN eventName IN ('RenameGroup','RenameUser') THEN 5
+            WHEN eventName IN ('EnableMFADevice','CreateVirtualMFADevice') THEN 6
+            WHEN eventName IN ('DeactivateMFADevice','DeleteVirtualMFADevice') THEN 7
+            WHEN eventName IN ('EnableUser') THEN 8
+            WHEN eventName IN ('DisableUser') THEN 9
+            WHEN eventName IN ('ActivateMFADevice') THEN 10
+            WHEN eventName IN ('DeactivateMFADevice') THEN 11
+            WHEN eventName IN ('SuspendUser') THEN 12
+            WHEN eventName IN ('ResumeUser') THEN 13
+            ELSE 99
+          END
+
+      - name: activity_name
+        expr: |
+          CASE
+            WHEN eventName LIKE 'Create%' THEN 'Create'
+            WHEN eventName LIKE 'Get%' OR eventName LIKE 'List%' OR eventName LIKE 'Describe%' THEN 'Read'
+            WHEN eventName IN (
+              'UpdateUser','UpdateGroup','UpdateRole','ChangePassword','UpdateLoginProfile',
+              'PutUserPolicy','PutGroupPolicy','PutRolePolicy',
+              'AttachUserPolicy','AttachGroupPolicy','AttachRolePolicy',
+              'AddUserToGroup','RemoveUserFromGroup',
+              'ResetServiceSpecificCredential','UpdateAssumeRolePolicy'
+            ) THEN 'Update'
+            WHEN eventName LIKE 'Delete%' THEN 'Delete'
+            WHEN eventName IN ('RenameGroup','RenameUser') THEN 'Move'
+            WHEN eventName IN ('EnableMFADevice','CreateVirtualMFADevice') THEN 'Enroll'
+            WHEN eventName IN ('DeactivateMFADevice','DeleteVirtualMFADevice') THEN 'Unenroll'
+            WHEN eventName IN ('EnableUser') THEN 'Enable'
+            WHEN eventName IN ('DisableUser') THEN 'Disable'
+            WHEN eventName IN ('ActivateMFADevice') THEN 'Activate'
+            WHEN eventName IN ('DeactivateMFADevice') THEN 'Deactivate'
+            WHEN eventName IN ('SuspendUser') THEN 'Suspend'
+            WHEN eventName IN ('ResumeUser') THEN 'Resume'
+            ELSE 'Other'
+          END
+
+      - name: category_name
+        literal: "Identity & Access Management"
+
+      - name: category_uid
+        expr: CAST(3 AS INT)
+
+      - name: class_name
+        literal: "Entity Management"
+
+      - name: class_uid
+        expr: CAST(3004 AS INT)
+
+      # -------------------- Outcome / status --------------------
+      - name: action
+        expr: |
+          CASE
+            WHEN errorCode IS NULL OR CAST(errorCode AS STRING) = '' THEN 'Allowed'
+            WHEN CAST(errorCode AS STRING) IN ('LimitExceeded','OptInRequired','ThrottlingException','AccessDenied','AccessDeniedException','InvalidAccessException','NotAuthorized') THEN 'Denied'
+            ELSE 'Unknown'
+          END
+
+      - name: action_id
+        expr: |
+          CASE
+            WHEN errorCode IS NULL OR CAST(errorCode AS STRING) = '' THEN 1
+            WHEN CAST(errorCode AS STRING) IN ('LimitExceeded','OptInRequired','ThrottlingException','AccessDenied','AccessDeniedException','InvalidAccessException','NotAuthorized') THEN 2
+            ELSE 0
+          END
+
+      - name: disposition
+        expr: |
+          CASE
+            WHEN errorCode IS NULL OR CAST(errorCode AS STRING) = '' THEN 'Allowed'
+            ELSE 'Error'
+          END
+
+      - name: disposition_id
+        expr: |
+          CASE
+            WHEN errorCode IS NULL OR CAST(errorCode AS STRING) = '' THEN 1
+            ELSE 27
+          END
+
+      - name: status
+        expr: |
+          CASE
+            WHEN errorCode IS NULL OR CAST(errorCode AS STRING) = '' THEN 'Success'
+            ELSE 'Failure'
+          END
+
+      - name: status_code
+        expr: NULLIF(CAST(errorCode AS STRING), '')
+
+      - name: status_detail
+        expr: NULLIF(CAST(errorMessage AS STRING), '')
+
+      - name: status_id
+        expr: |
+          CASE
+            WHEN errorCode IS NULL OR CAST(errorCode AS STRING) = '' THEN 1
+            ELSE 2
+          END
+
+      # -------------------- Time --------------------
+      - name: time
+        expr: to_timestamp(CAST(eventTime AS STRING))
+
+      - name: timezone_offset
+        expr: CAST(0 AS INT)
+
+      # -------------------- Type naming --------------------
+      - name: type_name
+        expr: |
+          CASE
+            WHEN eventName LIKE 'Create%' THEN 'Create'
+            WHEN eventName LIKE 'Get%' OR eventName LIKE 'List%' OR eventName LIKE 'Describe%' THEN 'Read'
+            WHEN eventName LIKE 'Delete%' THEN 'Delete'
+            WHEN eventName IN ('RenameUser','RenameGroup') THEN 'Move'
+            WHEN eventName IN ('EnableMFADevice','CreateVirtualMFADevice') THEN 'Enroll'
+            WHEN eventName IN ('DeactivateMFADevice','DeleteVirtualMFADevice') THEN 'Unenroll'
+            WHEN eventName IN ('EnableUser') THEN 'Enable'
+            WHEN eventName IN ('DisableUser') THEN 'Disable'
+            WHEN eventName IN ('ActivateMFADevice') THEN 'Activate'
+            WHEN eventName IN ('DeactivateMFADevice') THEN 'Deactivate'
+            WHEN eventName IN ('SuspendUser') THEN 'Suspend'
+            WHEN eventName IN ('ResumeUser') THEN 'Resume'
+            ELSE 'Unknown'
+          END
+
+      - name: type_uid
+        expr: |
+          CAST(3004 * 100 + CASE
+            WHEN eventName LIKE 'Create%' THEN 1
+            WHEN eventName LIKE 'Get%' OR eventName LIKE 'List%' OR eventName LIKE 'Describe%' THEN 2
+            WHEN eventName IN (
+              'UpdateUser', 'UpdateGroup', 'ChangePassword', 'AttachUserPolicy', 'PutUserPolicy',
+              'AddUserToGroup', 'RemoveUserFromGroup'
+            ) THEN 3
+            WHEN eventName LIKE 'Delete%' THEN 4
+            WHEN eventName IN ('RenameUser', 'RenameGroup') THEN 5
+            WHEN eventName IN ('EnableMFADevice', 'CreateVirtualMFADevice') THEN 6
+            WHEN eventName IN ('DeactivateMFADevice', 'DeleteVirtualMFADevice') THEN 7
+            WHEN eventName IN ('EnableUser') THEN 8
+            WHEN eventName IN ('DisableUser') THEN 9
+            WHEN eventName IN ('ActivateMFADevice') THEN 10
+            WHEN eventName IN ('DeactivateMFADevice') THEN 11
+            WHEN eventName IN ('SuspendUser') THEN 12
+            WHEN eventName IN ('ResumeUser') THEN 13
+            ELSE 0
+          END AS BIGINT)
+
+      # -------------------- API (exact shape) --------------------
+      - name: api
+        expr: |
+          struct(
+            CAST(eventName AS STRING) AS operation,
+            struct(
+              CAST(to_json(requestParameters) AS VARIANT) AS data,
+              CAST(requestID AS STRING) AS uid
+            ) AS request,
+            struct(
+              CAST(NULL AS INT) AS code,
+              CAST(to_json(NULL) AS VARIANT) AS data,
+              NULLIF(CAST(errorCode AS STRING), '') AS error,
+              NULLIF(CAST(errorMessage AS STRING), '') AS message
+            ) AS response
+          )
+
+      # -------------------- Cloud (account is STRUCT) --------------------
+      - name: cloud
+        expr: |
+          struct(
+            struct(
+              CAST(NULL AS STRING) AS name,
+              COALESCE(CAST(recipientAccountId AS STRING), CAST(userIdentity.accountId AS STRING)) AS uid
+            ) AS account,
+            CASE
+              WHEN CAST(awsRegion AS STRING) LIKE 'cn-%' THEN 'aws-cn'
+              WHEN CAST(awsRegion AS STRING) LIKE 'us-gov-%' THEN 'aws-us-gov'
+              ELSE 'aws'
+            END AS cloud_partition,
+            CAST(NULL AS STRING) AS project_uid,
+            'AWS' AS provider,
+            NULLIF(CAST(awsRegion AS STRING), '') AS region,
+            CAST(NULL AS STRING) AS zone
+          )
+
+      # -------------------- Actor (schema-accurate) --------------------
+      - name: actor
+        expr: |
+          struct(
+            NULLIF(CAST(userAgent AS STRING), '') AS app_name,
+            NULLIF(CAST(userIdentity.accessKeyId AS STRING), '') AS app_uid,
+            ARRAY(
+              NAMED_STRUCT('decision',
+                CASE WHEN CAST(errorCode AS STRING) IS NULL OR CAST(errorCode AS STRING) = '' THEN 'allowed' ELSE 'denied' END
+              )
+            ) AS authorizations,
+            struct(
+              CAST(NULL AS STRING) AS domain,
+              CAST(NULL AS STRING) AS name,
+              CAST(NULL AS STRING) AS protocol_name,
+              CAST(NULL AS STRING) AS tenant_uid,
+              CAST(NULL AS STRING) AS uid
+            ) AS idp,
+            struct(
+              CAST(NULL AS STRING) AS cmd_line,
+              CAST(NULL AS STRING) AS cpid,
+              CAST(NULL AS STRING) AS name,
+              CAST(NULL AS INT) AS pid,
+              struct(
+                CAST(NULL AS TIMESTAMP) AS created_time,
+                CAST(NULL AS STRING) AS credential_uid,
+                CAST(NULL AS STRING) AS expiration_reason,
+                CAST(NULL AS TIMESTAMP) AS expiration_time,
+                CAST(NULL AS BOOLEAN) AS is_mfa,
+                CAST(NULL AS BOOLEAN) AS is_remote,
+                CAST(NULL AS BOOLEAN) AS is_vpn,
+                CAST(NULL AS STRING) AS issuer,
+                CAST(NULL AS STRING) AS terminal,
+                CAST(NULL AS STRING) AS uid,
+                CAST(NULL AS STRING) AS uid_alt,
+                CAST(NULL AS STRING) AS uuid
+              ) AS session,
+              CAST(NULL AS STRING) AS uid,
+              struct(
+                CAST(NULL AS BOOLEAN) AS has_mfa,
+                CAST(NULL AS STRING)  AS name,
+                CAST(NULL AS STRING)  AS type,
+                CAST(NULL AS INT)     AS type_id,
+                CAST(NULL AS STRING)  AS uid
+              ) AS user
+            ) AS process,
+            struct(
+              CAST(userIdentity.sessionContext.attributes.mfaAuthenticated AS BOOLEAN) AS has_mfa,
+              NULLIF(CAST(userIdentity.userName AS STRING), '') AS name,
+              NULLIF(CAST(userIdentity.type AS STRING), '') AS type,
+              CAST(NULL AS INT) AS type_id,
+              NULLIF(CAST(userIdentity.principalId AS STRING), '') AS uid
+            ) AS user
+          )
+
+      # -------------------- Entity (exact table shape) --------------------
+      - name: entity
+        expr: |
+          struct(
+            CASE
+              WHEN eventName IN ('GetInstanceProfile') THEN NULLIF(get_json_object(CAST(requestParameters AS STRING), '$.instanceProfileName'), '')
+              WHEN eventName IN ('ListMFADevices','GetUser','GetLoginProfile','ListSSHPublicKeys') THEN NULLIF(get_json_object(CAST(requestParameters AS STRING), '$.userName'), '')
+              WHEN eventName IN ('DescribeRoleAlias') THEN NULLIF(get_json_object(CAST(requestParameters AS STRING), '$.roleAlias'), '')
+              WHEN eventName IN ('GetGroupPolicy') THEN COALESCE(
+                NULLIF(get_json_object(CAST(requestParameters AS STRING), '$.groupName'), ''),
+                NULLIF(get_json_object(CAST(requestParameters AS STRING), '$.policyName'), '')
+              )
+              WHEN eventName IN ('GetUserPolicy') THEN NULLIF(get_json_object(CAST(requestParameters AS STRING), '$.policyName'), '')
+              WHEN eventName IN ('GetGroup') THEN NULLIF(get_json_object(CAST(requestParameters AS STRING), '$.groupIdentifier'), '')
+              ELSE NULL
+            END AS name,
+            CAST(NULL AS STRING) AS uid,
+            CAST(to_json(requestParameters) AS VARIANT) AS data,
+            struct(CAST(NULL AS STRING) AS to) AS email,
+            struct(
+              CAST(NULL AS STRING) AS name,
+              CAST(NULL AS STRING) AS privileges,
+              CAST(NULL AS STRING) AS type,
+              CAST(NULL AS STRING) AS uid
+            ) AS `group`,
+            struct(
+              CAST(NULL AS STRING) AS city,
+              CAST(NULL AS STRING) AS continent,
+              CAST(NULL AS STRING) AS country,
+              CAST(NULL AS FLOAT)  AS lat,
+              CAST(NULL AS FLOAT)  AS long,
+              CAST(NULL AS STRING) AS postal_code
+            ) AS location,
+            CAST(array() AS ARRAY<STRUCT<is_applied: BOOLEAN, name: STRING, uid: STRING, version: STRING>>) AS policies,
+            CASE
+              WHEN eventName IN ('GetInstanceProfile') THEN 'InstanceProfile'
+              WHEN eventName IN ('ListMFADevices','GetUser','GetLoginProfile','ListSSHPublicKeys') THEN 'User'
+              WHEN eventName IN ('DescribeRoleAlias') THEN 'RoleAlias'
+              WHEN eventName IN ('GetGroupPolicy','GetUserPolicy','GetKeyPolicy','GetPolicyVersion') THEN 'Policy'
+              WHEN eventName IN ('GetGroup') THEN 'Group'
+              ELSE NULL
+            END AS type,
+            CASE
+              WHEN eventName IN ('GetInstanceProfile','DescribeRoleAlias') THEN 99
+              WHEN eventName IN ('ListMFADevices','GetUser','GetLoginProfile','ListSSHPublicKeys') THEN 2
+              WHEN eventName IN ('GetGroupPolicy','GetUserPolicy','GetKeyPolicy','GetPolicyVersion') THEN 5
+              WHEN eventName IN ('GetGroup') THEN 3
+              ELSE NULL
+            END AS type_id,
+            struct(
+              CAST(NULL AS BOOLEAN) AS has_mfa,
+              CAST(NULL AS STRING)  AS name,
+              CAST(NULL AS STRING)  AS type,
+              CAST(NULL AS INT)     AS type_id,
+              CAST(NULL AS STRING)  AS uid
+            ) AS user,
+            CASE
+              WHEN eventName IN ('GetPolicyVersion') THEN NULLIF(get_json_object(CAST(requestParameters AS STRING), '$.versionId'), '')
+              ELSE NULL
+            END AS version
+          )
+
+      - name: entity_result
+        expr: |
+          CAST(NULL AS STRUCT<
+            name: STRING,
+            uid: STRING,
+            data: VARIANT,
+            email: STRUCT<to: STRING>,
+            `group`: STRUCT<name: STRING, privileges: STRING, type: STRING, uid: STRING>,
+            location: STRUCT<city: STRING, continent: STRING, country: STRING, lat: FLOAT, long: FLOAT, postal_code: STRING>,
+            policies: ARRAY<STRUCT<is_applied: BOOLEAN, name: STRING, uid: STRING, version: STRING>>,
+            type: STRING,
+            type_id: INT,
+            user: STRUCT<has_mfa: BOOLEAN, name: STRING, type: STRING, type_id: INT, uid: STRING>,
+            version: STRING
+          >)
+
+      # -------------------- Device (STRUCT in table) --------------------
+      - name: device
+        expr: |
+          struct(
+            CAST(NULL AS TIMESTAMP) AS created_time,
+            CAST(NULL AS STRING) AS desc,
+            CAST(NULL AS STRING) AS domain,
+            CAST(array() AS ARRAY<STRUCT<name: STRING, privileges: STRING, type: STRING, uid: STRING>>) AS groups,
+            CAST(NULL AS STRING) AS hostname,
+            CAST(NULL AS STRING) AS ip,
+            CAST(NULL AS BOOLEAN) AS is_compliant,
+            CAST(NULL AS BOOLEAN) AS is_managed,
+            CAST(NULL AS BOOLEAN) AS is_personal,
+            CAST(NULL AS BOOLEAN) AS is_trusted,
+            CAST(NULL AS STRING) AS name,
+            CAST(NULL AS STRING) AS region,
+            CAST(NULL AS STRING) AS risk_level,
+            CAST(NULL AS INT) AS risk_level_id,
+            CAST(NULL AS INT) AS risk_score,
+            CAST(NULL AS STRING) AS subnet,
+            CAST(NULL AS STRING) AS type,
+            CAST(NULL AS INT) AS type_id,
+            CAST(NULL AS STRING) AS uid
+          )
+
+      # -------------------- Arrays present in schema --------------------
+      - name: enrichments
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<data: VARIANT, desc: STRING, name: STRING, value: STRING>>)
+
+      - name: observables
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<name: STRING, type: STRING, value: STRING>>)
+
+      # -------------------- Misc --------------------
+      - name: message
+        expr: NULLIF(CAST(errorMessage AS STRING), '')
+
+      - name: access_list
+        expr: |
+          CAST(array() AS ARRAY<STRING>)
+
+      - name: access_mask
+        expr: CAST(NULL AS INT)
+
+      - name: comment
+        expr: CAST(NULL AS STRING)
+
+      # -------------------- Metadata --------------------
+      - name: metadata
+        expr: |
+          struct(
+            CAST(sharedEventID AS STRING) AS correlation_uid,
+            CAST(eventName AS STRING) AS event_code,
+            'Informational' AS log_level,
+            'Cloudtrail' AS log_name,
+            'AWS' AS log_provider,
+            NULLIF(CAST(eventVersion AS STRING), '') AS log_version,
+            to_timestamp(CAST(eventTime AS STRING)) AS logged_time,
+            CAST(NULL AS TIMESTAMP) AS modified_time,
+            CAST(eventTime AS STRING) AS original_time,
+            current_timestamp() AS processed_time,
+            struct(
+              NULLIF(CAST(eventSource AS STRING), '') AS name,
+              'AWS' AS vendor_name,
+              NULLIF(CAST(eventVersion AS STRING), '') AS version
+            ) AS product,
+            CAST(NULL AS VARIANT) AS tags,
+            NULLIF(CAST(recipientAccountId AS STRING), '') AS tenant_uid,
+            CAST(eventID AS STRING) AS uid,
+            CAST(NULL AS STRING) AS version
+          )
+
+      # -------------------- Raw / Unmapped --------------------
+      - name: raw_data
+        expr: |
+          CAST(to_json(struct(*)) AS VARIANT)
+
+  - name: api_activity
+    input: aws_cloudtrail_api_activity
+    fields:
+      # ---------------- Core classification ----------------
+      - name: activity_id
+        expr: |
+          CASE
+            WHEN eventName LIKE 'Describe%' OR eventName LIKE 'List%' OR eventName LIKE 'Get%' THEN 2
+            WHEN eventName LIKE 'Create%' THEN 1
+            WHEN eventName LIKE 'Delete%' THEN 4
+            WHEN eventName = 'Encrypt' THEN 3
+            ELSE 0
+          END
+
+      - name: activity_name
+        expr: |
+          CASE
+            WHEN eventName LIKE 'Describe%' OR eventName LIKE 'List%' OR eventName LIKE 'Get%' THEN 'Read'
+            WHEN eventName LIKE 'Create%' THEN 'Create'
+            WHEN eventName LIKE 'Delete%' THEN 'Delete'
+            WHEN eventName = 'Encrypt' THEN 'Update'
+            ELSE NULL
+          END
+
+      - name: category_name
+        literal: 'Application Activity'
+
+      - name: category_uid
+        expr: CAST(6 AS INT)
+
+      - name: class_name
+        literal: 'API Activity'
+
+      - name: class_uid
+        expr: CAST(6003 AS INT)
+
+      - name: message
+        expr: NULLIF(CAST(errorMessage AS STRING), '')
+
+      # ---------------- Status / severity ----------------
+      - name: severity
+        literal: 'Informational'
+
+      - name: severity_id
+        expr: |
+          CASE
+            WHEN eventName LIKE 'Describe%' OR eventName LIKE 'List%' OR eventName LIKE 'Get%' OR
+                 eventName LIKE 'Create%'  OR eventName LIKE 'Batch%' OR eventName LIKE 'Assume%' OR
+                 eventName LIKE 'Delete%'  OR eventName IN ('GenerateCredentialReport','Encrypt','LookupEvents')
+            THEN 1
+            ELSE NULL
+          END
+
+      - name: status
+        expr: |
+          CASE WHEN CAST(errorCode AS STRING) IS NULL OR CAST(errorCode AS STRING) = '' THEN 'Success' ELSE 'Failure' END
+
+      - name: status_code
+        expr: NULLIF(CAST(errorCode AS STRING), '')
+
+      - name: status_detail
+        expr: NULLIF(CAST(errorCode AS STRING), '')
+
+      - name: status_id
+        expr: |
+          CASE WHEN CAST(errorCode AS STRING) IS NULL OR CAST(errorCode AS STRING) = '' THEN 1 ELSE 2 END
+
+      # ---------------- Timestamps ----------------
+      - name: time
+        expr: to_timestamp(CAST(eventTime AS STRING))
+
+      - name: start_time
+        expr: to_timestamp(CAST(eventTime AS STRING))
+
+      - name: timezone_offset
+        expr: CAST(0 AS INT)
+
+      # ---------------- Type naming ----------------
+      - name: type_name
+        expr: |
+          CASE
+            WHEN eventName LIKE 'Create%' THEN 'Create'
+            WHEN eventName LIKE 'Get%' OR eventName LIKE 'List%' OR eventName LIKE 'Describe%' OR eventName IN ('LookupEvents','GenerateCredentialReport')
+              THEN 'Read'
+            WHEN eventName LIKE 'Update%' OR eventName LIKE 'Put%' OR eventName LIKE 'Attach%' OR eventName LIKE 'Detach%' OR eventName LIKE 'Modify%'
+              THEN 'Update'
+            WHEN eventName LIKE 'Delete%' OR eventName LIKE 'Remove%' THEN 'Delete'
+            ELSE 'Other'
+          END
+
+      - name: type_uid
+        expr: |
+          CAST(
+            CASE
+              WHEN eventName LIKE 'Create%' THEN 600301
+              WHEN eventName LIKE 'Get%' OR eventName LIKE 'List%' OR eventName LIKE 'Describe%' OR eventName IN ('LookupEvents','GenerateCredentialReport') THEN 600302
+              WHEN eventName LIKE 'Update%' OR eventName LIKE 'Put%' OR eventName LIKE 'Attach%' OR eventName LIKE 'Detach%' OR eventName LIKE 'Modify%' THEN 600303
+              WHEN eventName LIKE 'Delete%' OR eventName LIKE 'Remove%' THEN 600304
+              ELSE 600399
+            END
+          AS BIGINT)
+
+      # ---------------- API (exact table shape) ----------------
+      - name: api
+        expr: |
+          struct(
+            CAST(
+              CASE
+                WHEN eventName = 'ListFunctions20150331' THEN regexp_replace(CAST(eventName AS STRING), '\\d+$', '')
+                ELSE CAST(eventName AS STRING)
+              END
+            AS STRING) AS operation,
+            struct(
+              CAST(to_json(requestParameters) AS VARIANT) AS data,
+              CAST(requestID AS STRING) AS uid
+            ) AS request,
+            struct(
+              CAST(NULL AS INT) AS code,
+              CAST(to_json(NULL) AS VARIANT) AS data,
+              NULLIF(CAST(errorCode AS STRING), '') AS error,
+              NULLIF(CAST(errorMessage AS STRING), '') AS message
+            ) AS response
+          )
+
+      # ---------------- Cloud (includes cloud_partition) ----------------
+      - name: cloud
+        expr: |
+          struct(
+            struct(
+              CAST(NULL AS STRING) AS name,
+              COALESCE(CAST(recipientAccountId AS STRING), CAST(userIdentity.accountId AS STRING)) AS uid
+            ) AS account,
+            CASE
+              WHEN CAST(awsRegion AS STRING) LIKE 'cn-%' THEN 'aws-cn'
+              WHEN CAST(awsRegion AS STRING) LIKE 'us-gov-%' THEN 'aws-us-gov'
+              ELSE 'aws'
+            END AS cloud_partition,
+            CAST(NULL AS STRING) AS project_uid,
+            'AWS' AS provider,
+            NULLIF(CAST(awsRegion AS STRING), '') AS region,
+            CAST(NULL AS STRING) AS zone
+          )
+
+      # ---------------- Actor (schema-accurate) ----------------
+      - name: actor
+        expr: |
+          struct(
+            NULLIF(CAST(userAgent AS STRING), '') AS app_name,
+            NULLIF(CAST(userIdentity.accessKeyId AS STRING), '') AS app_uid,
+            ARRAY(
+              NAMED_STRUCT('decision',
+                CASE WHEN CAST(errorCode AS STRING) IS NULL OR CAST(errorCode AS STRING) = '' THEN 'allowed' ELSE 'denied' END
+              )
+            ) AS authorizations,
+            struct(
+              CAST(NULL AS STRING) AS domain,
+              CAST(NULL AS STRING) AS name,
+              CAST(NULL AS STRING) AS protocol_name,
+              CAST(NULL AS STRING) AS tenant_uid,
+              CAST(NULL AS STRING) AS uid
+            ) AS idp,
+            struct(
+              CAST(NULL AS STRING) AS cmd_line,
+              CAST(NULL AS STRING) AS cpid,
+              CAST(NULL AS STRING) AS name,
+              CAST(NULL AS INT) AS pid,
+              struct(
+                CAST(NULL AS TIMESTAMP) AS created_time,
+                CAST(NULL AS STRING) AS credential_uid,
+                CAST(NULL AS STRING) AS expiration_reason,
+                CAST(NULL AS TIMESTAMP) AS expiration_time,
+                CAST(NULL AS BOOLEAN) AS is_mfa,
+                CAST(NULL AS BOOLEAN) AS is_remote,
+                CAST(NULL AS BOOLEAN) AS is_vpn,
+                CAST(NULL AS STRING) AS issuer,
+                CAST(NULL AS STRING) AS terminal,
+                CAST(NULL AS STRING) AS uid,
+                CAST(NULL AS STRING) AS uid_alt,
+                CAST(NULL AS STRING) AS uuid
+              ) AS session,
+              CAST(NULL AS STRING) AS uid,
+              struct(
+                CAST(NULL AS BOOLEAN) AS has_mfa,
+                CAST(NULL AS STRING)  AS name,
+                CAST(NULL AS STRING)  AS type,
+                CAST(NULL AS INT)     AS type_id,
+                CAST(NULL AS STRING)  AS uid
+              ) AS user
+            ) AS process,
+            struct(
+              CAST(userIdentity.sessionContext.attributes.mfaAuthenticated AS BOOLEAN) AS has_mfa,
+              NULLIF(CAST(userIdentity.userName AS STRING), '') AS name,
+              NULLIF(CAST(userIdentity.type AS STRING), '') AS type,
+              CAST(NULL AS INT) AS type_id,
+              NULLIF(CAST(userIdentity.principalId AS STRING), '') AS uid
+            ) AS user
+          )
+
+      # ---------------- Dest & Source endpoints (full shapes) ----------------
+      - name: dst_endpoint.domain
+        expr: CAST(NULL AS STRING)
+      - name: dst_endpoint.hostname
+        expr: NULLIF(CAST(eventSource AS STRING), '')
+      - name: dst_endpoint.instance_uid
+        expr: CAST(NULL AS STRING)
+      - name: dst_endpoint.interface_name
+        expr: CAST(NULL AS STRING)
+      - name: dst_endpoint.interface_uid
+        expr: CAST(NULL AS STRING)
+      - name: dst_endpoint.ip
+        expr: CAST(NULL AS STRING)
+      - name: dst_endpoint.name
+        expr: NULLIF(CAST(eventSource AS STRING), '')
+      - name: dst_endpoint.port
+        expr: CAST(NULL AS INT)
+      - name: dst_endpoint.svc_name
+        expr: NULLIF(split_part(CAST(eventSource AS STRING), '.', 1), '')
+      - name: dst_endpoint.type
+        literal: 'Unknown'
+      - name: dst_endpoint.type_id
+        expr: CAST(0 AS INT)
+      - name: dst_endpoint.uid
+        expr: CAST(NULL AS STRING)
+      - name: dst_endpoint.location
+        expr: |
+          named_struct(
+            'city',        CAST(NULL AS STRING),
+            'continent',   CAST(NULL AS STRING),
+            'country',     CAST(NULL AS STRING),
+            'lat',         CAST(NULL AS FLOAT),
+            'long',        CAST(NULL AS FLOAT),
+            'postal_code', CAST(NULL AS STRING)
+          )
+      - name: dst_endpoint.mac
+        expr: CAST(NULL AS STRING)
+      - name: dst_endpoint.vpc_uid
+        expr: CAST(NULL AS STRING)
+      - name: dst_endpoint.zone
+        expr: CAST(NULL AS STRING)
+
+      - name: src_endpoint.domain
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.hostname
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.instance_uid
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.interface_name
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.interface_uid
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.ip
+        expr: NULLIF(CAST(sourceIPAddress AS STRING), '')
+      - name: src_endpoint.name
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.port
+        expr: CAST(NULL AS INT)
+      - name: src_endpoint.svc_name
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.type
+        literal: 'Unknown'
+      - name: src_endpoint.type_id
+        expr: CAST(0 AS INT)
+      - name: src_endpoint.uid
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.location
+        expr: |
+          named_struct(
+            'city',        CAST(NULL AS STRING),
+            'continent',   CAST(NULL AS STRING),
+            'country',     CAST(NULL AS STRING),
+            'lat',         CAST(NULL AS FLOAT),
+            'long',        CAST(NULL AS FLOAT),
+            'postal_code', CAST(NULL AS STRING)
+          )
+      - name: src_endpoint.mac
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.vpc_uid
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.zone
+        expr: CAST(NULL AS STRING)
+
+      # ---------------- HTTP request / response (exact shapes) ----------------
+      - name: http_request
+        expr: |
+          struct(
+            CAST(requestParameters AS STRING) AS args,
+            CAST(NULL AS INT) AS body_length,
+            CAST(array() AS ARRAY<STRUCT<name: STRING, value: STRING>>) AS http_headers,
+            CAST(NULL AS STRING) AS http_method,
+            CAST(NULL AS INT) AS length,
+            CAST(NULL AS STRING) AS referrer,
+            NULLIF(CAST(eventSource AS STRING), '') AS url,
+            CAST(userAgent AS STRING) AS user_agent,
+            CAST(NULL AS STRING) AS version
+          )
+
+      - name: http_response
+        expr: |
+          struct(
+            CAST(NULL AS INT) AS body_length,
+            CAST(NULL AS INT) AS code,
+            CAST(NULL AS STRING) AS content_type,
+            CAST(array() AS ARRAY<STRUCT<name: STRING, value: STRING>>) AS http_headers,
+            CAST(NULL AS INT) AS latency,
+            CAST(NULL AS INT) AS length,
+            CAST(NULL AS STRING) AS message,
+            CAST(NULL AS STRING) AS status
+          )
+
+      # ---------------- Metadata ----------------
+      - name: metadata
+        expr: |
+          struct(
+            NULLIF(CAST(sharedEventID AS STRING), '') AS correlation_uid,
+            NULLIF(CAST(eventName AS STRING), '') AS event_code,
+            'Informational' AS log_level,
+            'cloudtrail' AS log_name,
+            'AWS' AS log_provider,
+            NULLIF(CAST(eventVersion AS STRING), '') AS log_version,
+            to_timestamp(CAST(eventTime AS STRING)) AS logged_time,
+            CAST(NULL AS TIMESTAMP) AS modified_time,
+            CAST(eventTime AS STRING) AS original_time,
+            current_timestamp() AS processed_time,
+            struct(
+              NULLIF(CAST(eventSource AS STRING), '') AS name,
+              'AWS' AS vendor_name,
+              NULLIF(CAST(eventVersion AS STRING), '') AS version
+            ) AS product,
+            CAST(NULL AS VARIANT) AS tags,
+            NULLIF(CAST(recipientAccountId AS STRING), '') AS tenant_uid,
+            NULLIF(CAST(eventID AS STRING), '') AS uid,
+            CAST(NULL AS STRING) AS version
+          )
+
+      # ---------------- Disposition / action ----------------
+      - name: disposition
+        expr: |
+          CASE
+            WHEN CAST(errorCode AS STRING) IS NULL OR CAST(errorCode AS STRING) = '' THEN 'Allowed'
+            ELSE 'Error'
+          END
+
+      - name: disposition_id
+        expr: |
+          CASE
+            WHEN CAST(errorCode AS STRING) IS NULL OR CAST(errorCode AS STRING) = '' THEN 1
+            ELSE 27
+          END
+
+      - name: action
+        expr: |
+          CASE
+            WHEN CAST(errorCode AS STRING) IS NULL OR CAST(errorCode AS STRING) = '' THEN 'Allowed'
+            ELSE 'Denied'
+          END
+
+      - name: action_id
+        expr: |
+          CASE
+            WHEN CAST(errorCode AS STRING) IS NULL OR CAST(errorCode AS STRING) = '' THEN 1
+            ELSE 2
+          END
+
+      # ---------------- Arrays ----------------
+      - name: enrichments
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<data: VARIANT, desc: STRING, name: STRING, value: STRING>>)
+
+      - name: observables
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<name: STRING, type: STRING, value: STRING>>)
+
+      - name: resources
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<hostname: STRING, ip: STRING, name: STRING, uid: STRING>>)
+
+      # ---------------- Raw ----------------
+      - name: raw_data
+        expr: |
+          CAST(to_json(struct(*)) AS VARIANT)
+
+  - name: datastore_activity
+    input: aws_cloudtrail_datastore_activity
+    filter: >
+      eventName IN ('GetObject','PutObject','DeleteObject','CopyObject','RestoreObject','ListObjects','ListObjectsV2','SelectObjectContent','GetItem','BatchGetItem','Query','Scan','PutItem','UpdateItem','DeleteItem',
+                    'BatchWriteItem','ExecuteStatement','BatchExecuteStatement','ExecuteSql','ESHttpGet','ESHttpPost','ESHttpPut','ESHttpDelete','ESHttpHead','StartQueryExecution','GetQueryResults','ReceiveMessage','SendMessage','PutRecord',
+                    'GetRecords','PutRecords','StartJobRun','GetJobRun','GetTableObjects','GetWorkUnits','GetWorkUnitResults')
+      AND eventSource IN ('s3.amazonaws.com','dynamodb.amazonaws.com','redshift-data.amazonaws.com','rds-data.amazonaws.com','es.amazonaws.com',
+                          'athena.amazonaws.com','kinesis.amazonaws.com','sqs.amazonaws.com','glue.amazonaws.com','lakeformation.amazonaws.com')
+    fields:
+      # ------------ Classification ------------
+      - name: activity_id
+        expr: |
+          CASE
+            WHEN eventName IN ('GetObject','GetItem','BatchGetItem','Scan','GetQueryResults','GetJobRun','GetTableObjects','ESHttpGet','ReceiveMessage') THEN 1
+            WHEN eventName IN ('UpdateItem') THEN 2
+            WHEN eventName IN ('StartJobRun') THEN 3
+            WHEN eventName IN ('SelectObjectContent','Query','ExecuteStatement','BatchExecuteStatement','ExecuteSql','StartQueryExecution','GetWorkUnits','GetWorkUnitResults') THEN 4
+            WHEN eventName IN ('PutObject','CopyObject','RestoreObject','ESHttpPost','ESHttpPut','SendMessage','PutRecord','PutRecords') THEN 5
+            WHEN eventName IN ('PutItem','BatchWriteItem') THEN 6
+            WHEN eventName IN ('DeleteObject','DeleteItem','ESHttpDelete') THEN 7
+            WHEN eventName IN ('ListObjects','ListObjectsV2','ESHttpHead') THEN 8
+            ELSE 0
+          END
+
+      - name: activity_name
+        expr: |
+          CASE
+            WHEN eventName IN ('GetObject','GetItem','BatchGetItem','Scan','GetQueryResults','GetJobRun','GetTableObjects','ESHttpGet','ReceiveMessage') THEN 'Read'
+            WHEN eventName IN ('UpdateItem') THEN 'Update'
+            WHEN eventName IN ('StartJobRun') THEN 'Connect'
+            WHEN eventName IN ('SelectObjectContent','Query','ExecuteStatement','BatchExecuteStatement','ExecuteSql','StartQueryExecution','GetWorkUnits','GetWorkUnitResults') THEN 'Query'
+            WHEN eventName IN ('PutObject','CopyObject','RestoreObject','ESHttpPost','ESHttpPut','SendMessage','PutRecord','PutRecords') THEN 'Write'
+            WHEN eventName IN ('PutItem','BatchWriteItem') THEN 'Create'
+            WHEN eventName IN ('DeleteObject','DeleteItem','ESHttpDelete') THEN 'Delete'
+            WHEN eventName IN ('ListObjects','ListObjectsV2','ESHttpHead') THEN 'List'
+            ELSE 'Unknown'
+          END
+
+      - name: category_name
+        literal: "Application Activity"
+
+      - name: category_uid
+        expr: CAST(6 AS INT)
+
+      - name: class_name
+        literal: "Datastore Activity"
+
+      - name: class_uid
+        expr: CAST(6005 AS INT)
+
+      - name: message
+        expr: NULLIF(CAST(errorMessage AS STRING), '')
+
+      # ------------ Status / severity ------------
+      - name: severity
+        literal: "Informational"
+
+      - name: severity_id
+        expr: CAST(1 AS INT)
+
+      - name: status
+        expr: |
+          CASE
+            WHEN errorCode IS NULL THEN 'Success'
+            WHEN errorCode IS NOT NULL THEN 'Failure'
+            ELSE 'Unknown'
+          END
+
+      - name: status_code
+        expr: NULLIF(CAST(errorCode AS STRING), '')
+
+      - name: status_detail
+        expr: NULLIF(CAST(errorCode AS STRING), '')
+
+      - name: status_id
+        expr: |
+          CASE
+            WHEN errorCode IS NULL THEN 1
+            WHEN errorCode IS NOT NULL THEN 2
+            ELSE 0
+          END
+
+      # ------------ Timestamps ------------
+      - name: time
+        expr: to_timestamp(CAST(eventTime AS STRING))
+
+      - name: timezone_offset
+        expr: CAST(0 AS INT)
+
+      # ------------ Type naming ------------
+      - name: type_name
+        expr: |
+          CASE
+            WHEN eventName IN ('GetObject','GetItem','BatchGetItem','Scan','GetQueryResults','GetRecords','GetJobRun','GetTableObjects','ESHttpGet','ReceiveMessage') THEN 'Read'
+            WHEN eventName IN ('UpdateItem') THEN 'Update'
+            WHEN eventName IN ('StartJobRun') THEN 'Connect'
+            WHEN eventName IN ('SelectObjectContent','Query','ExecuteStatement','BatchExecuteStatement','ExecuteSql','StartQueryExecution','GetWorkUnits','GetWorkUnitResults') THEN 'Query'
+            WHEN eventName IN ('PutObject','CopyObject','RestoreObject','ESHttpPost','ESHttpPut','SendMessage','PutRecord','PutRecords') THEN 'Write'
+            WHEN eventName IN ('PutItem','BatchWriteItem') THEN 'Create'
+            WHEN eventName IN ('DeleteObject','DeleteItem','ESHttpDelete') THEN 'Delete'
+            WHEN eventName IN ('ListObjects','ListObjectsV2','ESHttpHead') THEN 'List'
+            ELSE 'Unknown'
+          END
+
+      - name: type_uid
+        expr: |
+          CAST(
+            CASE
+              WHEN eventName IN ('GetObject','GetItem','BatchGetItem','Scan','GetQueryResults','GetRecords','GetJobRun','GetTableObjects','ESHttpGet','ReceiveMessage') THEN 600501
+              WHEN eventName IN ('UpdateItem') THEN 600502
+              WHEN eventName IN ('StartJobRun') THEN 600503
+              WHEN eventName IN ('SelectObjectContent','Query','ExecuteStatement','BatchExecuteStatement','ExecuteSql','StartQueryExecution','GetWorkUnits','GetWorkUnitResults') THEN 600504
+              WHEN eventName IN ('PutObject','CopyObject','RestoreObject','ESHttpPost','ESHttpPut','SendMessage','PutRecord','PutRecords') THEN 600505
+              WHEN eventName IN ('PutItem','BatchWriteItem') THEN 600506
+              WHEN eventName IN ('DeleteObject','DeleteItem','ESHttpDelete') THEN 600507
+              WHEN eventName IN ('ListObjects','ListObjectsV2','ESHttpHead') THEN 600508
+              ELSE 600500
+            END
+          AS BIGINT)
+
+      # ------------ API (exact table shape) ------------
+      - name: api
+        expr: |
+          struct(
+            CAST(eventName AS STRING) AS operation,
+            struct(
+              CAST(to_json(NULL) AS VARIANT) AS data,
+              NULLIF(CAST(requestID AS STRING), '') AS uid
+            ) AS request,
+            struct(
+              CAST(NULL AS INT) AS code,
+              CAST(to_json(NULL) AS VARIANT) AS data,
+              NULLIF(CAST(errorCode AS STRING), '') AS error,
+              NULLIF(CAST(errorMessage AS STRING), '') AS message
+            ) AS response
+          )
+
+      # ------------ Cloud (includes cloud_partition) ------------
+      - name: cloud
+        expr: |
+          struct(
+            struct(
+              CAST(NULL AS STRING) AS name,
+              COALESCE(CAST(recipientAccountId AS STRING), CAST(userIdentity.accountId AS STRING)) AS uid
+            ) AS account,
+            CASE
+              WHEN CAST(awsRegion AS STRING) LIKE 'cn-%' THEN 'aws-cn'
+              WHEN CAST(awsRegion AS STRING) LIKE 'us-gov-%' THEN 'aws-us-gov'
+              ELSE 'aws'
+            END AS cloud_partition,
+            CAST(CAST(recipientAccountId AS STRING) AS STRING) AS project_uid,
+            'AWS' AS provider,
+            NULLIF(CAST(awsRegion AS STRING), '') AS region,
+            CAST(NULL AS STRING) AS zone
+          )
+
+      # ------------ Actor (schema-accurate) ------------
+      - name: actor
+        expr: |
+          struct(
+            NULLIF(CAST(userAgent AS STRING), '') AS app_name,
+            NULLIF(CAST(userIdentity.accessKeyId AS STRING), '') AS app_uid,
+            ARRAY(
+              NAMED_STRUCT('decision',
+                CASE WHEN CAST(errorCode AS STRING) IS NULL OR CAST(errorCode AS STRING) = '' THEN 'allowed' ELSE 'denied' END
+              )
+            ) AS authorizations,
+            struct(
+              CAST(NULL AS STRING) AS domain,
+              CAST(NULL AS STRING) AS name,
+              CAST(NULL AS STRING) AS protocol_name,
+              CAST(NULL AS STRING) AS tenant_uid,
+              CAST(NULL AS STRING) AS uid
+            ) AS idp,
+            struct(
+              CAST(NULL AS STRING) AS cmd_line,
+              CAST(NULL AS STRING) AS cpid,
+              CAST(NULL AS STRING) AS name,
+              CAST(NULL AS INT) AS pid,
+              struct(
+                CAST(NULL AS TIMESTAMP) AS created_time,
+                CAST(NULL AS STRING) AS credential_uid,
+                CAST(NULL AS STRING) AS expiration_reason,
+                CAST(NULL AS TIMESTAMP) AS expiration_time,
+                CAST(NULL AS BOOLEAN) AS is_mfa,
+                CAST(NULL AS BOOLEAN) AS is_remote,
+                CAST(NULL AS BOOLEAN) AS is_vpn,
+                CAST(NULL AS STRING) AS issuer,
+                CAST(NULL AS STRING) AS terminal,
+                CAST(NULL AS STRING) AS uid,
+                CAST(NULL AS STRING) AS uid_alt,
+                CAST(NULL AS STRING) AS uuid
+              ) AS session,
+              CAST(NULL AS STRING) AS uid,
+              struct(
+                CAST(NULL AS BOOLEAN) AS has_mfa,
+                CAST(NULL AS STRING)  AS name,
+                CAST(NULL AS STRING)  AS type,
+                CAST(NULL AS INT)     AS type_id,
+                CAST(NULL AS STRING)  AS uid
+              ) AS user
+            ) AS process,
+            struct(
+              CAST(userIdentity.sessionContext.attributes.mfaAuthenticated AS BOOLEAN) AS has_mfa,
+              NULLIF(CAST(userIdentity.userName AS STRING), '') AS name,
+              NULLIF(CAST(userIdentity.type AS STRING), '') AS type,
+              CAST(NULL AS INT) AS type_id,
+              NULLIF(CAST(userIdentity.principalId AS STRING), '') AS uid
+            ) AS user
+          )
+
+      # ------------ Databucket ------------
+      - name: databucket
+        expr: |
+          struct(
+            CAST(NULL AS TIMESTAMP) AS created_time,
+            CAST(NULL AS STRING) AS desc,
+            struct(
+              CAST(NULL AS STRING) AS name,
+              CAST(NULL AS STRING) AS path
+            ) AS file,
+            CAST(array() AS ARRAY<STRUCT<name: STRING, privileges: STRING, type: STRING, uid: STRING>>) AS groups,
+            CAST(NULL AS BOOLEAN) AS is_encrypted,
+            CAST(NULL AS BOOLEAN) AS is_public,
+            CAST(NULL AS TIMESTAMP) AS modified_time,
+            CASE
+              WHEN eventSource = 's3.amazonaws.com' THEN
+                COALESCE(
+                  get_json_object(CAST(requestParameters AS STRING), '$.bucketName'),
+                  get_json_object(CAST(requestParameters AS STRING), '$.bucket')
+                )
+              WHEN eventSource = 'athena.amazonaws.com' THEN
+                get_json_object(CAST(requestParameters AS STRING), '$.queryExecutionContext.database')
+              WHEN eventSource = 'glue.amazonaws.com' THEN
+                get_json_object(CAST(requestParameters AS STRING), '$.databaseName')
+              WHEN eventSource = 'lakeformation.amazonaws.com' THEN
+                get_json_object(CAST(requestParameters AS STRING), '$.resource.databaseName')
+              WHEN eventSource = 'dynamodb.amazonaws.com' THEN
+                get_json_object(CAST(requestParameters AS STRING), '$.tableName')
+              WHEN eventSource = 'es.amazonaws.com' THEN
+                split_part(get_json_object(CAST(requestParameters AS STRING), '$.path'), '/', 2)
+              ELSE NULL
+            END AS name,
+            CAST(NULL AS BIGINT) AS size,
+            CAST(NULL AS STRING) AS type,
+            CAST(NULL AS INT) AS type_id,
+            CAST(NULL AS STRING) AS uid
+          )
+
+      # ------------ Database & Table ------------
+      - name: database
+        expr: |
+          struct(
+            CAST(NULL AS STRING) AS desc,
+            CAST(NULL AS TIMESTAMP) AS modified_time,
+            CAST(NULL AS STRING) AS name,
+            CAST(NULL AS STRING) AS type,
+            CAST(NULL AS INT) AS type_id,
+            CAST(NULL AS STRING) AS uid
+          )
+
+      - name: table
+        expr: |
+          struct(
+            CAST(NULL AS STRING) AS name,
+            CAST(NULL AS STRING) AS uid,
+            CAST(NULL AS TIMESTAMP) AS created_time,
+            CAST(NULL AS STRING) AS desc,
+            CAST(array() AS ARRAY<STRUCT<name: STRING, privileges: STRING, type: STRING, uid: STRING>>) AS groups,
+            CAST(NULL AS TIMESTAMP) AS modified_time,
+            CAST(NULL AS BIGINT) AS size
+          )
+
+      # ------------ Destination / Source endpoints (full shapes) ------------
+      - name: dst_endpoint.domain
+        expr: CAST(NULL AS STRING)
+      - name: dst_endpoint.hostname
+        expr: split_part(CAST(eventSource AS STRING), '.', 1)
+      - name: dst_endpoint.instance_uid
+        expr: CAST(NULL AS STRING)
+      - name: dst_endpoint.interface_name
+        expr: CAST(NULL AS STRING)
+      - name: dst_endpoint.interface_uid
+        expr: CAST(NULL AS STRING)
+      - name: dst_endpoint.ip
+        expr: CAST(NULL AS STRING)
+      - name: dst_endpoint.name
+        expr: COALESCE(CAST(tlsDetails.clientProvidedHostHeader AS STRING), CAST(eventSource AS STRING))
+      - name: dst_endpoint.port
+        expr: CAST(NULL AS INT)
+      - name: dst_endpoint.svc_name
+        expr: split_part(CAST(eventSource AS STRING), '.', 1)
+      - name: dst_endpoint.type
+        literal: "Unknown"
+      - name: dst_endpoint.type_id
+        expr: CAST(0 AS INT)
+      - name: dst_endpoint.uid
+        expr: CAST(NULL AS STRING)
+      - name: dst_endpoint.location
+        expr: |
+          named_struct(
+            'city',        CAST(NULL AS STRING),
+            'continent',   CAST(NULL AS STRING),
+            'country',     CAST(NULL AS STRING),
+            'lat',         CAST(NULL AS FLOAT),
+            'long',        CAST(NULL AS FLOAT),
+            'postal_code', CAST(NULL AS STRING)
+          )
+      - name: dst_endpoint.mac
+        expr: CAST(NULL AS STRING)
+      - name: dst_endpoint.vpc_uid
+        expr: CAST(NULL AS STRING)
+      - name: dst_endpoint.zone
+        expr: CAST(NULL AS STRING)
+
+      - name: src_endpoint.domain
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.hostname
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.instance_uid
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.interface_name
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.interface_uid
+        expr: NULLIF(CAST(vpcEndpointId AS STRING), '')
+      - name: src_endpoint.ip
+        expr: NULLIF(CAST(sourceIPAddress AS STRING), '')
+      - name: src_endpoint.name
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.port
+        expr: CAST(NULL AS INT)
+      - name: src_endpoint.svc_name
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.type
+        literal: "Unknown"
+      - name: src_endpoint.type_id
+        expr: CAST(0 AS INT)
+      - name: src_endpoint.uid
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.location
+        expr: |
+          named_struct(
+            'city',        CAST(NULL AS STRING),
+            'continent',   CAST(NULL AS STRING),
+            'country',     CAST(NULL AS STRING),
+            'lat',         CAST(NULL AS FLOAT),
+            'long',        CAST(NULL AS FLOAT),
+            'postal_code', CAST(NULL AS STRING)
+          )
+      - name: src_endpoint.mac
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.vpc_uid
+        expr: CAST(NULL AS STRING)
+      - name: src_endpoint.zone
+        expr: CAST(NULL AS STRING)
+
+      # ------------ HTTP request/response (exact shapes) ------------
+      - name: http_request
+        expr: |
+          struct(
+            CAST(requestParameters AS STRING) AS args,
+            CASE WHEN requestParameters IS NOT NULL THEN LENGTH(to_json(requestParameters)) ELSE NULL END AS body_length,
+            CAST(array() AS ARRAY<STRUCT<name: STRING, value: STRING>>) AS http_headers,
+            CAST(NULL AS STRING) AS http_method,
+            CAST(NULL AS INT) AS length,
+            CAST(NULL AS STRING) AS referrer,
+            COALESCE(CAST(tlsDetails.clientProvidedHostHeader AS STRING), CAST(eventSource AS STRING)) AS url,
+            CAST(userAgent AS STRING) AS user_agent,
+            CAST(NULL AS STRING) AS version
+          )
+
+      - name: http_response
+        expr: |
+          struct(
+            CAST(NULL AS INT) AS body_length,
+            CAST(NULL AS INT) AS code,
+            CAST(NULL AS STRING) AS content_type,
+            CAST(array() AS ARRAY<STRUCT<name: STRING, value: STRING>>) AS http_headers,
+            CAST(NULL AS INT) AS latency,
+            CAST(NULL AS INT) AS length,
+            CAST(NULL AS STRING) AS message,
+            CAST(NULL AS STRING) AS status
+          )
+
+      # ------------ Metadata ------------
+      - name: metadata
+        expr: |
+          struct(
+            CAST(sharedEventID AS STRING) AS correlation_uid,
+            CAST(eventName AS STRING) AS event_code,
+            'Informational' AS log_level,
+            'cloudtrail' AS log_name,
+            'AWS' AS log_provider,
+            NULLIF(CAST(eventVersion AS STRING), '') AS log_version,
+            to_timestamp(CAST(eventTime AS STRING)) AS logged_time,
+            CAST(NULL AS TIMESTAMP) AS modified_time,
+            CAST(eventTime AS STRING) AS original_time,
+            current_timestamp() AS processed_time,
+            struct(
+              NULLIF(CAST(eventSource AS STRING), '') AS name,
+              'AWS' AS vendor_name,
+              NULLIF(CAST(eventVersion AS STRING), '') AS version
+            ) AS product,
+            CAST(NULL AS VARIANT) AS tags,
+            NULLIF(CAST(recipientAccountId AS STRING), '') AS tenant_uid,
+            CAST(eventID AS STRING) AS uid,
+            CAST(NULL AS STRING) AS version
+          )
+
+      # ------------ Disposition / action (normalized) ------------
+      - name: disposition
+        expr: |
+          CASE WHEN CAST(errorCode AS STRING) IS NULL OR CAST(errorCode AS STRING) = '' THEN 'Allowed' ELSE 'Error' END
+
+      - name: disposition_id
+        expr: |
+          CASE WHEN CAST(errorCode AS STRING) IS NULL OR CAST(errorCode AS STRING) = '' THEN 1 ELSE 27 END
+
+      - name: action
+        expr: |
+          CASE
+            WHEN eventSource IN ('s3.amazonaws.com','dynamodb.amazonaws.com','rds.amazonaws.com','glacier.amazonaws.com','ecr.amazonaws.com','athena.amazonaws.com','es.amazonaws.com','lakeformation.amazonaws.com','glue.amazonaws.com')
+                 AND (eventName LIKE 'Get%' OR eventName LIKE 'Describe%' OR eventName LIKE 'List%')
+            THEN CASE
+                   WHEN errorCode IS NULL THEN 'Allowed'
+                   WHEN errorCode IN ('LimitExceeded','OptInRequired','ThrottlingException','AccessDenied','AccessDeniedException','InvalidAccessException','NotAuthorized','UnauthorizedOperation') THEN 'Denied'
+                   ELSE 'Unknown'
+                 END
+            ELSE NULL
+          END
+
+      - name: action_id
+        expr: |
+          CASE
+            WHEN eventSource IN ('s3.amazonaws.com','dynamodb.amazonaws.com','rds.amazonaws.com','glacier.amazonaws.com','ecr.amazonaws.com','athena.amazonaws.com','es.amazonaws.com','lakeformation.amazonaws.com','glue.amazonaws.com')
+                 AND (eventName LIKE 'Get%' OR eventName LIKE 'Describe%' OR eventName LIKE 'List%')
+            THEN CASE
+                   WHEN errorCode IS NULL THEN 1
+                   WHEN errorCode IN ('LimitExceeded','OptInRequired','ThrottlingException','AccessDenied','AccessDeniedException','InvalidAccessException','NotAuthorized','UnauthorizedOperation') THEN 2
+                   ELSE 0
+                 END
+            ELSE NULL
+          END
+
+      # ------------ Arrays ------------
+      - name: enrichments
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<data: VARIANT, desc: STRING, name: STRING, value: STRING>>)
+
+      - name: observables
+        expr: |
+          CAST(array() AS ARRAY<STRUCT<name: STRING, type: STRING, value: STRING>>)
+
+      # ------------ Raw / Unmapped ------------
+      - name: raw_data
+        expr: |
+          CAST(to_json(struct(*)) AS VARIANT)
+
+      # ------------ Optional type fields present in table ------------
+      - name: type
+        expr: CAST(NULL AS STRING)
+
+      - name: type_id
+        expr: CAST(NULL AS INT)
