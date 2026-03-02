@@ -40,3 +40,320 @@ the repository.
 bottom of the list.
 
 7. Put these changes up for review. Once merged, the preset will be visible to the DASL PresetStore.
+
+---
+
+## Using Presets in Lakewatch
+
+To use presets in your Lakewatch workspace, you need to host them in a Unity Catalog volume and
+configure your workspace to point to it. Presets can also be installed via content packs.
+
+### Prerequisites
+
+To interact with Lakewatch programmatically (managing presets, creating datasources, etc.), you need
+the `lakewatch` Python client installed in your Databricks notebook.
+
+In the first cell of your Databricks notebook, run:
+
+```python
+%pip install lakewatch
+```
+
+Then restart the Python kernel and import the client:
+
+```python
+from lakewatch import Client
+
+client = Client.for_workspace()
+```
+
+> **Note:** The `lakewatch` package is published to PyPI and includes the high-level SDK for
+> preset operations, datasource CRUD, workspace configuration, and more. It automatically handles
+> authentication when running inside a Databricks notebook.
+>
+> Auto-generated job notebooks (datasource pipelines, detection rules, exports) do **not** need
+> this manual step — the dasl-apiserver injects the required `%pip install` automatically.
+
+### Approach 1: Hosting Presets in a Unity Catalog Volume
+
+Place preset files from this repository into a Unity Catalog volume and point your workspace at it.
+
+#### Step 1: Check if a custom presets path is already configured
+
+Before creating a new volume, check whether your workspace already has a presets path configured.
+If one exists, you should place your preset files there instead of configuring a new path (which
+would overwrite the existing setting).
+
+**Via the Lakewatch UI:**
+
+Navigate to **Settings → Advanced** and look for the presets path field.
+
+**Via Python client:**
+
+```python
+from lakewatch import Client
+
+client = Client.for_workspace()
+config = client.get_config()
+print(config.dasl_custom_presets_path)
+# If this prints a path (e.g., "/Volumes/my_catalog/my_schema/my_volume/presets"),
+# use that existing path. If it prints None, you'll configure one in a later step.
+```
+
+#### Step 2: Create the directory structure
+
+If a presets path already exists (from Step 1), place your files there. Otherwise, create a new
+Unity Catalog volume with the same layout used by this repository:
+
+```
+/Volumes/<catalog>/<schema>/<volume>/presets/
+├── index.yaml
+└── <source>/
+    └── <sourceType>/
+        └── preset.yaml
+```
+
+For example, to add a preset for your app's authentication logs:
+
+```
+/Volumes/my_catalog/my_schema/my_volume/presets/
+├── index.yaml
+└── myapp/
+    └── auth/
+        └── preset.yaml
+```
+
+#### Step 3: Create or update `index.yaml`
+
+The index file registers all your presets:
+
+```yaml
+presets:
+  - source: "myapp"
+    sourceType: "auth"
+```
+
+Each entry's `source` and `sourceType` correspond to the directory path: `<source>/<sourceType>/preset.yaml`.
+
+#### Step 4: Place your `preset.yaml`
+
+Copy your preset YAML into the appropriate directory. The preset's `name` field should follow the convention `<source>_<sourceType>` (e.g., `myapp_auth`).
+
+#### Step 5: Configure your workspace to use the presets path
+
+> **Skip this step** if your workspace already has a presets path configured (from Step 1)
+> and you placed your files there.
+
+> **Note:** Updating the workspace configuration requires **workspace admin** privileges.
+
+**Via the Lakewatch UI:**
+
+Navigate to **Settings → Advanced** and set the presets path to your UC volume location
+(e.g., `/Volumes/my_catalog/my_schema/my_volume/presets`).
+
+**Via Python client:**
+
+```python
+from lakewatch import Client
+
+client = Client.for_workspace()
+config = client.get_config()
+config.dasl_custom_presets_path = "/Volumes/my_catalog/my_schema/my_volume/presets"
+client.put_config(config)
+```
+
+**Via REST API:**
+
+```bash
+curl -X PUT "${HOST}/ajax-api/2.0/dasl-apiserver/apis/workspace/v1/config" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: DBAUTH=${DBAUTH_TOKEN}" \
+  -H "x-csrf-token: ${CSRF_TOKEN}" \
+  -H "x-databricks-org-id: ${ORG_ID}" \
+  -d '{
+    "apiVersion": "v1",
+    "kind": "WorkspaceConfig",
+    "spec": {
+      "daslCustomPresetsPath": "/Volumes/my_catalog/my_schema/my_volume/presets",
+      ...
+    }
+  }'
+```
+
+#### Step 6: Verify your preset is visible
+
+**Python client:**
+
+```python
+presets = client.list_presets()
+for p in presets.items:
+    print(p.name)
+# Should include: internal_myapp_auth
+```
+
+**REST API:**
+
+```bash
+curl "${HOST}/ajax-api/2.0/dasl-apiserver/apis/content/v1/datasources" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: DBAUTH=${DBAUTH_TOKEN}" \
+  -H "x-csrf-token: ${CSRF_TOKEN}" \
+  -H "x-databricks-org-id: ${ORG_ID}"
+```
+
+> **Note:** Presets hosted in a UC volume are automatically prefixed with `internal_` by Lakewatch.
+> You must use this prefix when referencing them (e.g., `internal_myapp_auth`).
+
+### Approach 2: Installing Presets via Content Packs
+
+Content packs bundle presets (and optionally detection rules) into installable packages. You can
+install a preset from a content pack using the REST API:
+
+```bash
+curl -X POST "${HOST}/ajax-api/2.0/dasl-apiserver/apis/content/v1/content-packs/${CONTENT_PACK_UUID}/install/preset" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: DBAUTH=${DBAUTH_TOKEN}" \
+  -H "x-csrf-token: ${CSRF_TOKEN}" \
+  -H "x-databricks-org-id: ${ORG_ID}"
+```
+
+Installed content pack presets are stored in the workspace's presets location (same UC volume path).
+
+---
+
+## Preset Cache
+
+Presets are cached for 1 hour after first retrieval to avoid repeatedly fetching from storage.
+During active development, force a cache refresh after updating your preset files:
+
+**Python client:**
+
+```python
+client.purge_preset_cache()
+```
+
+**REST API:**
+
+```bash
+curl "${HOST}/ajax-api/2.0/dasl-apiserver/apis/content/v1/presets/purge-cache" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: DBAUTH=${DBAUTH_TOKEN}" \
+  -H "x-csrf-token: ${CSRF_TOKEN}" \
+  -H "x-databricks-org-id: ${ORG_ID}"
+```
+
+You can also pass `clear_cache=true` when listing presets to force a refresh:
+
+```bash
+curl "${HOST}/ajax-api/2.0/dasl-apiserver/apis/content/v1/datasources?clear_cache=true" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: DBAUTH=${DBAUTH_TOKEN}" \
+  -H "x-csrf-token: ${CSRF_TOKEN}" \
+  -H "x-databricks-org-id: ${ORG_ID}"
+```
+
+---
+
+## Inspecting Presets
+
+### Listing All Available Presets
+
+**Python client:**
+
+```python
+from lakewatch import Client
+
+client = Client.for_workspace()
+presets = client.list_presets()
+
+for preset in presets.items:
+    print(f"{preset.name}: {preset.title} ({preset.source}/{preset.source_type})")
+
+# Check for presets that failed to load
+for error in presets.errors:
+    print(f"Error loading {error.name}: {error.error}")
+```
+
+**REST API:**
+
+```bash
+curl "${HOST}/ajax-api/2.0/dasl-apiserver/apis/content/v1/datasources" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: DBAUTH=${DBAUTH_TOKEN}" \
+  -H "x-csrf-token: ${CSRF_TOKEN}" \
+  -H "x-databricks-org-id: ${ORG_ID}"
+```
+
+### Getting a Specific Preset
+
+**Python client:**
+
+```python
+preset = client.get_preset("internal_myapp_auth")
+
+# View autoloader config
+print(preset.autoloader.format)
+
+# View silver transform tables
+for table in preset.silver.transform:
+    print(f"Silver table: {table.name}")
+    for field in table.fields:
+        print(f"  {field.name}")
+
+# View gold tables
+for table in preset.gold:
+    print(f"Gold table: {table.name} (from {table.input})")
+```
+
+**REST API:**
+
+```bash
+# Get the full preset specification
+curl "${HOST}/ajax-api/2.0/dasl-apiserver/apis/content/v1/presets/datasource/internal_myapp_auth" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: DBAUTH=${DBAUTH_TOKEN}" \
+  -H "x-csrf-token: ${CSRF_TOKEN}" \
+  -H "x-databricks-org-id: ${ORG_ID}"
+
+# Get just the summary metadata
+curl "${HOST}/ajax-api/2.0/dasl-apiserver/apis/content/v1/presets/datasource/summary/internal_myapp_auth" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: DBAUTH=${DBAUTH_TOKEN}" \
+  -H "x-csrf-token: ${CSRF_TOKEN}" \
+  -H "x-databricks-org-id: ${ORG_ID}"
+```
+
+---
+
+## API Reference
+
+### REST API Endpoints (Presets)
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/apis/content/v1/datasources` | List all available preset templates |
+| `GET` | `/apis/content/v1/presets/datasource/{name}` | Get full preset specification |
+| `GET` | `/apis/content/v1/presets/datasource/summary/{name}` | Get preset summary metadata |
+| `GET` | `/apis/content/v1/presets/purge-cache` | Purge preset cache |
+| `POST` | `/apis/content/v1/content-packs/{uuid}/install/preset` | Install preset from content pack |
+
+All endpoints are prefixed with `${HOST}/ajax-api/2.0/dasl-apiserver`.
+
+### Python Client
+
+Install: `%pip install lakewatch` (in a Databricks notebook)
+
+```python
+from lakewatch import Client
+
+client = Client.for_workspace()
+
+# Preset operations
+client.list_presets()                          # List all presets
+client.get_preset("internal_myapp_auth")       # Get specific preset
+client.purge_preset_cache()                    # Purge preset cache
+
+# Workspace config (for presets path)
+client.get_config()                            # Get workspace config
+client.put_config(config)                      # Update workspace config
+```
