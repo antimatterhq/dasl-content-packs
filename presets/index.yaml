@@ -13,3 +13,5 @@ presets:
     sourceType: "http"
   - source: "zeek"
     sourceType: "dns"
+  - source: "microsoft"
+    sourceType: "windows_security"

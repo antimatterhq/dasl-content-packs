@@ -1,0 +1,3 @@
+versions:
+  - versionNumber: 1
+    changes: Initial release — Microsoft Windows Security Event Log (EVTX) preset with OCSF Authentication (3002), Account Change (3001), and Group Management (3006) gold tables

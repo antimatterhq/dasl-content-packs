@@ -1,0 +1,168 @@
+author: "Alan Silva <alan.silva@databricks.com>"
+title: "Microsoft Windows Security Event Log"
+name: windows_security_evtx
+description: "Windows Security Event Log (EVTX) — Authentication, Account Change, and Group Management normalized to OCSF"
+iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/default_icon.png?raw=true"
+
+autoloader:
+  format: jsonl
+  options:
+    ignoreMissingFiles: true
+    ignoreCorruptFiles: true
+    pathGlobFilter: "*.jsonl"
+  inputs:
+  - /Volumes/<catalog>/<schema>/<volume>/
+
+bronze:
+  loadAsSingleVariant: true
+  preTransform:
+    - ["try_parse_json(data::STRING) AS event_raw"]
+    - [
+        "event_raw",
+        "try_variant_get(event_raw, '$.Event.System.TimeCreated.#attributes.SystemTime', 'timestamp') AS time",
+        "try_variant_get(event_raw, '$.Event.System.EventID.#text', 'int') AS event_id",
+        "try_variant_get(event_raw, '$.Event.System.Computer', 'string') AS computer",
+        "try_variant_get(event_raw, '$.Event.System.Channel', 'string') AS channel",
+        "try_variant_get(event_raw, '$.Event.System.Keywords', 'string') AS keywords",
+        "CAST('microsoft' AS STRING) AS source",
+        "CAST('windows-security-evtx' AS STRING) AS sourcetype",
+        "current_timestamp() AS ingest_time"
+      ]
+
+silver:
+  transform:
+  - name: windows_security_authentication
+    filter: "event_id IN (4624, 4625, 4634, 4647, 4648, 4768, 4769, 4771)"
+    clusterBy: ["time", "event_id"]
+    fields:
+      - {name: event_id, expr: "event_id"}
+      - {name: time, expr: "time"}
+      - {name: computer, expr: "computer"}
+      - {name: keywords, expr: "keywords"}
+      - {name: event_record_id, expr: "try_variant_get(event_raw, '$.Event.System.EventRecordID', 'bigint')"}
+      - {name: subject_user_name, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'SubjectUserName'), 0), '$[\"#text\"]', 'string')"}
+      - {name: subject_domain_name, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'SubjectDomainName'), 0), '$[\"#text\"]', 'string')"}
+      - {name: subject_logon_id, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'SubjectLogonId'), 0), '$[\"#text\"]', 'string')"}
+      - {name: target_user_name, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'TargetUserName'), 0), '$[\"#text\"]', 'string')"}
+      - {name: target_domain_name, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'TargetDomainName'), 0), '$[\"#text\"]', 'string')"}
+      - {name: target_logon_id, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'TargetLogonId'), 0), '$[\"#text\"]', 'string')"}
+      - {name: logon_type, expr: "CAST(try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'LogonType'), 0), '$[\"#text\"]', 'string') AS INT)"}
+      - {name: logon_process_name, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'LogonProcessName'), 0), '$[\"#text\"]', 'string')"}
+      - {name: auth_package_name, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'AuthenticationPackageName'), 0), '$[\"#text\"]', 'string')"}
+      - {name: workstation_name, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'WorkstationName'), 0), '$[\"#text\"]', 'string')"}
+      - {name: ip_address, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'IpAddress'), 0), '$[\"#text\"]', 'string')"}
+      - {name: ip_port, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'IpPort'), 0), '$[\"#text\"]', 'string')"}
+      - {name: failure_reason, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'FailureReason'), 0), '$[\"#text\"]', 'string')"}
+      - {name: status, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'Status'), 0), '$[\"#text\"]', 'string')"}
+      - {name: sub_status, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'SubStatus'), 0), '$[\"#text\"]', 'string')"}
+      - {name: ticket_encryption_type, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'TicketEncryptionType'), 0), '$[\"#text\"]', 'string')"}
+      - {name: pre_auth_type, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'PreAuthType'), 0), '$[\"#text\"]', 'string')"}
+      - {name: process_name, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'ProcessName'), 0), '$[\"#text\"]', 'string')"}
+      - {name: target_server_name, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'TargetServerName'), 0), '$[\"#text\"]', 'string')"}
+      - {name: raw_data, expr: "to_json(event_raw)"}
+
+  - name: windows_security_account_change
+    filter: "event_id IN (4720, 4722, 4723, 4724, 4725, 4726, 4740)"
+    clusterBy: ["time", "event_id"]
+    fields:
+      - {name: event_id, expr: "event_id"}
+      - {name: time, expr: "time"}
+      - {name: computer, expr: "computer"}
+      - {name: keywords, expr: "keywords"}
+      - {name: event_record_id, expr: "try_variant_get(event_raw, '$.Event.System.EventRecordID', 'bigint')"}
+      - {name: subject_user_name, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'SubjectUserName'), 0), '$[\"#text\"]', 'string')"}
+      - {name: subject_domain_name, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'SubjectDomainName'), 0), '$[\"#text\"]', 'string')"}
+      - {name: subject_logon_id, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'SubjectLogonId'), 0), '$[\"#text\"]', 'string')"}
+      - {name: target_user_name, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'TargetUserName'), 0), '$[\"#text\"]', 'string')"}
+      - {name: target_domain_name, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'TargetDomainName'), 0), '$[\"#text\"]', 'string')"}
+      - {name: target_sid, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'TargetSid'), 0), '$[\"#text\"]', 'string')"}
+      - {name: sam_account_name, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'SamAccountName'), 0), '$[\"#text\"]', 'string')"}
+      - {name: display_name, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'DisplayName'), 0), '$[\"#text\"]', 'string')"}
+      - {name: user_principal_name, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'UserPrincipalName'), 0), '$[\"#text\"]', 'string')"}
+      - {name: raw_data, expr: "to_json(event_raw)"}
+
+  - name: windows_security_group_management
+    filter: "event_id IN (4728, 4729, 4732, 4733, 4756, 4757)"
+    clusterBy: ["time", "event_id"]
+    fields:
+      - {name: event_id, expr: "event_id"}
+      - {name: time, expr: "time"}
+      - {name: computer, expr: "computer"}
+      - {name: keywords, expr: "keywords"}
+      - {name: event_record_id, expr: "try_variant_get(event_raw, '$.Event.System.EventRecordID', 'bigint')"}
+      - {name: subject_user_name, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'SubjectUserName'), 0), '$[\"#text\"]', 'string')"}
+      - {name: subject_domain_name, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'SubjectDomainName'), 0), '$[\"#text\"]', 'string')"}
+      - {name: subject_logon_id, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'SubjectLogonId'), 0), '$[\"#text\"]', 'string')"}
+      - {name: member_sid, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'MemberSid'), 0), '$[\"#text\"]', 'string')"}
+      - {name: member_name, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'MemberName'), 0), '$[\"#text\"]', 'string')"}
+      - {name: target_user_name, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'TargetUserName'), 0), '$[\"#text\"]', 'string')"}
+      - {name: target_domain_name, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'TargetDomainName'), 0), '$[\"#text\"]', 'string')"}
+      - {name: target_sid, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'TargetSid'), 0), '$[\"#text\"]', 'string')"}
+      - {name: privilege_list, expr: "try_variant_get(get(filter(try_variant_get(event_raw, '$.Event.EventData.Data', 'array<variant>'), x -> try_variant_get(x, '$[\"#attributes\"][\"Name\"]', 'string') = 'PrivilegeList'), 0), '$[\"#text\"]', 'string')"}
+      - {name: raw_data, expr: "to_json(event_raw)"}
+
+gold:
+  - name: authentication
+    input: windows_security_authentication
+    fields:
+      - {name: class_uid, expr: "CAST(3002 AS INT)"}
+      - {name: class_name, expr: "'Authentication'"}
+      - {name: category_uid, expr: "CAST(3 AS INT)"}
+      - {name: category_name, expr: "'Identity & Access Management'"}
+      - {name: activity_id, expr: "CASE event_id WHEN 4624 THEN 1 WHEN 4625 THEN 1 WHEN 4634 THEN 2 WHEN 4647 THEN 2 WHEN 4648 THEN 1 WHEN 4768 THEN 3 WHEN 4769 THEN 3 WHEN 4771 THEN 3 ELSE 99 END"}
+      - {name: activity_name, expr: "CASE event_id WHEN 4624 THEN 'Logon' WHEN 4625 THEN 'Logon' WHEN 4634 THEN 'Logoff' WHEN 4647 THEN 'Logoff' WHEN 4648 THEN 'Logon' WHEN 4768 THEN 'Authentication Ticket' WHEN 4769 THEN 'Service Ticket' WHEN 4771 THEN 'Authentication Ticket' ELSE 'Unknown' END"}
+      - {name: type_uid, expr: "CAST(3002 * 100 + CASE event_id WHEN 4624 THEN 1 WHEN 4625 THEN 1 WHEN 4634 THEN 2 WHEN 4647 THEN 2 WHEN 4648 THEN 1 WHEN 4768 THEN 3 WHEN 4769 THEN 3 WHEN 4771 THEN 3 ELSE 99 END AS BIGINT)"}
+      - {name: time, expr: "to_timestamp(time)"}
+      - {name: timezone_offset, expr: "CAST(0 AS INT)"}
+      - {name: status, expr: "CASE WHEN keywords LIKE '%0x8020%' THEN 'Success' ELSE 'Failure' END"}
+      - {name: status_id, expr: "CASE WHEN keywords LIKE '%0x8020%' THEN 1 ELSE 2 END"}
+      - {name: status_detail, expr: "COALESCE(failure_reason, sub_status)"}
+      - {name: auth_protocol, expr: "CASE WHEN auth_package_name = 'Kerberos' THEN 'Kerberos' WHEN auth_package_name = 'NTLM' THEN 'NTLM' WHEN auth_package_name = 'Negotiate' THEN 'Negotiate' ELSE auth_package_name END"}
+      - {name: auth_protocol_id, expr: "CASE WHEN auth_package_name = 'Kerberos' THEN 1 WHEN auth_package_name = 'NTLM' THEN 2 ELSE 0 END"}
+      - {name: logon_type, expr: "logon_type"}
+      - {name: logon_type_id, expr: "logon_type"}
+      - {name: user, expr: "named_struct('name', target_user_name, 'domain', target_domain_name, 'uid', target_logon_id)"}
+      - {name: src_endpoint, expr: "named_struct('hostname', workstation_name, 'ip', ip_address, 'port', ip_port)"}
+      - {name: dst_endpoint, expr: "named_struct('hostname', computer)"}
+      - {name: actor, expr: "named_struct('user', named_struct('name', subject_user_name, 'domain', subject_domain_name, 'session_uid', subject_logon_id))"}
+      - {name: metadata, expr: "named_struct('product', named_struct('name', 'Microsoft-Windows-Security-Auditing', 'vendor_name', 'Microsoft', 'log_name', 'Security'), 'uid', CAST(event_record_id AS STRING), 'processed_time', current_timestamp())"}
+      - {name: raw_data, expr: "raw_data"}
+
+  - name: account_change
+    input: windows_security_account_change
+    fields:
+      - {name: class_uid, expr: "CAST(3001 AS INT)"}
+      - {name: class_name, expr: "'Account Change'"}
+      - {name: category_uid, expr: "CAST(3 AS INT)"}
+      - {name: category_name, expr: "'Identity & Access Management'"}
+      - {name: activity_id, expr: "CASE event_id WHEN 4720 THEN 1 WHEN 4722 THEN 8 WHEN 4723 THEN 3 WHEN 4724 THEN 3 WHEN 4725 THEN 9 WHEN 4726 THEN 4 WHEN 4740 THEN 12 ELSE 99 END"}
+      - {name: activity_name, expr: "CASE event_id WHEN 4720 THEN 'Create' WHEN 4722 THEN 'Enable' WHEN 4723 THEN 'Update' WHEN 4724 THEN 'Update' WHEN 4725 THEN 'Disable' WHEN 4726 THEN 'Delete' WHEN 4740 THEN 'Lock' ELSE 'Unknown' END"}
+      - {name: type_uid, expr: "CAST(3001 * 100 + CASE event_id WHEN 4720 THEN 1 WHEN 4722 THEN 8 WHEN 4723 THEN 3 WHEN 4724 THEN 3 WHEN 4725 THEN 9 WHEN 4726 THEN 4 WHEN 4740 THEN 12 ELSE 99 END AS BIGINT)"}
+      - {name: time, expr: "to_timestamp(time)"}
+      - {name: timezone_offset, expr: "CAST(0 AS INT)"}
+      - {name: status, expr: "CASE WHEN keywords LIKE '%0x8020%' THEN 'Success' ELSE 'Failure' END"}
+      - {name: status_id, expr: "CASE WHEN keywords LIKE '%0x8020%' THEN 1 ELSE 2 END"}
+      - {name: user, expr: "named_struct('name', target_user_name, 'domain', target_domain_name, 'uid', target_sid, 'account_name', sam_account_name)"}
+      - {name: actor, expr: "named_struct('user', named_struct('name', subject_user_name, 'domain', subject_domain_name, 'session_uid', subject_logon_id))"}
+      - {name: metadata, expr: "named_struct('product', named_struct('name', 'Microsoft-Windows-Security-Auditing', 'vendor_name', 'Microsoft', 'log_name', 'Security'), 'uid', CAST(event_record_id AS STRING), 'processed_time', current_timestamp())"}
+      - {name: raw_data, expr: "raw_data"}
+
+  - name: group_management
+    input: windows_security_group_management
+    fields:
+      - {name: class_uid, expr: "CAST(3006 AS INT)"}
+      - {name: class_name, expr: "'Group Management'"}
+      - {name: category_uid, expr: "CAST(3 AS INT)"}
+      - {name: category_name, expr: "'Identity & Access Management'"}
+      - {name: activity_id, expr: "CASE WHEN event_id IN (4728, 4732, 4756) THEN 2 ELSE 4 END"}
+      - {name: activity_name, expr: "CASE WHEN event_id IN (4728, 4732, 4756) THEN 'Add Member' ELSE 'Remove Member' END"}
+      - {name: type_uid, expr: "CAST(3006 * 100 + CASE WHEN event_id IN (4728, 4732, 4756) THEN 2 ELSE 4 END AS BIGINT)"}
+      - {name: time, expr: "to_timestamp(time)"}
+      - {name: timezone_offset, expr: "CAST(0 AS INT)"}
+      - {name: status, expr: "CASE WHEN keywords LIKE '%0x8020%' THEN 'Success' ELSE 'Failure' END"}
+      - {name: status_id, expr: "CASE WHEN keywords LIKE '%0x8020%' THEN 1 ELSE 2 END"}
+      - {name: group, expr: "named_struct('name', target_user_name, 'domain', target_domain_name, 'uid', target_sid)"}
+      - {name: user, expr: "named_struct('uid', member_sid, 'name', member_name)"}
+      - {name: actor, expr: "named_struct('user', named_struct('name', subject_user_name, 'domain', subject_domain_name, 'session_uid', subject_logon_id))"}
+      - {name: metadata, expr: "named_struct('product', named_struct('name', 'Microsoft-Windows-Security-Auditing', 'vendor_name', 'Microsoft', 'log_name', 'Security'), 'uid', CAST(event_record_id AS STRING), 'processed_time', current_timestamp())"}
+      - {name: raw_data, expr: "raw_data"}
