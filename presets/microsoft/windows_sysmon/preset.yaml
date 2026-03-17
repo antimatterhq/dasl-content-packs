@@ -1,0 +1,305 @@
+author: "Alan Silva <alan.silva@databricks.com>"
+title: "Microsoft Windows System Monitor Log"
+name: windows_sysmon
+description: "Windows System Monitor (Sysmon) — Process, Network, File System, DNS, and Registry activity normalized to OCSF"
+iconURL: "https://raw.githubusercontent.com/antimatterhq/dasl-content-packs/refs/heads/main/presets/default_icon.png?raw=true"
+
+autoloader:
+  format: jsonl
+  options:
+    ignoreMissingFiles: true
+    ignoreCorruptFiles: true
+  inputs:
+  - /Volumes/acs/lw/windows-sysmon/data/
+
+bronze:
+  loadAsSingleVariant: true
+  preTransform:
+    - ["try_parse_json(data::STRING) AS event_raw"]
+    - [
+        "event_raw",
+        "try_variant_get(event_raw, '$.Event.System.TimeCreated.#attributes.SystemTime', 'timestamp') AS time",
+        "COALESCE(try_variant_get(event_raw, '$.Event.System.EventID.#text', 'int'), try_variant_get(event_raw, '$.Event.System.EventID', 'int')) AS event_id",
+        "try_variant_get(event_raw, '$.Event.System.Computer', 'string') AS computer",
+        "try_variant_get(event_raw, '$.Event.System.Channel', 'string') AS channel",
+        "try_variant_get(event_raw, '$.Event.System.Version', 'int') AS sysmon_version",
+        "CAST('microsoft' AS STRING) AS source",
+        "CAST('windows-sysmon' AS STRING) AS sourcetype",
+        "current_timestamp() AS ingest_time"
+      ]
+
+silver:
+  transform:
+  - name: windows_sysmon_process
+    filter: "event_id IN (1, 5, 6, 7, 8, 10, 25)"
+    clusterBy: ["time", "event_id"]
+    fields:
+      - {name: event_id, expr: "event_id"}
+      - {name: time, expr: "time"}
+      - {name: computer, expr: "computer"}
+      - {name: event_record_id, expr: "try_variant_get(event_raw, '$.Event.System.EventRecordID', 'bigint')"}
+      - {name: rule_name, expr: "try_variant_get(event_raw, '$.Event.EventData.RuleName', 'string')"}
+      - {name: image, expr: "try_variant_get(event_raw, '$.Event.EventData.Image', 'string')"}
+      - {name: image_loaded, expr: "try_variant_get(event_raw, '$.Event.EventData.ImageLoaded', 'string')"}
+      - {name: command_line, expr: "try_variant_get(event_raw, '$.Event.EventData.CommandLine', 'string')"}
+      - {name: process_guid, expr: "try_variant_get(event_raw, '$.Event.EventData.ProcessGuid', 'string')"}
+      - {name: process_id, expr: "CAST(try_variant_get(event_raw, '$.Event.EventData.ProcessId', 'int') AS INT)"}
+      - {name: current_directory, expr: "try_variant_get(event_raw, '$.Event.EventData.CurrentDirectory', 'string')"}
+      - {name: parent_image, expr: "try_variant_get(event_raw, '$.Event.EventData.ParentImage', 'string')"}
+      - {name: parent_command_line, expr: "try_variant_get(event_raw, '$.Event.EventData.ParentCommandLine', 'string')"}
+      - {name: parent_process_guid, expr: "try_variant_get(event_raw, '$.Event.EventData.ParentProcessGuid', 'string')"}
+      - {name: parent_process_id, expr: "CAST(try_variant_get(event_raw, '$.Event.EventData.ParentProcessId', 'int') AS INT)"}
+      - {name: parent_user, expr: "try_variant_get(event_raw, '$.Event.EventData.ParentUser', 'string')"}
+      - {name: user, expr: "try_variant_get(event_raw, '$.Event.EventData.User', 'string')"}
+      - {name: logon_id, expr: "try_variant_get(event_raw, '$.Event.EventData.LogonId', 'string')"}
+      - {name: integrity_level, expr: "try_variant_get(event_raw, '$.Event.EventData.IntegrityLevel', 'string')"}
+      - {name: hashes, expr: "try_variant_get(event_raw, '$.Event.EventData.Hashes', 'string')"}
+      - {name: signed, expr: "try_variant_get(event_raw, '$.Event.EventData.Signed', 'string')"}
+      - {name: signature, expr: "try_variant_get(event_raw, '$.Event.EventData.Signature', 'string')"}
+      - {name: signature_status, expr: "try_variant_get(event_raw, '$.Event.EventData.SignatureStatus', 'string')"}
+      - {name: source_image, expr: "try_variant_get(event_raw, '$.Event.EventData.SourceImage', 'string')"}
+      - {name: source_process_id, expr: "CAST(try_variant_get(event_raw, '$.Event.EventData.SourceProcessId', 'int') AS INT)"}
+      - {name: source_process_guid, expr: "COALESCE(try_variant_get(event_raw, '$.Event.EventData.SourceProcessGuid', 'string'), try_variant_get(event_raw, '$.Event.EventData.SourceProcessGUID', 'string'))"}
+      - {name: source_thread_id, expr: "CAST(try_variant_get(event_raw, '$.Event.EventData.SourceThreadId', 'int') AS INT)"}
+      - {name: source_user, expr: "try_variant_get(event_raw, '$.Event.EventData.SourceUser', 'string')"}
+      - {name: target_image, expr: "try_variant_get(event_raw, '$.Event.EventData.TargetImage', 'string')"}
+      - {name: target_process_id, expr: "CAST(try_variant_get(event_raw, '$.Event.EventData.TargetProcessId', 'int') AS INT)"}
+      - {name: target_process_guid, expr: "COALESCE(try_variant_get(event_raw, '$.Event.EventData.TargetProcessGuid', 'string'), try_variant_get(event_raw, '$.Event.EventData.TargetProcessGUID', 'string'))"}
+      - {name: target_user, expr: "try_variant_get(event_raw, '$.Event.EventData.TargetUser', 'string')"}
+      - {name: new_thread_id, expr: "CAST(try_variant_get(event_raw, '$.Event.EventData.NewThreadId', 'int') AS INT)"}
+      - {name: start_address, expr: "try_variant_get(event_raw, '$.Event.EventData.StartAddress', 'string')"}
+      - {name: start_module, expr: "try_variant_get(event_raw, '$.Event.EventData.StartModule', 'string')"}
+      - {name: start_function, expr: "try_variant_get(event_raw, '$.Event.EventData.StartFunction', 'string')"}
+      - {name: granted_access, expr: "try_variant_get(event_raw, '$.Event.EventData.GrantedAccess', 'string')"}
+      - {name: call_trace, expr: "try_variant_get(event_raw, '$.Event.EventData.CallTrace', 'string')"}
+      - {name: tamper_type, expr: "try_variant_get(event_raw, '$.Event.EventData.Type', 'string')"}
+      - {name: raw_data, expr: "to_json(event_raw)"}
+
+  - name: windows_sysmon_network
+    filter: "event_id = 3"
+    clusterBy: ["time"]
+    fields:
+      - {name: event_id, expr: "event_id"}
+      - {name: time, expr: "time"}
+      - {name: computer, expr: "computer"}
+      - {name: event_record_id, expr: "try_variant_get(event_raw, '$.Event.System.EventRecordID', 'bigint')"}
+      - {name: rule_name, expr: "try_variant_get(event_raw, '$.Event.EventData.RuleName', 'string')"}
+      - {name: image, expr: "try_variant_get(event_raw, '$.Event.EventData.Image', 'string')"}
+      - {name: process_guid, expr: "try_variant_get(event_raw, '$.Event.EventData.ProcessGuid', 'string')"}
+      - {name: process_id, expr: "CAST(try_variant_get(event_raw, '$.Event.EventData.ProcessId', 'int') AS INT)"}
+      - {name: user, expr: "try_variant_get(event_raw, '$.Event.EventData.User', 'string')"}
+      - {name: protocol, expr: "try_variant_get(event_raw, '$.Event.EventData.Protocol', 'string')"}
+      - {name: initiated, expr: "try_variant_get(event_raw, '$.Event.EventData.Initiated', 'string') = 'true'"}
+      - {name: src_ip, expr: "try_variant_get(event_raw, '$.Event.EventData.SourceIp', 'string')"}
+      - {name: src_hostname, expr: "try_variant_get(event_raw, '$.Event.EventData.SourceHostname', 'string')"}
+      - {name: src_port, expr: "CAST(try_variant_get(event_raw, '$.Event.EventData.SourcePort', 'int') AS INT)"}
+      - {name: dst_ip, expr: "try_variant_get(event_raw, '$.Event.EventData.DestinationIp', 'string')"}
+      - {name: dst_hostname, expr: "try_variant_get(event_raw, '$.Event.EventData.DestinationHostname', 'string')"}
+      - {name: dst_port, expr: "CAST(try_variant_get(event_raw, '$.Event.EventData.DestinationPort', 'int') AS INT)"}
+      - {name: dst_port_name, expr: "try_variant_get(event_raw, '$.Event.EventData.DestinationPortName', 'string')"}
+      - {name: raw_data, expr: "to_json(event_raw)"}
+
+  - name: windows_sysmon_file
+    filter: "event_id IN (11, 15, 23, 26)"
+    clusterBy: ["time", "event_id"]
+    fields:
+      - {name: event_id, expr: "event_id"}
+      - {name: time, expr: "time"}
+      - {name: computer, expr: "computer"}
+      - {name: event_record_id, expr: "try_variant_get(event_raw, '$.Event.System.EventRecordID', 'bigint')"}
+      - {name: rule_name, expr: "try_variant_get(event_raw, '$.Event.EventData.RuleName', 'string')"}
+      - {name: image, expr: "try_variant_get(event_raw, '$.Event.EventData.Image', 'string')"}
+      - {name: process_guid, expr: "try_variant_get(event_raw, '$.Event.EventData.ProcessGuid', 'string')"}
+      - {name: process_id, expr: "CAST(try_variant_get(event_raw, '$.Event.EventData.ProcessId', 'int') AS INT)"}
+      - {name: user, expr: "try_variant_get(event_raw, '$.Event.EventData.User', 'string')"}
+      - {name: target_filename, expr: "try_variant_get(event_raw, '$.Event.EventData.TargetFilename', 'string')"}
+      - {name: creation_utc_time, expr: "try_cast(try_variant_get(event_raw, '$.Event.EventData.CreationUtcTime', 'string') AS TIMESTAMP)"}
+      - {name: hashes, expr: "try_variant_get(event_raw, '$.Event.EventData.Hashes', 'string')"}
+      - {name: hash, expr: "try_variant_get(event_raw, '$.Event.EventData.Hash', 'string')"}
+      - {name: is_executable, expr: "try_variant_get(event_raw, '$.Event.EventData.IsExecutable', 'string') = 'true'"}
+      - {name: archived, expr: "try_variant_get(event_raw, '$.Event.EventData.Archived', 'string') = 'true'"}
+      - {name: contents, expr: "try_variant_get(event_raw, '$.Event.EventData.Contents', 'string')"}
+      - {name: raw_data, expr: "to_json(event_raw)"}
+
+  - name: windows_sysmon_dns
+    filter: "event_id = 22"
+    clusterBy: ["time"]
+    fields:
+      - {name: event_id, expr: "event_id"}
+      - {name: time, expr: "time"}
+      - {name: computer, expr: "computer"}
+      - {name: event_record_id, expr: "try_variant_get(event_raw, '$.Event.System.EventRecordID', 'bigint')"}
+      - {name: rule_name, expr: "try_variant_get(event_raw, '$.Event.EventData.RuleName', 'string')"}
+      - {name: image, expr: "try_variant_get(event_raw, '$.Event.EventData.Image', 'string')"}
+      - {name: process_guid, expr: "try_variant_get(event_raw, '$.Event.EventData.ProcessGuid', 'string')"}
+      - {name: process_id, expr: "CAST(try_variant_get(event_raw, '$.Event.EventData.ProcessId', 'int') AS INT)"}
+      - {name: user, expr: "try_variant_get(event_raw, '$.Event.EventData.User', 'string')"}
+      - {name: query_name, expr: "try_variant_get(event_raw, '$.Event.EventData.QueryName', 'string')"}
+      - {name: query_status, expr: "try_variant_get(event_raw, '$.Event.EventData.QueryStatus', 'string')"}
+      - {name: query_results, expr: "try_variant_get(event_raw, '$.Event.EventData.QueryResults', 'string')"}
+      - {name: raw_data, expr: "to_json(event_raw)"}
+
+  - name: windows_sysmon_registry_key
+    filter: "event_id IN (12, 14)"
+    clusterBy: ["time", "event_id"]
+    fields:
+      - {name: event_id, expr: "event_id"}
+      - {name: time, expr: "time"}
+      - {name: computer, expr: "computer"}
+      - {name: event_record_id, expr: "try_variant_get(event_raw, '$.Event.System.EventRecordID', 'bigint')"}
+      - {name: rule_name, expr: "try_variant_get(event_raw, '$.Event.EventData.RuleName', 'string')"}
+      - {name: event_type, expr: "try_variant_get(event_raw, '$.Event.EventData.EventType', 'string')"}
+      - {name: image, expr: "try_variant_get(event_raw, '$.Event.EventData.Image', 'string')"}
+      - {name: process_guid, expr: "try_variant_get(event_raw, '$.Event.EventData.ProcessGuid', 'string')"}
+      - {name: process_id, expr: "CAST(try_variant_get(event_raw, '$.Event.EventData.ProcessId', 'int') AS INT)"}
+      - {name: user, expr: "try_variant_get(event_raw, '$.Event.EventData.User', 'string')"}
+      - {name: target_object, expr: "try_variant_get(event_raw, '$.Event.EventData.TargetObject', 'string')"}
+      - {name: new_name, expr: "try_variant_get(event_raw, '$.Event.EventData.NewName', 'string')"}
+      - {name: raw_data, expr: "to_json(event_raw)"}
+
+  - name: windows_sysmon_registry_value
+    filter: "event_id = 13"
+    clusterBy: ["time"]
+    fields:
+      - {name: event_id, expr: "event_id"}
+      - {name: time, expr: "time"}
+      - {name: computer, expr: "computer"}
+      - {name: event_record_id, expr: "try_variant_get(event_raw, '$.Event.System.EventRecordID', 'bigint')"}
+      - {name: rule_name, expr: "try_variant_get(event_raw, '$.Event.EventData.RuleName', 'string')"}
+      - {name: event_type, expr: "try_variant_get(event_raw, '$.Event.EventData.EventType', 'string')"}
+      - {name: image, expr: "try_variant_get(event_raw, '$.Event.EventData.Image', 'string')"}
+      - {name: process_guid, expr: "try_variant_get(event_raw, '$.Event.EventData.ProcessGuid', 'string')"}
+      - {name: process_id, expr: "CAST(try_variant_get(event_raw, '$.Event.EventData.ProcessId', 'int') AS INT)"}
+      - {name: user, expr: "try_variant_get(event_raw, '$.Event.EventData.User', 'string')"}
+      - {name: target_object, expr: "try_variant_get(event_raw, '$.Event.EventData.TargetObject', 'string')"}
+      - {name: details, expr: "try_variant_get(event_raw, '$.Event.EventData.Details', 'string')"}
+      - {name: raw_data, expr: "to_json(event_raw)"}
+
+gold:
+  - name: process_activity
+    input: windows_sysmon_process
+    fields:
+      - {name: class_uid, expr: "CAST(4007 AS INT)"}
+      - {name: class_name, expr: "'Process Activity'"}
+      - {name: category_uid, expr: "CAST(4 AS INT)"}
+      - {name: category_name, expr: "'System Activity'"}
+      - {name: activity_id, expr: "CASE event_id WHEN 1 THEN 1 WHEN 5 THEN 2 WHEN 8 THEN 4 WHEN 10 THEN 3 ELSE 99 END"}
+      - {name: activity_name, expr: "CASE event_id WHEN 1 THEN 'Launch' WHEN 5 THEN 'Terminate' WHEN 8 THEN 'Inject' WHEN 10 THEN 'Open' ELSE 'Other' END"}
+      - {name: type_uid, expr: "CAST(4007 * 100 + CASE event_id WHEN 1 THEN 1 WHEN 5 THEN 2 WHEN 8 THEN 4 WHEN 10 THEN 3 ELSE 99 END AS BIGINT)"}
+      - {name: time, expr: "to_timestamp(time)"}
+      - {name: timezone_offset, expr: "CAST(0 AS INT)"}
+      - {name: status_id, expr: "CAST(1 AS INT)"}
+      - {name: status, expr: "'Success'"}
+      - {name: process, expr: "named_struct('pid', COALESCE(process_id, source_process_id), 'file', named_struct('path', COALESCE(image, source_image)), 'cmd_line', command_line, 'user', named_struct('name', COALESCE(user, source_user)), 'integrity_info', named_struct('level', integrity_level))"}
+      - {name: parent_process, expr: "named_struct('pid', parent_process_id, 'file', named_struct('path', parent_image), 'cmd_line', parent_command_line, 'user', named_struct('name', parent_user))"}
+      - {name: actor, expr: "named_struct('process', named_struct('pid', source_process_id, 'file', named_struct('path', source_image), 'user', named_struct('name', source_user)))"}
+      - {name: target, expr: "named_struct('process', named_struct('pid', target_process_id, 'file', named_struct('path', target_image), 'user', named_struct('name', target_user)))"}
+      - {name: metadata, expr: "named_struct('product', named_struct('name', 'Microsoft-Windows-Sysmon', 'vendor_name', 'Microsoft', 'log_name', 'Microsoft-Windows-Sysmon/Operational'), 'uid', CAST(event_record_id AS STRING), 'processed_time', current_timestamp())"}
+      - {name: unmapped, expr: "named_struct('rule_name', rule_name, 'hashes', hashes, 'granted_access', granted_access, 'call_trace', call_trace, 'tamper_type', tamper_type, 'logon_id', logon_id, 'new_thread_id', new_thread_id, 'start_address', start_address, 'start_module', start_module, 'start_function', start_function, 'image_loaded', image_loaded, 'signed', signed, 'signature_status', signature_status)"}
+      - {name: raw_data, expr: "raw_data"}
+
+  - name: network_activity
+    input: windows_sysmon_network
+    fields:
+      - {name: class_uid, expr: "CAST(4001 AS INT)"}
+      - {name: class_name, expr: "'Network Activity'"}
+      - {name: category_uid, expr: "CAST(4 AS INT)"}
+      - {name: category_name, expr: "'Network Activity'"}
+      - {name: activity_id, expr: "CAST(1 AS INT)"}
+      - {name: activity_name, expr: "'Open'"}
+      - {name: type_uid, expr: "CAST(400101 AS BIGINT)"}
+      - {name: time, expr: "to_timestamp(time)"}
+      - {name: timezone_offset, expr: "CAST(0 AS INT)"}
+      - {name: status_id, expr: "CAST(1 AS INT)"}
+      - {name: status, expr: "'Success'"}
+      - {name: src_endpoint, expr: "named_struct('ip', src_ip, 'hostname', src_hostname, 'port', src_port)"}
+      - {name: dst_endpoint, expr: "named_struct('ip', dst_ip, 'hostname', dst_hostname, 'port', dst_port, 'svc_name', dst_port_name)"}
+      - {name: connection_info, expr: "named_struct('direction_id', CASE WHEN initiated THEN 2 ELSE 1 END, 'direction', CASE WHEN initiated THEN 'Outbound' ELSE 'Inbound' END, 'protocol_name', protocol)"}
+      - {name: process, expr: "named_struct('pid', process_id, 'file', named_struct('path', image), 'user', named_struct('name', user))"}
+      - {name: metadata, expr: "named_struct('product', named_struct('name', 'Microsoft-Windows-Sysmon', 'vendor_name', 'Microsoft', 'log_name', 'Microsoft-Windows-Sysmon/Operational'), 'uid', CAST(event_record_id AS STRING), 'processed_time', current_timestamp())"}
+      - {name: unmapped, expr: "named_struct('rule_name', rule_name, 'process_guid', process_guid)"}
+      - {name: raw_data, expr: "raw_data"}
+
+  - name: file_system_activity
+    input: windows_sysmon_file
+    fields:
+      - {name: class_uid, expr: "CAST(1001 AS INT)"}
+      - {name: class_name, expr: "'File System Activity'"}
+      - {name: category_uid, expr: "CAST(1 AS INT)"}
+      - {name: category_name, expr: "'System Activity'"}
+      - {name: activity_id, expr: "CASE event_id WHEN 11 THEN 1 WHEN 15 THEN 1 WHEN 23 THEN 4 WHEN 26 THEN 4 ELSE 99 END"}
+      - {name: activity_name, expr: "CASE event_id WHEN 11 THEN 'Create' WHEN 15 THEN 'Create' WHEN 23 THEN 'Delete' WHEN 26 THEN 'Delete' ELSE 'Other' END"}
+      - {name: type_uid, expr: "CAST(1001 * 100 + CASE event_id WHEN 11 THEN 1 WHEN 15 THEN 1 WHEN 23 THEN 4 WHEN 26 THEN 4 ELSE 99 END AS BIGINT)"}
+      - {name: time, expr: "to_timestamp(time)"}
+      - {name: timezone_offset, expr: "CAST(0 AS INT)"}
+      - {name: status_id, expr: "CAST(1 AS INT)"}
+      - {name: status, expr: "'Success'"}
+      - {name: file, expr: "named_struct('path', target_filename, 'hashes', named_struct('md5', regexp_extract(COALESCE(hashes, hash, ''), 'MD5=([A-F0-9a-f]+)', 1), 'sha256', regexp_extract(COALESCE(hashes, hash, ''), 'SHA256=([A-F0-9a-f]+)', 1)))"}
+      - {name: process, expr: "named_struct('pid', process_id, 'file', named_struct('path', image), 'user', named_struct('name', user))"}
+      - {name: metadata, expr: "named_struct('product', named_struct('name', 'Microsoft-Windows-Sysmon', 'vendor_name', 'Microsoft', 'log_name', 'Microsoft-Windows-Sysmon/Operational'), 'uid', CAST(event_record_id AS STRING), 'processed_time', current_timestamp())"}
+      - {name: unmapped, expr: "named_struct('rule_name', rule_name, 'creation_utc_time', creation_utc_time, 'is_executable', is_executable, 'archived', archived, 'contents', contents)"}
+      - {name: raw_data, expr: "raw_data"}
+
+  - name: dns_activity
+    input: windows_sysmon_dns
+    fields:
+      - {name: class_uid, expr: "CAST(4003 AS INT)"}
+      - {name: class_name, expr: "'DNS Activity'"}
+      - {name: category_uid, expr: "CAST(4 AS INT)"}
+      - {name: category_name, expr: "'Network Activity'"}
+      - {name: activity_id, expr: "CAST(1 AS INT)"}
+      - {name: activity_name, expr: "'Query'"}
+      - {name: type_uid, expr: "CAST(400301 AS BIGINT)"}
+      - {name: time, expr: "to_timestamp(time)"}
+      - {name: timezone_offset, expr: "CAST(0 AS INT)"}
+      - {name: status_id, expr: "CASE WHEN query_status = '0' THEN 1 WHEN query_status IS NOT NULL THEN 2 ELSE 0 END"}
+      - {name: status, expr: "CASE WHEN query_status = '0' THEN 'Success' WHEN query_status IS NOT NULL THEN 'Failure' ELSE 'Unknown' END"}
+      - {name: query, expr: "named_struct('hostname', query_name, 'type', 'A', 'type_id', 1)"}
+      - {name: answers, expr: "CASE WHEN query_results IS NOT NULL AND query_results != '' THEN transform(filter(split(query_results, ';'), x -> trim(x) != ''), x -> named_struct('rdata', trim(x))) ELSE array() END"}
+      - {name: process, expr: "named_struct('pid', process_id, 'file', named_struct('path', image), 'user', named_struct('name', user))"}
+      - {name: metadata, expr: "named_struct('product', named_struct('name', 'Microsoft-Windows-Sysmon', 'vendor_name', 'Microsoft', 'log_name', 'Microsoft-Windows-Sysmon/Operational'), 'uid', CAST(event_record_id AS STRING), 'processed_time', current_timestamp())"}
+      - {name: unmapped, expr: "named_struct('rule_name', rule_name, 'query_status', query_status)"}
+      - {name: raw_data, expr: "raw_data"}
+
+  - name: registry_key_activity
+    input: windows_sysmon_registry_key
+    fields:
+      - {name: class_uid, expr: "CAST(201001 AS INT)"}
+      - {name: class_name, expr: "'Registry Key Activity'"}
+      - {name: category_uid, expr: "CAST(201 AS INT)"}
+      - {name: category_name, expr: "'Windows Registry'"}
+      - {name: activity_id, expr: "CASE event_type WHEN 'CreateKey' THEN 1 WHEN 'DeleteKey' THEN 2 WHEN 'CreateValue' THEN 1 WHEN 'DeleteValue' THEN 2 WHEN 'RenameKey' THEN 5 ELSE 99 END"}
+      - {name: activity_name, expr: "CASE event_type WHEN 'CreateKey' THEN 'Create' WHEN 'DeleteKey' THEN 'Delete' WHEN 'CreateValue' THEN 'Create' WHEN 'DeleteValue' THEN 'Delete' WHEN 'RenameKey' THEN 'Rename' ELSE 'Other' END"}
+      - {name: type_uid, expr: "CAST(201001 * 100 + CASE event_type WHEN 'CreateKey' THEN 1 WHEN 'DeleteKey' THEN 2 WHEN 'CreateValue' THEN 1 WHEN 'DeleteValue' THEN 2 WHEN 'RenameKey' THEN 5 ELSE 99 END AS BIGINT)"}
+      - {name: time, expr: "to_timestamp(time)"}
+      - {name: timezone_offset, expr: "CAST(0 AS INT)"}
+      - {name: status_id, expr: "CAST(1 AS INT)"}
+      - {name: status, expr: "'Success'"}
+      - {name: reg_key, expr: "named_struct('path', target_object)"}
+      - {name: process, expr: "named_struct('pid', process_id, 'file', named_struct('path', image), 'user', named_struct('name', user))"}
+      - {name: is_persistence_target, expr: "target_object LIKE '%CurrentVersion%Run%' OR target_object LIKE '%Winlogon%' OR target_object LIKE '%SYSTEM%Services%'"}
+      - {name: metadata, expr: "named_struct('product', named_struct('name', 'Microsoft-Windows-Sysmon', 'vendor_name', 'Microsoft', 'log_name', 'Microsoft-Windows-Sysmon/Operational'), 'uid', CAST(event_record_id AS STRING), 'processed_time', current_timestamp())"}
+      - {name: unmapped, expr: "named_struct('rule_name', rule_name, 'new_name', new_name)"}
+      - {name: raw_data, expr: "raw_data"}
+
+  - name: registry_value_activity
+    input: windows_sysmon_registry_value
+    fields:
+      - {name: class_uid, expr: "CAST(201002 AS INT)"}
+      - {name: class_name, expr: "'Registry Value Activity'"}
+      - {name: category_uid, expr: "CAST(201 AS INT)"}
+      - {name: category_name, expr: "'Windows Registry'"}
+      - {name: activity_id, expr: "CAST(1 AS INT)"}
+      - {name: activity_name, expr: "'Set'"}
+      - {name: type_uid, expr: "CAST(20100201 AS BIGINT)"}
+      - {name: time, expr: "to_timestamp(time)"}
+      - {name: timezone_offset, expr: "CAST(0 AS INT)"}
+      - {name: status_id, expr: "CAST(1 AS INT)"}
+      - {name: status, expr: "'Success'"}
+      - {name: reg_key, expr: "named_struct('path', regexp_extract(COALESCE(target_object, ''), '^(.*)[\\\\\\\\][^\\\\\\\\]+$', 1))"}
+      - {name: reg_value, expr: "named_struct('name', regexp_extract(COALESCE(target_object, ''), '[^\\\\\\\\]+$', 0), 'data', details)"}
+      - {name: process, expr: "named_struct('pid', process_id, 'file', named_struct('path', image), 'user', named_struct('name', user))"}
+      - {name: is_persistence_target, expr: "target_object LIKE '%CurrentVersion%Run%' OR target_object LIKE '%Winlogon%' OR target_object LIKE '%SYSTEM%Services%'"}
+      - {name: metadata, expr: "named_struct('product', named_struct('name', 'Microsoft-Windows-Sysmon', 'vendor_name', 'Microsoft', 'log_name', 'Microsoft-Windows-Sysmon/Operational'), 'uid', CAST(event_record_id AS STRING), 'processed_time', current_timestamp())"}
+      - {name: unmapped, expr: "named_struct('rule_name', rule_name)"}
+      - {name: raw_data, expr: "raw_data"}
