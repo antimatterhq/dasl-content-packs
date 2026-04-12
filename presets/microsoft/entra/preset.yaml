@@ -251,7 +251,7 @@ silver:
         - name: properties.C_Iat
           expr: |
             CAST(data:properties['C_Iat'] AS BIGINT)
-        - name: resultSignature
+        - name: result_signature
           expr: |
             CAST(data:resultSignature AS STRING)
         - name: category
